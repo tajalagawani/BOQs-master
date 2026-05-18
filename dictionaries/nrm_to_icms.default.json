@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "standard": "ICMS 3rd edition, 2021",
+  "scope": "Construction Costs (CC) — buildings",
+  "description": "Maps NRM L2 codes to ICMS Level-3 Groups for Construction Costs (CC). Used by pomi_coder_app.py to produce the ICMS SUMMARY sheet aggregating amounts by ICMS group.",
+  "mapping": {
+    "1.1":  { "icms_l2": "CC", "icms_l3": "02", "icms_group_name": "Substructure" },
+
+    "2.1":  { "icms_l2": "CC", "icms_l3": "03", "icms_group_name": "Structure" },
+    "2.2":  { "icms_l2": "CC", "icms_l3": "03", "icms_group_name": "Structure" },
+    "2.3":  { "icms_l2": "CC", "icms_l3": "03", "icms_group_name": "Structure" },
+    "2.4":  { "icms_l2": "CC", "icms_l3": "03", "icms_group_name": "Structure" },
+
+    "2.5":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "2.6":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "2.7":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "2.8":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "3.1":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "3.2":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+    "3.3":  { "icms_l2": "CC", "icms_l3": "04", "icms_group_name": "Architectural Works" },
+
+    "4.1":  { "icms_l2": "CC", "icms_l3": "12", "icms_group_name": "Production and Loose FF&E" },
+
+    "5.1":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.2":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.3":  { "icms_l2": "CC", "icms_l3": "06", "icms_group_name": "Drainage" },
+    "5.4":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.5":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.6":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.7":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.8":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.9":  { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.10": { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.11": { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.12": { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.13": { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+    "5.14": { "icms_l2": "CC", "icms_l3": "05", "icms_group_name": "Services and Equipment" },
+
+    "6.1":  { "icms_l2": "CC", "icms_l3": "03", "icms_group_name": "Structure" },
+
+    "7.1":  { "icms_l2": "CC", "icms_l3": "01", "icms_group_name": "Demolition, Site Preparation and Formation" },
+
+    "8.1":  { "icms_l2": "CC", "icms_l3": "07", "icms_group_name": "External and Ancillary Works" },
+    "8.2":  { "icms_l2": "CC", "icms_l3": "07", "icms_group_name": "External and Ancillary Works" },
+    "8.3":  { "icms_l2": "CC", "icms_l3": "07", "icms_group_name": "External and Ancillary Works" },
+    "8.4":  { "icms_l2": "CC", "icms_l3": "07", "icms_group_name": "External and Ancillary Works" },
+    "8.5":  { "icms_l2": "CC", "icms_l3": "07", "icms_group_name": "External and Ancillary Works" },
+    "8.6":  { "icms_l2": "CC", "icms_l3": "06", "icms_group_name": "Drainage" },
+    "8.7":  { "icms_l2": "CC", "icms_l3": "11", "icms_group_name": "Work and Utilities Off-Site" },
+
+    "9.1":  { "icms_l2": "CC", "icms_l3": "08", "icms_group_name": "Preliminaries / Site Overheads / General Requirements" }
+  },
+  "all_icms_groups_buildings": {
+    "01": "Demolition, Site Preparation and Formation",
+    "02": "Substructure",
+    "03": "Structure",
+    "04": "Architectural Works / Non-Structural Works",
+    "05": "Services and Equipment",
+    "06": "Surface and Underground Drainage",
+    "07": "External and Ancillary Works",
+    "08": "Preliminaries / Site Overheads / General Requirements",
+    "09": "Risk Allowances",
+    "10": "Taxes and Levies",
+    "11": "Work and Utilities Off-Site",
+    "12": "Production and Loose FF&E",
+    "13": "Construction-Related Consultancies and Supervision"
+  },
+  "icms_categories": {
+    "AC": "Acquisition Costs",
+    "CC": "Construction Costs",
+    "RC": "Renewal Costs",
+    "OC": "Operation Costs",
+    "MC": "Maintenance Costs",
+    "EC": "End of Life Costs"
+  }
+}

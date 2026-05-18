@@ -1,0 +1,1449 @@
+#!/usr/bin/env python3
+"""
+pomi_coder_app.py
+─────────────────
+Universal POMI BQ Auto-Coder
+
+Reads ANY Excel BQ file, detects all sheets and items automatically,
+codes every item through the 3-stage pipeline (Rules → Fuzzy → AI),
+and writes a fully formatted output workbook.
+
+USAGE:
+  python pomi_coder_app.py  POMI_CODING_FINAL.xlsx  YourBQ.xlsx
+  python pomi_coder_app.py  POMI_CODING_FINAL.xlsx  YourBQ.xlsx  --ai
+  python pomi_coder_app.py  POMI_CODING_FINAL.xlsx  YourBQ.xlsx  --ai --batch 10
+  python pomi_coder_app.py  POMI_CODING_FINAL.xlsx  YourBQ.xlsx  --out MyOutput.xlsx
+  python pomi_coder_app.py  POMI_CODING_FINAL.xlsx  Data/AKAM/ --ai \
+      --country UAE --city Dubai --asset AKAM --project "AKAM Mall Refurbishment" \
+      --type Commercial --employer "Majid Al Futtaim" --contractor "ABC Contracting LLC" \
+      --contract-type "Lump Sum" --tender-date "21/02/2024"
+
+OPTIONS:
+  --ai             Enable AI coding for items that rules don't match
+  --batch N        AI batch size — items per API call (default: 10)
+  --out FILE       Output filename (default: <input>_POMI_Coded.xlsx)
+  --api-key KEY    Anthropic API key (or set ANTHROPIC_API_KEY env var)
+  --sheets S1 S2   Only process specific sheets (default: all)
+  --skip-headers   Skip rows with no item reference AND no amount
+  --country        Country (e.g. UAE)
+  --city           City (e.g. Dubai)
+  --asset          Asset name (e.g. AKAM)
+  --project        Project / villa name
+  --type           Asset type (e.g. Commercial)
+  --employer       Employer name
+  --contractor     Contractor name
+  --status         Project status
+  --contract-type  Contract type (e.g. Lump Sum)
+  --tender-date    Tender date (e.g. 21/02/2024)
+  --award-date     Award date
+  --currency       Currency code (default: auto-detect, fallback AED)
+
+REQUIREMENTS:
+  pip install openpyxl rapidfuzz
+  (AI mode also needs: internet + Anthropic API key)
+"""
+
+import sys, os, re, argparse
+from datetime import datetime
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+from pomi_coder_engine import BQCodingEngine
+
+# ── Colour palette ────────────────────────────────────────────────────────────
+SECTION_COLORS = {
+    'A': ('FF1B2A4A', 'FFD6E4F0'),
+    'B': ('FF1A5276', 'FFD6EAF8'),
+    'C': ('FF7D6608', 'FFFFF3CD'),
+    'D': ('FF4A235A', 'FFF5EEF8'),
+    'E': ('FF1A6B75', 'FFD1F2EB'),
+    'F': ('FF6E2F0A', 'FFFDE8D8'),
+    'G': ('FF145A32', 'FFD5F5E3'),
+    'H': ('FF1F618D', 'FFD4E6F1'),
+    'J': ('FF943126', 'FFFDEDEC'),
+    'K': ('FF7D3C98', 'FFF4ECF7'),
+    'L': ('FF1B7A4E', 'FFD5F5E3'),
+    'M': ('FF21618C', 'FFD4E6F1'),
+    'N': ('FF0E6655', 'FFD0ECE7'),
+    'P': ('FF1B2631', 'FFD5D8DC'),
+    'Q': ('FF117A65', 'FFD0ECE7'),
+    'R': ('FF7B241C', 'FFFDEDEC'),
+}
+DEFAULT_DARK  = 'FF2C3E50'
+DEFAULT_LIGHT = 'FFF2F2F2'
+NAVY   = 'FF1B2A4A'
+ORANGE = 'FFFFC000'
+
+def sol(h):  return PatternFill('solid', fgColor=h)
+def fnt(bold=False, size=9, col='FF000000', italic=False):
+    return Font(name='Arial', bold=bold, size=size, color=col, italic=italic)
+def aln(h='left', v='center', wrap=False):
+    return Alignment(horizontal=h, vertical=v, wrap_text=wrap)
+def bdr(col='FFD0D0D0'):
+    s = Side(style='thin', color=col)
+    return Border(left=s, right=s, top=s, bottom=s)
+
+
+def _is_real_preamble(txt: str) -> bool:
+    """A row is a preamble header if it's a non-blank header row describing
+    a category of items below it. Reject notes and numbered/lettered lists."""
+    if not txt:
+        return False
+    s = txt.strip()
+    if not s:
+        return False
+    lower = s.lower()
+    if lower.startswith(('note', 'notes', 'general note')):
+        return False
+    if s.startswith(('1)', '2)', '3)', '4)', '5)', '6)', '7)', '8)', '9)')):
+        return False
+    if s.startswith(('a)', 'b)', 'c)', 'd)', 'e)')):
+        return False
+    return True
+
+
+def _is_noise_row(desc, qty=None, amount=None) -> bool:
+    """Skip junk rows that should not be coded.
+    Filters page-numbers, 'None' strings, 'Refer to ...' tag lines, etc."""
+    if not desc:
+        return True
+    d = str(desc).strip().lower()
+    if d in ('none', 'page no.', 'page no', "cont'd", "(cont'd)", '.', '..', '...', '-', '--'):
+        return True
+    if d.startswith('page ') and len(d) < 20:
+        return True
+    if d.startswith('refer to ') and len(d) < 50:
+        return True
+    return False
+
+
+def _is_prose_clause(desc, qty=None, unit=None) -> bool:
+    """A prose clause is qty=1, unit=Item, long text with contract verbs."""
+    if not desc or qty != 1:
+        return False
+    u = (str(unit) if unit else '').strip().lower()
+    if u not in ('item', '', 'no', 'nr'):
+        return False
+    d = str(desc).strip()
+    if len(d) < 200:
+        return False
+    dl = d.lower()
+    contract_verbs = (
+        'the contractor shall', 'the contractor will',
+        'shall be responsible', 'shall include',
+        'shall provide', 'shall allow', 'shall comply',
+        'shall undertake', 'allow for compliance',
+    )
+    return any(v in dl for v in contract_verbs)
+
+
+# Module-level NRM master cache (hydrated once at startup in main()).
+NRM_MASTER: dict = {}
+
+
+# ── Placeholder NRM mapping (Issue 3) ─────────────────────────────────────────
+# Legacy production codes that need to be hydrated to real NRM codes
+PLACEHOLDER_NRM_MAP = {
+    'P':  ('9.01', 'Preliminaries / General Requirements'),
+    'PS': ('9.01', 'Preliminaries – Provisional Sums'),
+    'DW': ('9.01', 'Preliminaries – Dayworks'),
+    '0':  ('7.01', 'Minor Demolition and Alteration Works'),
+    # 'U' is noise — those rows are filtered, not remapped
+}
+
+
+def remap_placeholder_nrm(result):
+    """If a result has a placeholder NRM code, swap in the real NRM."""
+    if not result or not result.get('nrm_code'):
+        return result
+    nrm = str(result['nrm_code']).strip()
+    if nrm in PLACEHOLDER_NRM_MAP:
+        new_nrm, new_name = PLACEHOLDER_NRM_MAP[nrm]
+        result['nrm_code'] = new_nrm
+        result['nrm_desc'] = new_name
+        result['_placeholder_fixed'] = True
+    return result
+
+
+# ── NRM hierarchy hydration (Issue 4) ─────────────────────────────────────────
+# L1 names: NRM main groups (derived from RICS NRM2 standard).
+NRM_L1_NAMES = {
+    '1': 'Substructure',
+    '2': 'Superstructure',
+    '3': 'Internal Finishes',
+    '4': 'Fittings, Furnishings and Equipment',
+    '5': 'Services',
+    '6': 'Prefabricated Buildings and Building Units',
+    '7': 'Work to Existing Buildings',
+    '8': 'External Works',
+    '9': 'Preliminaries / General Requirements',
+}
+
+
+def _normalize_nrm(code: str) -> str:
+    """Strip leading zeros within each dotted segment ('5.08' → '5.8').
+    Pass-through for already-normalized codes ('5.8.2' → '5.8.2')."""
+    if not code:
+        return ''
+    parts = [str(int(p)) if p.isdigit() else p for p in str(code).split('.')]
+    return '.'.join(parts)
+
+
+def _load_nrm_master(pomi_path: str) -> dict:
+    """Read the NRM sheet from POMI_CODING_FINAL workbook.
+    Returns dict: normalized_code → name. Tolerant of missing/changed file."""
+    nrm_map = {}
+    try:
+        wb = load_workbook(pomi_path, data_only=True, read_only=True)
+    except Exception as e:
+        print(f'  ⚠  Could not load NRM master from {pomi_path}: {e}')
+        return nrm_map
+    if 'NRM' not in wb.sheetnames:
+        return nrm_map
+    ws = wb['NRM']
+    # The NRM sheet on POMI_CODING_FINAL stores data in cols P (code) and Q (name)
+    for row in ws.iter_rows(values_only=True):
+        if not row or len(row) < 17:
+            continue
+        code = row[15]  # column P
+        name = row[16]  # column Q
+        if code and name:
+            ncode = _normalize_nrm(str(code).strip())
+            nrm_map[ncode] = str(name).strip()
+    return nrm_map
+
+
+def hydrate_nrm_names(result: dict, nrm_master: dict) -> dict:
+    """Add nrm_l1_code/name, nrm_l2_code/name, nrm_l3_code/name to a result."""
+    if not result or not result.get('nrm_code'):
+        return result
+    raw = str(result['nrm_code']).strip()
+    norm = _normalize_nrm(raw)
+    parts = norm.split('.')
+    if len(parts) == 1:
+        l1, l2, l3 = parts[0], '', ''
+    elif len(parts) == 2:
+        l1, l2, l3 = parts[0], norm, norm   # rules emit at L2 — treat as L3
+    else:
+        l1, l2, l3 = parts[0], f'{parts[0]}.{parts[1]}', norm
+    result['nrm_l1_code'] = l1
+    result['nrm_l2_code'] = l2
+    result['nrm_l3_code'] = l3
+    result['nrm_l1_name'] = NRM_L1_NAMES.get(l1, '')
+    result['nrm_l2_name'] = nrm_master.get(l2, '')
+    result['nrm_l3_name'] = nrm_master.get(l3, result.get('nrm_desc', ''))
+    return result
+
+
+# ── Excel reader — smart column detection ─────────────────────────────────────
+def detect_columns(ws):
+    """
+    Scan the first 10 rows to detect which columns hold:
+    item_ref, description, qty, unit, rate, amount
+    Returns a dict of col_name → column_index (1-based)
+    """
+    PATTERNS = {
+        'item_ref':    re.compile(r'item|ref|no\.?$|^#$', re.I),
+        'description': re.compile(r'descri|particular|item detail', re.I),
+        'qty':         re.compile(r'^qty$|^quantity$|^q$', re.I),
+        'unit':        re.compile(r'^unit$|^u$|^uom$', re.I),
+        'rate':        re.compile(r'^rate$|^unit.?rate$|^price$', re.I),
+        'amount':      re.compile(r'^amount|^total$|^value$|^aed$|^sum$', re.I),
+    }
+    cols = {}
+    for row in ws.iter_rows(min_row=1, max_row=10):
+        for cell in row:
+            val = str(cell.value or '').strip().replace('\n', ' ').replace('\r', '')
+            for name, pat in PATTERNS.items():
+                if name not in cols and pat.search(val):
+                    cols[name] = cell.column
+        if len(cols) >= 4:
+            break
+
+    # Fallback: assume standard layout A=ref B=desc C=qty D=unit E=rate F=amount
+    defaults = {'item_ref': 1, 'description': 2, 'qty': 3,
+                'unit': 4, 'rate': 5, 'amount': 6}
+    for k, v in defaults.items():
+        if k not in cols:
+            cols[k] = v
+    return cols
+
+
+def read_sheet_items(ws, col_map):
+    """
+    Read all rows from a sheet.
+    Returns list of dicts with keys: src_row, item_ref, description,
+    qty, unit, rate, amount, is_header, is_collection, is_blank
+    """
+    items = []
+    for r in range(1, ws.max_row + 1):
+        def cell(col_name):
+            ci = col_map.get(col_name, 0)
+            return ws.cell(r, ci).value if ci else None
+
+        item_ref = cell('item_ref')
+        desc     = cell('description')
+        qty      = cell('qty')
+        unit     = cell('unit')
+        rate     = cell('rate')
+        amount   = cell('amount')
+
+        # Completely blank row
+        if all(v is None for v in [item_ref, desc, qty, unit, rate, amount]):
+            items.append({'src_row': r, 'item_ref': None, 'description': None,
+                          'qty': None, 'unit': None, 'rate': None, 'amount': None,
+                          'is_blank': True, 'is_header': False, 'is_collection': False})
+            continue
+
+        # Skip column header rows (e.g. "Item" | "Description" | "Quantity"...)
+        _HEADER_KEYWORDS = re.compile(
+            r'^(item|ref|no\.?|description|particulars|qty|quantity|unit|rate|amount|total|aed)$',
+            re.I)
+        if (item_ref is not None and desc is not None
+                and _HEADER_KEYWORDS.match(str(item_ref).strip())
+                and _HEADER_KEYWORDS.match(str(desc).strip())):
+            continue
+
+        # Skip description-only rows starting with '.'
+        if desc and str(desc).startswith('.'):
+            continue
+
+        desc_str = str(desc or '').strip()
+
+        is_collection = any(x in desc_str for x in
+                            ['To Collection', 'Carried To', 'COLLECTION',
+                             'Brought Forward', 'Page Total', 'Total to'])
+        is_header = (item_ref is None and desc is not None
+                     and qty is None and amount is None
+                     and not is_collection)
+
+        items.append({
+            'src_row':     r,
+            'item_ref':    item_ref,
+            'description': desc,
+            'qty':         qty,
+            'unit':        unit,
+            'rate':        rate,
+            'amount':      amount,
+            'is_blank':    False,
+            'is_header':   is_header,
+            'is_collection': is_collection,
+        })
+    return items
+
+
+# ── Output workbook builder ───────────────────────────────────────────────────
+DATA_COLS = [
+    ('A', 'Row',          5),
+    ('B', 'Item Ref',     9),
+    ('C', 'Description',  52),
+    ('D', 'Qty',          8),
+    ('E', 'Unit',         7),
+    ('F', 'Rate\nAED',    12),
+    ('G', 'Amount\nAED',  14),
+    ('H', 'POMI\nSec',    7),
+    ('I', 'POMI Code',    11),
+    ('J', 'NRM',          8),
+    ('K', 'NRM Description', 26),
+    ('L', 'Measurement',  16),
+    ('M', 'Conf%',        7),
+    ('N', 'Stage',        8),
+    ('O', 'Flag',         5),
+]
+
+FLAG_COLS = [
+    ('A', 'Source Sheet', 22), ('B', 'Row',     6),
+    ('C', 'Item Ref',      9), ('D', 'Description', 54),
+    ('E', 'Qty',           8), ('F', 'Unit',    7),
+    ('G', 'Rate AED',     12), ('H', 'Amount AED', 14),
+    ('I', 'POMI Code',    11), ('J', 'NRM',     8),
+    ('K', 'NRM Description', 26), ('L', 'Measurement', 16),
+    ('M', 'Conf%',         7), ('N', 'Stage',   8),
+    ('O', 'Reasoning',    42),
+]
+
+
+def write_data_sheet(wb_out, sheet_name, items, results, project_title):
+    """Write one coded data sheet to the output workbook."""
+    ws = wb_out.create_sheet(title=sheet_name[:31])
+    ws.sheet_view.showGridLines = False
+    ws.freeze_panes = 'A4'
+    ws.sheet_view.zoomScale = 80
+
+    for cl, _, w in DATA_COLS:
+        ws.column_dimensions[cl].width = w
+
+    # Pick header colour based on dominant section
+    sec_counts = {}
+    for r in results:
+        if r and r.get('section'):
+            sec_counts[r['section']] = sec_counts.get(r['section'], 0) + 1
+    dom_sec = max(sec_counts, key=sec_counts.get) if sec_counts else ''
+    dark, light = SECTION_COLORS.get(dom_sec, (DEFAULT_DARK, DEFAULT_LIGHT))
+
+    # Title row
+    ws.merge_cells('A1:O1')
+    c = ws['A1']
+    c.value     = f'{project_title}  ·  {sheet_name}'
+    c.font      = Font(name='Arial', bold=True, size=11, color='FFFFFFFF')
+    c.fill      = sol(dark)
+    c.alignment = aln('center', 'center')
+    ws.row_dimensions[1].height = 26
+
+    # Sub-title
+    ws.merge_cells('A2:O2')
+    c = ws['A2']
+    c.value = ('A–G = original bill  ·  H–O = POMI + NRM coding  ·  '
+               '✓ rule/AI ≥85%  ·  ⚠ fuzzy/AI <85% = review')
+    c.font      = Font(name='Arial', size=9, color='FF1B2A4A', italic=True)
+    c.fill      = sol('FFD6E4F0')
+    c.alignment = aln('left', 'center')
+    ws.row_dimensions[2].height = 14
+
+    # Header row
+    for ci, (_, hdr, _) in enumerate(DATA_COLS, 1):
+        c = ws.cell(3, ci)
+        c.value     = hdr
+        c.font      = Font(name='Arial', bold=True, size=9, color='FFFFFFFF')
+        c.fill      = sol(dark)
+        c.alignment = aln('center', 'center', True)
+        c.border    = bdr()
+    ws.row_dimensions[3].height = 28
+
+    out_r  = 4
+    coded  = flagged = 0
+    ri     = 0   # result index (only priced items get a result)
+
+    for item in items:
+        # Skip blank rows entirely — don't write them to output
+        if item.get('is_blank'):
+            continue
+
+        desc   = item['description']
+        is_col = item['is_collection']
+        is_hdr = item['is_header']
+
+        # Context/section header rows → write as a full-width merged info bar
+        if is_hdr:
+            desc_str = str(desc or '').strip()
+            if not desc_str:
+                continue
+            ws.merge_cells(f'A{out_r}:O{out_r}')
+            c = ws.cell(out_r, 1)
+            c.value     = f'  ▸  {desc_str}'
+            # Section titles (ALL CAPS) get a darker band; context rows get subtle
+            is_section = desc_str.isupper() or (desc_str == desc_str.upper() and len(desc_str) > 6)
+            if is_section:
+                c.fill = sol('FFD6E4F0')
+                c.font = Font(name='Arial', bold=True, size=9, color='FF1B2A4A')
+            else:
+                c.fill = sol('FFFFFBE6')
+                c.font = Font(name='Arial', bold=False, size=8, color='FF7D6608', italic=True)
+            c.alignment = aln('left', 'center')
+            ws.row_dimensions[out_r].height = 13
+            out_r += 1
+            continue
+
+        # Row fill for data rows
+        if is_col:
+            rf = sol(ORANGE)
+            tf = fnt(bold=True, size=9, col='FF1B2A4A')
+        elif out_r % 2 == 0:
+            rf = sol('FFFFFFFF')
+            tf = fnt(size=9)
+        else:
+            rf = sol('FFF8F9FA')
+            tf = fnt(size=9)
+
+        # Use merged description (preamble + item) when available — this is
+        # what the engine actually coded against, so the QS can audit it.
+        display_desc = item.get('_merged_desc') or desc
+
+        # Write original columns
+        vals = [item['src_row'], item['item_ref'], display_desc,
+                item['qty'], item['unit'], item['rate'], item['amount']]
+        for ci, val in enumerate(vals, 1):
+            c = ws.cell(out_r, ci)
+            c.value     = val
+            c.fill      = rf
+            c.font      = tf
+            c.alignment = (aln('center', 'center') if ci in [1, 2, 4, 5]
+                           else aln('left', 'top', ci == 3))
+            c.border    = bdr()
+            if ci in [6, 7] and isinstance(val, (int, float)):
+                c.number_format = '#,##0.00'
+
+        # Write coding columns
+        is_priced = (item['item_ref'] is not None and desc is not None
+                     and not is_col)
+        result = None
+        if is_priced and ri < len(results):
+            result = results[ri]
+            ri += 1
+
+        if result and result.get('pomi_code'):
+            coded += 1
+            conf  = result['confidence']
+            stage = result['stage']
+            flag  = '✓' if conf >= 85 else '⚠'
+            if conf < 85:
+                flagged += 1
+            cf    = sol('FFD5F5E3') if conf >= 85 else sol('FFFDE8D8')
+            fc    = 'FF1E8449'     if conf >= 85 else 'FFB03A2E'
+
+            stage_lbl = {'rule': 'Rule', 'fuzzy': 'Fuzzy',
+                         'ai': 'AI', 'unmatched': '—'}.get(stage, stage)
+
+            for i, val in enumerate([result['section'], result['pomi_code'],
+                                      result['nrm_code'], result['nrm_desc'],
+                                      result['measurement'], conf,
+                                      stage_lbl, flag], 8):
+                c = ws.cell(out_r, i)
+                c.value     = val
+                c.border    = bdr()
+                c.alignment = aln('center', 'center')
+                if i in [13, 15]:   # conf, flag
+                    c.font = fnt(bold=True, size=9, col=fc)
+                    c.fill = cf
+                elif i == 8:        # section
+                    sec_d, sec_l = SECTION_COLORS.get(result['section'],
+                                                       (DEFAULT_DARK, DEFAULT_LIGHT))
+                    c.font = fnt(bold=True, size=9, col='FF' + sec_d[2:])
+                    c.fill = sol(sec_l)
+                elif i == 9:        # pomi code
+                    c.font = fnt(bold=True, size=9, col='FF1B2A4A')
+                    c.fill = sol('FFD6E4F0')
+                else:
+                    c.font = fnt(size=9)
+                    c.fill = sol('FFE8F4FB')
+        else:
+            for i in range(8, 16):
+                c = ws.cell(out_r, i)
+                c.fill   = sol('FFF8F9FA')
+                c.border = bdr()
+
+        dl = len(str(display_desc)) if display_desc else 0
+        ws.row_dimensions[out_r].height = max(14, min(60, dl // 6))
+        out_r += 1
+
+    # Footer
+    out_r += 1
+    ws.merge_cells(f'A{out_r}:O{out_r}')
+    c = ws.cell(out_r, 1)
+    pct = round((coded - flagged) / coded * 100) if coded else 0
+    c.value     = (f'Items coded: {coded}  ·  Auto ✓: {coded-flagged}  ·  '
+                   f'Flagged ⚠: {flagged}  ·  Auto rate: {pct}%')
+    c.font      = Font(name='Arial', bold=True, size=9, color='FFFFFFFF')
+    c.fill      = sol(dark)
+    c.alignment = aln('left', 'center')
+    ws.row_dimensions[out_r].height = 16
+
+    return coded, flagged
+
+
+def write_flagged_sheet(wb_out, all_flagged):
+    ws = wb_out.create_sheet('⚠ FLAGGED FOR REVIEW')
+    ws.sheet_view.showGridLines = False
+    ws.freeze_panes = 'A4'
+    ws.sheet_view.zoomScale = 80
+
+    for cl, _, w in FLAG_COLS:
+        ws.column_dimensions[cl].width = w
+
+    ws.merge_cells('A1:O1')
+    c = ws['A1']
+    c.value     = (f'FLAGGED ITEMS  ·  {len(all_flagged)} items below 85% confidence  ·  '
+                   f'Review and correct POMI Code (Col I) where needed')
+    c.font      = Font(name='Arial', bold=True, size=11, color='FFFFFFFF')
+    c.fill      = sol('FF922B21')
+    c.alignment = aln('center', 'center')
+    ws.row_dimensions[1].height = 26
+
+    ws.merge_cells('A2:O2')
+    c = ws['A2']
+    c.value = 'AI/fuzzy suggestion is pre-filled.  Override Col I (POMI Code) where incorrect.'
+    c.font      = Font(name='Arial', size=9, color='FF922B21', italic=True)
+    c.fill      = sol('FFFCE4D6')
+    c.alignment = aln('left', 'center')
+    ws.row_dimensions[2].height = 14
+
+    for ci, (_, hdr, _) in enumerate(FLAG_COLS, 1):
+        c = ws.cell(3, ci)
+        c.value     = hdr
+        c.font      = Font(name='Arial', bold=True, size=9, color='FFFFFFFF')
+        c.fill      = sol('FF922B21')
+        c.alignment = aln('center', 'center', True)
+        c.border    = bdr()
+    ws.row_dimensions[3].height = 26
+
+    for fi, row in enumerate(all_flagged, 4):
+        r    = row['result']
+        rf   = sol('FFFCE4D6') if fi % 2 == 0 else sol('FFFDF2F2')
+        vals = [row['sheet'], row['src_row'], row['item_ref'], row['desc'],
+                row['qty'], row['unit'], row['rate'], row['amount'],
+                r['pomi_code'], r['nrm_code'], r['nrm_desc'],
+                r['measurement'], r['confidence'], r['stage'],
+                r.get('reasoning', '')]
+        for ci, val in enumerate(vals, 1):
+            c = ws.cell(fi, ci)
+            c.value     = val
+            c.fill      = rf
+            c.font      = fnt(bold=(ci in [1, 9]), size=9,
+                              col='FF922B21' if ci in [9, 13] else 'FF000000')
+            c.alignment = (aln('center', 'center') if ci in [2, 3, 5, 6, 9, 10, 13, 14]
+                           else aln('left', 'top', ci in [4, 11, 15]))
+            c.border    = bdr()
+            if ci in [7, 8] and isinstance(val, (int, float)):
+                c.number_format = '#,##0.00'
+        ws.row_dimensions[fi].height = max(14, min(60, len(str(row['desc'])) // 6))
+
+
+def write_summary_sheet(wb_out, sheet_totals, project_title, args_info):
+    ws = wb_out.create_sheet('SUMMARY', 0)
+    ws.sheet_view.showGridLines = False
+
+    col_ws = [('A', 26), ('B', 32), ('C', 8), ('D', 10),
+              ('E', 10), ('F', 10), ('G', 10), ('H', 10)]
+    for cl, w in col_ws:
+        ws.column_dimensions[cl].width = w
+
+    ws.merge_cells('A1:H1')
+    c = ws['A1']
+    c.value     = f'POMI BQ CODING SUMMARY  ·  {project_title}'
+    c.font      = Font(name='Arial', bold=True, size=14, color='FFFFFFFF')
+    c.fill      = sol(NAVY)
+    c.alignment = aln('center', 'center')
+    ws.row_dimensions[1].height = 32
+
+    ws.merge_cells('A2:H2')
+    c = ws['A2']
+    c.value = (f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}  ·  '
+               f'{args_info}')
+    c.font      = Font(name='Arial', size=9, color='FF566573', italic=True)
+    c.fill      = sol('FFF8F9FA')
+    c.alignment = aln('left', 'center')
+    ws.row_dimensions[2].height = 16
+    ws.row_dimensions[3].height = 8
+
+    hdrs = ['Sheet', 'Description', 'Rows', 'Coded', '✓ Rule',
+            '~ Fuzzy', '✓ AI', '⚠ Review']
+    for ci, h in enumerate(hdrs, 1):
+        c = ws.cell(4, ci)
+        c.value     = h
+        c.font      = Font(name='Arial', bold=True, size=9, color='FFFFFFFF')
+        c.fill      = sol(NAVY)
+        c.alignment = aln('center', 'center')
+        c.border    = bdr()
+    ws.row_dimensions[4].height = 18
+
+    tr = tc = trule = tfuzzy = tai = tflag = 0
+    for ri, (sname, rows, coded, rule_n, fuzzy_n, ai_n, flag_n) in enumerate(sheet_totals, 5):
+        rf = sol('FFF8F9FA') if ri % 2 == 0 else sol('FFFFFFFF')
+        for ci, val in enumerate([sname, '', rows, coded,
+                                   rule_n, fuzzy_n, ai_n, flag_n], 1):
+            c = ws.cell(ri, ci)
+            c.value     = val
+            c.fill      = rf
+            c.font      = fnt(bold=(ci == 1), size=9)
+            c.alignment = aln('center' if ci > 2 else 'left', 'center')
+            c.border    = bdr()
+        ws.row_dimensions[ri].height = 15
+        tr += rows; tc += coded; trule += rule_n
+        tfuzzy += fuzzy_n; tai += ai_n; tflag += flag_n
+
+    tot_r = 5 + len(sheet_totals) + 1
+    auto_pct = round((trule + tai) / tc * 100) if tc else 0
+    ws.merge_cells(f'A{tot_r}:H{tot_r}')
+    c = ws.cell(tot_r, 1)
+    c.value     = (f'TOTAL  ·  {tr} rows  ·  {tc} coded  ·  '
+                   f'{trule+tai} auto ✓ ({auto_pct}%)  ·  {tflag} flagged ⚠')
+    c.font      = Font(name='Arial', bold=True, size=10, color='FFFFFFFF')
+    c.fill      = sol('FFCA6F1E')
+    c.alignment = aln('center', 'center')
+    ws.row_dimensions[tot_r].height = 20
+
+
+MASTER_COLS = [
+    # Manual / workflow
+    (1,  'ACTION',            6),
+    # Auto from filename
+    (2,  'BATCH',            38),
+    (3,  'REF',               7),
+    # CLI params
+    (4,  'Country',           9),
+    (5,  'City',              9),
+    (6,  'Asset',             9),
+    (7,  'Project',          26),
+    (8,  'Type',             13),
+    (9,  'Employer',         22),
+    (10, 'Contractor',       22),
+    (11, 'Status',            9),
+    (12, 'Tender Date',      12),
+    (13, 'Award Date',       12),
+    (14, 'Contract Type',    13),
+    # POMI hierarchy (auto from code)
+    (15, 'POMI Section',     24),
+    (16, 'Code 1',            8),
+    (17, 'Code 2',            8),
+    (18, 'Code 3',            8),
+    (19, 'POMI Sub Section', 30),
+    # Original BQ data
+    (20, 'Description',      52),
+    (21, 'Qty',               8),
+    (22, 'Unit',              7),
+    (23, 'Currency',          9),
+    (24, 'Rate',             12),
+    (25, 'Amount',           14),
+    # NRM coding (L3 = primary display)
+    (26, 'NRM',               8),
+    (27, 'NRM Description',  26),
+    (28, 'Measurement',      16),
+    # QA
+    (29, 'Conf%',             7),
+    (30, 'Stage',             8),
+    (31, 'Flag',              5),
+    # NRM hierarchy (hydrated from corrected lookup)
+    (32, 'NRM L1',            7),
+    (33, 'NRM L1 Name',      28),
+    (34, 'NRM L2',            8),
+    (35, 'NRM L2 Name',      30),
+]
+
+
+def write_master_sheet(wb_out, all_master, project_title, meta=None):
+    """
+    Write a single consolidated sheet with every priced item from all sheets.
+    all_master = list of dicts with keys:
+      sheet, item_ref, description, qty, unit, rate, amount, result,
+      batch, hier (hierarchy dict)
+    meta = dict of project-level fields from CLI params
+    """
+    if meta is None:
+        meta = {}
+
+    ws = wb_out.create_sheet(title='MASTER BOQs', index=1)
+    ws.sheet_view.showGridLines = False
+    ws.freeze_panes = 'A4'
+    ws.sheet_view.zoomScale = 75
+
+    ncols = len(MASTER_COLS)
+    last_col = get_column_letter(ncols)
+
+    for ci, hdr, w in MASTER_COLS:
+        ws.column_dimensions[get_column_letter(ci)].width = w
+
+    # ── Title ──────────────────────────────────────────────────────────────────
+    ws.merge_cells(f'A1:{last_col}1')
+    c = ws['A1']
+    proj_lbl = meta.get('project') or project_title
+    c.value     = f'MASTER BOQs  ·  {proj_lbl}  ·  All Sheets Combined'
+    c.font      = Font(name='Arial', bold=True, size=11, color='FFFFFFFF')
+    c.fill      = sol(NAVY)
+    c.alignment = aln('center', 'center')
+    ws.row_dimensions[1].height = 26
+
+    ws.merge_cells(f'A2:{last_col}2')
+    c = ws['A2']
+    c.value     = ('All priced items from every bill sheet in one table  ·  '
+                   'Use filters to sort by Sheet / POMI Section / Stage')
+    c.font      = Font(name='Arial', size=9, color='FF566573', italic=True)
+    c.fill      = sol('FFF8F9FA')
+    c.alignment = aln('left', 'center')
+    ws.row_dimensions[2].height = 14
+
+    # ── Header row ─────────────────────────────────────────────────────────────
+    HDR_COLORS = {
+        1:  'FF4A235A',   # ACTION — manual
+        2:  'FF1A5276',   # BATCH
+        3:  'FF1A5276',   # REF
+        4:  'FF1B7A4E',   # Country
+        5:  'FF1B7A4E',   # City
+        6:  'FF1B7A4E',   # Asset
+        7:  'FF1B7A4E',   # Project
+        8:  'FF1B7A4E',   # Type
+        9:  'FF566573',   # Employer
+        10: 'FF566573',   # Contractor
+        11: 'FF4A235A',   # Status — manual
+        12: 'FF1A5276',   # Tender Date
+        13: 'FF4A235A',   # Award Date — manual
+        14: 'FF1A5276',   # Contract Type
+        15: 'FF7D6608',   # POMI Section
+        16: 'FF7D6608',   # Code 1
+        17: 'FF7D6608',   # Code 2
+        18: 'FF7D6608',   # Code 3
+        19: 'FF7D6608',   # POMI Sub Section
+        20: NAVY,         # Description
+        21: NAVY,         # Qty
+        22: NAVY,         # Unit
+        23: 'FF117A65',   # Currency
+        24: NAVY,         # Rate
+        25: NAVY,         # Amount
+        26: 'FF1A6B75',   # NRM
+        27: 'FF1A6B75',   # NRM Description
+        28: 'FF1A6B75',   # Measurement
+        29: 'FF117A65',   # Conf%
+        30: 'FF117A65',   # Stage
+        31: 'FF117A65',   # Flag
+        32: 'FF148F77',   # NRM L1
+        33: 'FF148F77',   # NRM L1 Name
+        34: 'FF148F77',   # NRM L2
+        35: 'FF148F77',   # NRM L2 Name
+    }
+    for ci, hdr, _ in MASTER_COLS:
+        c = ws.cell(3, ci)
+        c.value     = hdr
+        c.font      = Font(name='Arial', bold=True, size=8, color='FFFFFFFF')
+        c.fill      = sol(HDR_COLORS.get(ci, NAVY))
+        c.alignment = aln('center', 'center', True)
+        c.border    = bdr()
+    ws.row_dimensions[3].height = 36
+
+    ws.auto_filter.ref = f'A3:{last_col}3'
+
+    CENTER_COLS = {1,2,3,4,5,6,8,11,12,13,14,16,17,18,21,22,23,26,29,30,31,32,34}
+
+    total_amount = 0
+
+    for ri, item in enumerate(all_master, 4):
+        r      = item['result']
+        hier   = item.get('hier', {})
+        rf     = sol('FFFFFFFF') if ri % 2 == 0 else sol('FFF8F9FA')
+        amount = item['amount']
+        if isinstance(amount, (int, float)):
+            total_amount += amount
+
+        conf  = r['confidence'] if r and r.get('pomi_code') else 0
+        is_good = conf >= 85
+        cf = sol('FFD5F5E3') if is_good else sol('FFFDE8D8')
+        fc = 'FF1E8449'     if is_good else 'FFB03A2E'
+        stage_lbl = ''
+        flag = ''
+        if r and r.get('pomi_code'):
+            stage_lbl = {'rule': 'Rule', 'fuzzy': 'Fuzzy',
+                         'ai': 'AI', 'unmatched': '—'}.get(r['stage'], r['stage'])
+            flag = '✓' if conf >= 85 else '⚠'
+
+        pomi_code = r['pomi_code'] if r else ''
+        sec_letter = r['section']  if r else ''
+
+        vals = {
+            1:  '',                                                    # ACTION — manual
+            2:  item.get('batch', ''),                                 # BATCH
+            3:  item['item_ref'],                                      # REF
+            4:  meta.get('country', ''),                               # Country
+            5:  meta.get('city', ''),                                  # City
+            6:  meta.get('asset', item.get('asset_fallback', '')),     # Asset
+            7:  meta.get('project', ''),                               # Project
+            8:  meta.get('type', ''),                                  # Type
+            9:  meta.get('employer', ''),                              # Employer
+            10: meta.get('contractor', ''),                            # Contractor
+            11: meta.get('status', ''),                                # Status — manual
+            12: meta.get('tender_date', ''),                           # Tender Date
+            13: meta.get('award_date', ''),                            # Award Date — manual
+            14: meta.get('contract_type', ''),                         # Contract Type
+            15: f"{sec_letter} — {hier.get('section_name', '')}" if sec_letter else '',
+            16: hier.get('code1', sec_letter),                         # Code 1
+            17: hier.get('code2', ''),                                 # Code 2
+            18: hier.get('code3', ''),                                 # Code 3
+            19: hier.get('sub_section', ''),                           # POMI Sub Section
+            20: item['description'],                                   # Description
+            21: item['qty'],                                           # Qty
+            22: item['unit'],                                          # Unit
+            23: item.get('currency', meta.get('currency', 'AED')),     # Currency
+            24: item['rate'],                                          # Rate
+            25: amount,                                                # Amount
+            26: (r.get('nrm_l3_code') or r['nrm_code']) if r else '',   # NRM (L3 if hydrated)
+            27: (r.get('nrm_l3_name') or r['nrm_desc']) if r else '',   # NRM L3 Name
+            28: r['measurement'] if r else '',                         # Measurement
+            29: conf             if r and r.get('pomi_code') else '',  # Conf%
+            30: stage_lbl,                                             # Stage
+            31: flag,                                                  # Flag
+            32: r.get('nrm_l1_code', '') if r else '',                 # NRM L1
+            33: r.get('nrm_l1_name', '') if r else '',                 # NRM L1 Name
+            34: r.get('nrm_l2_code', '') if r else '',                 # NRM L2
+            35: r.get('nrm_l2_name', '') if r else '',                 # NRM L2 Name
+        }
+
+        for ci, _, _ in MASTER_COLS:
+            val = vals.get(ci, '')
+            c   = ws.cell(ri, ci)
+            c.value  = val
+            c.border = bdr()
+
+            if ci == 1:  # ACTION — manual grey
+                c.font      = fnt(size=8, col='FF999999', italic=True)
+                c.fill      = sol('FFF5F5F5')
+                c.alignment = aln('center', 'center')
+            elif ci in [11, 13]:  # Status, Award — manual grey
+                c.font      = fnt(size=8, col='FF999999', italic=True)
+                c.fill      = sol('FFF5F5F5')
+                c.alignment = aln('center', 'center')
+            elif ci == 2:  # BATCH
+                c.font      = fnt(size=8, col='FF1A5276')
+                c.fill      = sol('FFD6EAF8')
+                c.alignment = aln('center', 'center')
+            elif ci == 3:  # REF
+                c.font      = fnt(bold=True, size=9, col='FF1A5276')
+                c.fill      = sol('FFD6EAF8')
+                c.alignment = aln('center', 'center')
+            elif ci in range(4, 15):  # Meta cols
+                c.font      = fnt(size=8)
+                c.fill      = sol('FFE8F8F5')
+                c.alignment = aln('center' if ci in CENTER_COLS else 'left', 'center')
+            elif ci in range(15, 20):  # POMI hierarchy
+                c.font      = fnt(bold=(ci in [15, 16]), size=8, col='FF7D6608')
+                c.fill      = sol('FFFFF3CD')
+                c.alignment = aln('center' if ci in CENTER_COLS else 'left', 'center')
+            elif ci == 20:  # Description
+                c.font      = fnt(size=9)
+                c.fill      = rf
+                c.alignment = aln('left', 'top', True)
+            elif ci in [21, 22]:  # Qty, Unit
+                c.font      = fnt(size=9)
+                c.fill      = rf
+                c.alignment = aln('center', 'center')
+            elif ci == 23:  # Currency
+                c.font      = fnt(bold=True, size=8, col='FF1B2A4A')
+                c.fill      = sol('FFD6E4F0')
+                c.alignment = aln('center', 'center')
+            elif ci in [24, 25]:  # Rate, Amount
+                c.font      = fnt(size=9)
+                c.fill      = rf
+                c.alignment = aln('right', 'center')
+                if isinstance(val, (int, float)):
+                    c.number_format = '#,##0.00'
+            elif ci in [26, 27, 28]:  # NRM
+                c.font      = fnt(size=8, col='FF1A6B75')
+                c.fill      = sol('FFD1F2EB')
+                c.alignment = aln('center' if ci == 26 else 'left', 'center')
+            elif ci in [29, 30, 31]:  # Conf/Stage/Flag
+                c.font      = fnt(bold=True, size=9, col=fc if r and r.get('pomi_code') else 'FF000000')
+                c.fill      = cf if r and r.get('pomi_code') else sol('FFF8F9FA')
+                c.alignment = aln('center', 'center')
+            elif ci in [32, 33, 34, 35]:  # NRM L1 / L2 hydrated
+                c.font      = fnt(size=8, col='FF148F77', bold=(ci in [32, 34]))
+                c.fill      = sol('FFE0F5EE')
+                c.alignment = aln('center' if ci in CENTER_COLS else 'left', 'center')
+            else:
+                c.font      = fnt(size=9)
+                c.fill      = rf
+                c.alignment = aln('center' if ci in CENTER_COLS else 'left', 'center')
+
+        dl = len(str(item['description'])) if item['description'] else 0
+        ws.row_dimensions[ri].height = max(14, min(60, dl // 6))
+
+    # ── Grand total row ────────────────────────────────────────────────────────
+    tot_r = 4 + len(all_master) + 1
+    # Merge across description block (cols A..X = 1..24) leaving Rate/Amount visible
+    ws.merge_cells(f'A{tot_r}:{get_column_letter(24)}{tot_r}')
+    c = ws.cell(tot_r, 1)
+    c.value     = f'GRAND TOTAL  ·  {len(all_master)} items'
+    c.font      = Font(name='Arial', bold=True, size=10, color='FFFFFFFF')
+    c.fill      = sol('FFCA6F1E')
+    c.alignment = aln('right', 'center')
+    ws.row_dimensions[tot_r].height = 20
+
+    c = ws.cell(tot_r, 25)
+    c.value         = total_amount
+    c.number_format = '#,##0.00'
+    c.font          = Font(name='Arial', bold=True, size=10, color='FFFFFFFF')
+    c.fill          = sol('FFCA6F1E')
+    c.alignment     = aln('right', 'center')
+
+    for i in range(26, 32):
+        ws.cell(tot_r, i).fill = sol('FFCA6F1E')
+
+    print(f'  Master BOQs sheet: {len(all_master)} items  |  '
+          f'Total Amount: {meta.get("currency","AED")} {total_amount:,.2f}')
+
+
+def detect_currency(ws) -> str:
+    """Scan first 10 rows for a header containing a currency code."""
+    for row in ws.iter_rows(min_row=1, max_row=10):
+        for cell in row:
+            val = str(cell.value or '')
+            m = re.search(r'\b(AED|USD|GBP|EUR|SAR|QAR|KWD|OMR|BHD)\b', val, re.I)
+            if m:
+                return m.group(1).upper()
+    return 'AED'
+
+
+def detect_project_meta(wb, api_key: str = '', bill_path: str = '') -> dict:
+    """
+    Extract project metadata from a BOQ workbook using AI.
+    Scans cover/summary sheets in the bill file and any summary file
+    found in the same folder. Sends raw text to AI — no hardcoded patterns.
+    Returns a dict; empty string = not found.
+    CLI params always override whatever is returned here.
+    """
+    import urllib.request, json as _json
+
+    EMPTY = {
+        'project': '', 'employer': '', 'contractor': '', 'country': '',
+        'city': '', 'type': '', 'contract_type': '', 'tender_date': '',
+        'award_date': '', 'status': '', 'currency': '',
+    }
+
+    def _wb_to_text(workbook, max_rows=80) -> str:
+        """Flatten all sheets that look like cover/summary into plain text."""
+        COVER = re.compile(r'cover|summary|title|front|contents|index', re.I)
+        sheets = [s for s in workbook.sheetnames if COVER.search(s)] or workbook.sheetnames[:2]
+        lines = []
+        for sname in sheets[:2]:
+            ws = workbook[sname]
+            for row in ws.iter_rows(min_row=1, max_row=max_rows, values_only=True):
+                parts = [str(v).strip() for v in row if v is not None and str(v).strip()]
+                if parts:
+                    lines.append('  |  '.join(parts))
+        return '\n'.join(lines)
+
+    # ── Gather text: prefer summary file in folder, fallback to bill itself ───
+    raw_text = ''
+    if bill_path:
+        folder = os.path.dirname(os.path.abspath(bill_path))
+        SUMMARY = re.compile(r'summary|main|cover|tender', re.I)
+        for fname in sorted(os.listdir(folder)):
+            if not fname.endswith('.xlsx') or fname.endswith('_POMI_Coded.xlsx'):
+                continue
+            if SUMMARY.search(fname):
+                try:
+                    wb_s = load_workbook(os.path.join(folder, fname), data_only=True)
+                    raw_text = _wb_to_text(wb_s)
+                    if raw_text.strip():
+                        break
+                except Exception:
+                    pass
+    if not raw_text.strip():
+        raw_text = _wb_to_text(wb)
+
+    # Always detect currency via header scan (reliable, no AI needed)
+    first_ws = wb[wb.sheetnames[0]]
+    currency = detect_currency(first_ws)
+
+    if not raw_text.strip() or not api_key:
+        if not api_key:
+            print('  ⚠  No API key — skipping AI meta extraction')
+        return {**EMPTY, 'currency': currency}
+
+    # ── Send raw text to AI — let it figure out the format ───────────────────
+    FIELDS = list(EMPTY.keys())
+    FIELDS.remove('currency')   # already detected
+
+    prompt = (
+        "You are reading the cover sheet of a construction Bill of Quantities (BOQ).\n"
+        "Extract the project metadata from the text below.\n\n"
+        "Return ONLY a JSON object with exactly these keys:\n"
+        f"{_json.dumps({k: '' for k in FIELDS})}\n\n"
+        "Rules:\n"
+        "- Use empty string for any field not found\n"
+        "- Dates in DD/MM/YYYY format\n"
+        "- contract_type: e.g. 'Lump Sum', 'Remeasured', 'GMP', 'Cost Plus'\n"
+        "- type: e.g. 'Commercial', 'Residential', 'Mixed Use', 'Infrastructure'\n"
+        "- No markdown, no preamble, JSON only\n\n"
+        f"Text:\n{raw_text[:3000]}"
+    )
+
+    try:
+        body = _json.dumps({
+            'model':      'claude-haiku-4-5-20251001',
+            'max_tokens': 400,
+            'messages':   [{'role': 'user', 'content': prompt}]
+        }).encode()
+        req = urllib.request.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=body,
+            headers={
+                'Content-Type':      'application/json',
+                'x-api-key':         api_key,
+                'anthropic-version': '2023-06-01',
+            })
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = _json.loads(resp.read())
+
+        raw = ''.join(b['text'] for b in data.get('content', []) if b.get('type') == 'text')
+        raw = re.sub(r'```json\s*|```\s*', '', raw).strip()
+        ai_vals = _json.loads(raw)
+
+        result = {**EMPTY, 'currency': currency}
+        for k in FIELDS:
+            v = str(ai_vals.get(k, '')).strip()
+            if v:
+                result[k] = v
+
+        found = {k: v for k, v in result.items() if v}
+        print(f'  🤖  AI detected meta: {found}')
+        return result
+
+    except Exception as e:
+        print(f'  ⚠  AI meta extraction failed: {e}')
+        return {**EMPTY, 'currency': currency}
+
+
+def process_one_file(engine, args, bill_path, out_path, meta=None):
+    """
+    Process a single BQ file. Returns all_master list for the file.
+    Saves the individual coded workbook to out_path.
+    """
+    if meta is None:
+        meta = {}
+    print(f'\n  Loading: {bill_path}')
+    print(f'  Description merging: ON  (preamble headers merged into item descriptions)')
+    print(f'  NRM hydration:       ON  (L1/L2/L3 codes + names)')
+    print(f'  Placeholder mapping: ON  (P/PS/DW/0 → real NRM)')
+    print(f'  Noise filtering:     ON  (notes, page refs, blank rows skipped)')
+    print(f'  Prose-clause guard:  ON  (long contract clauses forced to 9.01)')
+    wb_in = load_workbook(bill_path, data_only=True)
+
+    # Auto-detect project metadata from cover sheet
+    detected = detect_project_meta(wb_in, api_key=engine.api_key, bill_path=bill_path)
+    # CLI params take priority — only fill gaps from detection
+    merged_meta = {**detected, **{k: v for k, v in meta.items() if v}}
+    meta = merged_meta
+
+    asset_fallback = os.path.basename(os.path.dirname(os.path.abspath(bill_path)))
+    batch_name     = os.path.basename(bill_path)
+
+    sheets_to_process = args.sheets if args.sheets else wb_in.sheetnames
+    skip_patterns = re.compile(
+        r'summary|total|cover|index|content|instruction|how.to|'
+        r'fly.bill|fly_bill|flybill|'                # fly sheets (header only)
+        r'bill.*-.*sum|bill.*sum$|'                  # "Bill 2-Sum" style summaries
+        r'collection|carried.forward|brought.forward',  # collection sheets
+        re.I)
+    sheets_to_process = [s for s in sheets_to_process
+                         if not skip_patterns.search(s)]
+    print(f'  Sheets to code: {len(sheets_to_process)}')
+    for s in sheets_to_process:
+        print(f'    • {s}')
+
+    wb_out        = Workbook()
+    wb_out.remove(wb_out.active)
+    sheet_totals  = []
+    all_flagged   = []
+    all_master    = []
+    project_title = os.path.splitext(os.path.basename(bill_path))[0]
+
+    for sname in sheets_to_process:
+        if sname not in wb_in.sheetnames:
+            print(f'\n  ⚠  Sheet not found: {sname} — skipping')
+            continue
+
+        ws_src   = wb_in[sname]
+        col_map  = detect_columns(ws_src)
+        all_rows = read_sheet_items(ws_src, col_map)
+
+        priced = [row for row in all_rows
+                  if (row['item_ref'] is not None
+                      and row['description'] is not None
+                      and not row['is_collection']
+                      and not row['is_blank']
+                      and not _is_noise_row(row['description'],
+                                            row.get('qty'),
+                                            row.get('amount')))]
+
+        sheet_label   = re.sub(r'^Bill\s+\d+\s*[-–]?\s*', '', sname).strip()
+        project_label = re.sub(r'_\d{2}\.\d{2}\.\d{4}.*$', '', project_title)[:35]
+        batch_context = f"{project_label} | {sheet_label}"
+
+        # ── Build full descriptions with preamble headers merged in ──────────
+        # Real BoQs use "header + indented items" pattern. The header is part
+        # of the item description — without it, items like "Raft foundation;
+        # 400mm thick" miss critical context like "Reinforced waterproof
+        # concrete C40 N/mm²".  Flagged by QS David Parry (12/03 5:09 PM).
+        last_preamble = ''
+        preamble_map  = {}      # priced_i → preamble text
+        priced_i      = 0
+        for row in all_rows:
+            if row.get('is_header') and row.get('description'):
+                txt = str(row['description']).strip()
+                if _is_real_preamble(txt):
+                    last_preamble = txt         # keep full text, no truncation
+            if (row.get('item_ref') is not None
+                    and row.get('description') is not None
+                    and not row.get('is_collection')
+                    and not row.get('is_blank')):
+                preamble_map[priced_i] = last_preamble
+                priced_i += 1
+
+        descriptions = []
+        contexts     = []
+        for i, row in enumerate(priced):
+            item_desc = str(row['description']).strip()
+            preamble  = preamble_map.get(i, '').strip()
+            # Merge preamble + item if preamble adds info not already present
+            if preamble and preamble.lower() not in item_desc.lower():
+                full_desc = f"{preamble}; {item_desc}"
+            else:
+                full_desc = item_desc
+            descriptions.append(full_desc)
+            contexts.append(sheet_label)
+            # Stash on row so write_data_sheet can display the merged form
+            row['_merged_desc'] = full_desc
+
+        print(f'\n  ── {sname}  ({len(all_rows)} rows, {len(descriptions)} items to code) ──')
+
+        results = engine.code_items(
+            descriptions,
+            use_ai        = args.ai,
+            batch_size    = args.batch,
+            contexts      = contexts,
+            batch_context = batch_context)
+
+        # Post-process: remap placeholder NRM codes → real NRM, force prose
+        # clauses to 9.01 Preliminaries, then hydrate L1/L2/L3 codes + names.
+        for i, row in enumerate(priced):
+            r = results[i] if i < len(results) else None
+            if r:
+                remap_placeholder_nrm(r)
+                if _is_prose_clause(row['description'], row.get('qty'), row.get('unit')):
+                    r['nrm_code'] = '9.01'
+                    r['nrm_desc'] = 'Preliminaries / General Requirements'
+                    r['_prose_clause'] = True
+                hydrate_nrm_names(r, NRM_MASTER)
+            row['_result'] = r
+
+        result_list = [row['_result'] for row in priced]
+
+        rule_n = fuzzy_n = ai_n = flag_n = 0
+        for r in results:
+            if not r: continue
+            if r['stage'] == 'rule':  rule_n  += 1
+            if r['stage'] == 'fuzzy': fuzzy_n += 1
+            if r['stage'] == 'ai':    ai_n    += 1
+            if r['confidence'] < 85 and r['pomi_code']:
+                flag_n += 1
+                for row in priced:
+                    if row['_result'] is r:
+                        all_flagged.append({
+                            'sheet': sname, 'src_row': row['src_row'],
+                            'item_ref': row['item_ref'],
+                            'desc': row.get('_merged_desc') or row['description'],
+                            'qty': row['qty'], 'unit': row['unit'],
+                            'rate': row['rate'], 'amount': row['amount'],
+                            'result': r,
+                        })
+                        break
+
+        for row in priced:
+            r    = row['_result']
+            hier = engine.get_hierarchy(r['pomi_code']) if r and r.get('pomi_code') else {}
+            all_master.append({
+                'sheet':          f"{project_title} | {sname}",
+                'batch':          batch_name,
+                'item_ref':       row['item_ref'],
+                'description':    row.get('_merged_desc') or row['description'],
+                'qty':            row['qty'],
+                'unit':           row['unit'],
+                'rate':           row['rate'],
+                'amount':         row['amount'],
+                'currency':       meta.get('currency', 'AED'),
+                'asset_fallback': asset_fallback,
+                'hier':           hier,
+                'result':         r,
+            })
+
+        coded, _ = write_data_sheet(wb_out, sname, all_rows, result_list, project_title)
+        sheet_totals.append((sname, len(all_rows), coded, rule_n, fuzzy_n, ai_n, flag_n))
+        pct = round((rule_n + ai_n) / coded * 100) if coded else 0
+        print(f'  ✓  coded:{coded}  rule:{rule_n}  fuzzy:{fuzzy_n}  '
+              f'ai:{ai_n}  ⚠:{flag_n}  auto:{pct}%')
+
+    if all_master:
+        write_master_sheet(wb_out, all_master, project_title, meta=meta)
+    if all_flagged:
+        write_flagged_sheet(wb_out, all_flagged)
+        print(f'\n  ⚠  Flagged: {len(all_flagged)} items')
+
+    args_info = (f'Rules: {len(engine.lookup_rows and [1] or [])} | '
+                 f'AI: {"on" if args.ai else "off"} | Batch: {args.batch}')
+    write_summary_sheet(wb_out, sheet_totals, project_title, args_info)
+    wb_out.save(out_path)
+
+    # Save auto-learned rules
+    rules_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pomi_rules.py')
+    n_new = engine.save_new_rules(rules_path)
+    if n_new:
+        print(f'  📚  Learned {n_new} new rules this run → pomi_rules.py')
+
+    total_rows  = sum(t[2] for t in sheet_totals)
+    grand_total = sum(i['amount'] for i in all_master
+                      if isinstance(i.get('amount'), (int, float)))
+    print(f'  ✅  SAVED → {out_path}  |  {total_rows} items  |  AED {grand_total:,.2f}')
+    return all_master
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+def main():
+    global NRM_MASTER
+    parser = argparse.ArgumentParser(
+        description='Universal POMI BQ Auto-Coder',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__)
+    parser.add_argument('pomi',    help='POMI_CODING_FINAL.xlsx')
+    parser.add_argument('bill',    help='Input BQ Excel file OR folder path')
+    parser.add_argument('--out',   default='',
+                        help='Output filename (default: <input>_POMI_Coded.xlsx)')
+    parser.add_argument('--ai',    action='store_true',
+                        help='Enable AI coding for unmatched items')
+    parser.add_argument('--batch', type=int, default=10,
+                        help='AI batch size (default 10)')
+    parser.add_argument('--api-key', default='',
+                        help='Anthropic API key')
+    parser.add_argument('--sheets', nargs='+', default=[],
+                        help='Only process these sheet names')
+    # Project metadata params (fill every row in MASTER BOQ)
+    parser.add_argument('--country',       default='', help='Country (e.g. UAE)')
+    parser.add_argument('--city',          default='', help='City (e.g. Dubai)')
+    parser.add_argument('--asset',         default='', help='Asset name (e.g. AKAM)')
+    parser.add_argument('--project',       default='', help='Project / villa name')
+    parser.add_argument('--type',          default='', help='Asset type (e.g. Commercial)')
+    parser.add_argument('--employer',      default='', help='Employer name')
+    parser.add_argument('--contractor',    default='', help='Contractor name')
+    parser.add_argument('--status',        default='', help='Project status')
+    parser.add_argument('--contract-type', default='', help='Contract type (e.g. Lump Sum)')
+    parser.add_argument('--tender-date',   default='', help='Tender date (e.g. 21/02/2024)')
+    parser.add_argument('--award-date',    default='', help='Award date')
+    parser.add_argument('--currency',      default='', help='Currency code (default: auto-detect, fallback AED)')
+    args = parser.parse_args()
+
+    # Build meta dict from CLI params
+    meta = {
+        'country':       args.country,
+        'city':          args.city,
+        'asset':         args.asset,
+        'project':       args.project,
+        'type':          args.type,
+        'employer':      args.employer,
+        'contractor':    args.contractor,
+        'status':        args.status,
+        'contract_type': getattr(args, 'contract_type', ''),
+        'tender_date':   getattr(args, 'tender_date', ''),
+        'award_date':    getattr(args, 'award_date', ''),
+        'currency':      args.currency,
+    }
+
+    if not os.path.exists(args.pomi):
+        print(f'  ✗  File not found: {args.pomi}'); sys.exit(1)
+
+    # ── Folder mode: process all xlsx files in folder ─────────────────────────
+    if os.path.isdir(args.bill):
+        folder       = args.bill
+        bill_files   = sorted(f for f in os.listdir(folder)
+                              if f.endswith('.xlsx') and not f.endswith('_POMI_Coded.xlsx'))
+        if not bill_files:
+            print(f'  ✗  No .xlsx files found in {folder}'); sys.exit(1)
+
+        print(f"""
+{'='*70}
+  POMI FOLDER BATCH RUN
+  Folder : {folder}
+  Files  : {len(bill_files)}
+  AI     : {'ON (batch=' + str(args.batch) + ')' if args.ai else 'OFF'}
+{'='*70}""")
+
+        folder_master   = []   # combined master across all files
+        folder_cost     = 0.0
+        folder_in_tok   = 0
+        folder_out_tok  = 0
+        folder_grand    = 0.0
+        pass_n = fail_n = 0
+
+        engine = BQCodingEngine(
+            pomi_path = args.pomi,
+            api_key   = args.api_key or os.environ.get('ANTHROPIC_API_KEY', ''))
+
+        NRM_MASTER = _load_nrm_master(args.pomi)
+        print(f'  NRM master loaded: {len(NRM_MASTER)} entries')
+
+        for bill_file in bill_files:
+            bill_path = os.path.join(folder, bill_file)
+            print(f'\n{"─"*70}')
+            print(f'  ▶  {bill_file}')
+            try:
+                file_master = process_one_file(
+                    engine, args, bill_path,
+                    out_path=os.path.splitext(bill_path)[0] + '_POMI_Coded.xlsx',
+                    meta=meta)
+                folder_master.extend(file_master)
+                folder_grand   += sum(i['amount'] for i in file_master
+                                      if isinstance(i.get('amount'), (int, float)))
+                pass_n += 1
+            except Exception as e:
+                print(f'  ✗  ERROR: {e}')
+                fail_n += 1
+
+        folder_in_tok  = engine.total_in_tok
+        folder_out_tok = engine.total_out_tok
+        folder_cost    = (folder_in_tok / 1_000_000 * engine._PRICE_IN +
+                          folder_out_tok / 1_000_000 * engine._PRICE_OUT)
+
+        # Write combined master workbook
+        if folder_master:
+            master_path = os.path.join(folder, 'PROJECT_MASTER_BOQ.xlsx')
+            wb_master   = Workbook()
+            wb_master.remove(wb_master.active)
+            project_title = os.path.basename(folder)
+            write_master_sheet(wb_master, folder_master, project_title, meta=meta)
+            wb_master.save(master_path)
+            print(f'\n  ✅  PROJECT MASTER BOQ → {master_path}')
+
+        print(f"""
+{'='*70}
+  BATCH COMPLETE
+  ✅  Passed      : {pass_n} / {len(bill_files)}
+  ❌  Failed      : {fail_n}
+{'─'*70}
+  🤖  AI Tokens   : {folder_in_tok:,} in  /  {folder_out_tok:,} out
+  💵  AI Cost     : ${folder_cost:.4f} USD
+{'─'*70}
+  💰  GRAND TOTAL : AED {folder_grand:>20,.2f}
+{'='*70}
+""")
+        return
+
+    # ── Single file mode ──────────────────────────────────────────────────────
+    if not os.path.exists(args.bill):
+        print(f'  ✗  File not found: {args.bill}'); sys.exit(1)
+
+    out_path = args.out or (
+        os.path.splitext(args.bill)[0] + '_POMI_Coded.xlsx')
+
+    print(f"""
+{'='*70}
+  POMI UNIVERSAL BQ AUTO-CODER
+  Input : {os.path.basename(args.bill)}
+  POMI  : {os.path.basename(args.pomi)}
+  AI    : {'ON  (batch=' + str(args.batch) + ')' if args.ai else 'OFF  (rules + fuzzy only)'}
+  Output: {os.path.basename(out_path)}
+{'='*70}""")
+
+    engine = BQCodingEngine(
+        pomi_path = args.pomi,
+        api_key   = args.api_key or os.environ.get('ANTHROPIC_API_KEY', ''))
+
+    NRM_MASTER = _load_nrm_master(args.pomi)
+    print(f'  NRM master loaded: {len(NRM_MASTER)} entries')
+
+    all_master = process_one_file(engine, args, args.bill, out_path, meta=meta)
+
+    in_tok  = engine.total_in_tok
+    out_tok = engine.total_out_tok
+    ai_cost = (in_tok / 1_000_000 * engine._PRICE_IN +
+               out_tok / 1_000_000 * engine._PRICE_OUT)
+    grand_total = sum(i['amount'] for i in all_master
+                      if isinstance(i.get('amount'), (int, float)))
+
+    print(f"""
+{'─'*70}
+  🤖  AI Tokens   : {in_tok:,} in  /  {out_tok:,} out
+  💵  AI Cost     : ${ai_cost:.4f} USD
+{'─'*70}
+  💰  GRAND TOTAL : AED {grand_total:>20,.2f}
+{'='*70}
+""")
+
+
+
+if __name__ == '__main__':
+    main()

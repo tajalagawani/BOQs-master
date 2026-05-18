@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "convention": "NCS / AIA layer codes (LACASA-style, NN-DISC pattern)",
+  "description": "Maps CAD layer codes to NRM L2 codes for path-B layer-based reconciliation. Patterns match case-insensitively as substrings against the trailing layer segment (after the last '$'). First match wins.",
+  "match_rule": {
+    "extract_segment": "after_last_$",
+    "case_sensitive": false,
+    "match_mode": "substring",
+    "order": "first_match_wins"
+  },
+  "patterns": [
+    { "pattern": "08-DOOR-EXT", "nrm_l2": "2.6", "category": "External Doors",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "09-DOOR-EXT", "nrm_l2": "2.6", "category": "External Doors",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "08-DOOR",     "nrm_l2": "2.8", "category": "Internal Doors",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "MEDIUM" },
+    { "pattern": "09-DOOR",     "nrm_l2": "2.8", "category": "Internal Doors",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "MEDIUM" },
+
+    { "pattern": "50-WALL-EXT", "nrm_l2": "2.5", "category": "External Walls",            "unit": "m²", "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+    { "pattern": "50-WALL",     "nrm_l2": "2.7", "category": "Internal Walls/Partitions", "unit": "m²", "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+
+    { "pattern": "14-GLAS",     "nrm_l2": "2.6", "category": "Windows / Glazing",         "unit": "Nr", "count_from": ["INSERT"],          "confidence": "LOW"    },
+    { "pattern": "34-SILL",     "nrm_l2": "2.6", "category": "Window Sills",              "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+
+    { "pattern": "35-STAIR",    "nrm_l2": "2.4", "category": "Stairs",                    "unit": "Nr", "count_from": ["INSERT"],          "confidence": "MEDIUM" },
+    { "pattern": "31-RAIL",     "nrm_l2": "2.4", "category": "Railings / Handrails",      "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+
+    { "pattern": "06-CONC",     "nrm_l2": "2.1", "category": "Concrete Frame",            "unit": "m²", "count_from": ["LWPOLYLINE_AREA"],"confidence": "LOW"    },
+
+    { "pattern": "12-FIXT",     "nrm_l2": "5.1", "category": "Sanitary Fixtures",         "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "13-FURN",     "nrm_l2": "4.1", "category": "Furniture",                 "unit": "Nr", "count_from": ["INSERT"],          "confidence": "MEDIUM" },
+    { "pattern": "03-COUN",     "nrm_l2": "4.1", "category": "Counters",                  "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "MEDIUM" },
+
+    { "pattern": "20-LIGHT",    "nrm_l2": "5.8", "category": "Light Fixtures",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "E-LIGHT",     "nrm_l2": "5.8", "category": "Light Fixtures",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "21-POWER",    "nrm_l2": "5.8", "category": "Power Outlets",             "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "E-POWER",     "nrm_l2": "5.8", "category": "Power Outlets",             "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "22-DATA",     "nrm_l2": "5.12","category": "Data / Comms Outlets",      "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "E-DATA",      "nrm_l2": "5.12","category": "Data / Comms Outlets",      "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "23-FA",       "nrm_l2": "5.11","category": "Fire Alarm Devices",        "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "E-FA",        "nrm_l2": "5.11","category": "Fire Alarm Devices",        "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+    { "pattern": "24-CCTV",     "nrm_l2": "5.12","category": "CCTV / Security",           "unit": "Nr", "count_from": ["INSERT"],          "confidence": "HIGH"   },
+
+    { "pattern": "M-HVAC",      "nrm_l2": "5.6", "category": "HVAC Equipment",            "unit": "Nr", "count_from": ["INSERT"],          "confidence": "MEDIUM" },
+    { "pattern": "M-DUCT",      "nrm_l2": "5.7", "category": "Ductwork",                  "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+    { "pattern": "P-PIPE",      "nrm_l2": "5.4", "category": "Water Pipework",            "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+    { "pattern": "P-DRAIN",     "nrm_l2": "5.3", "category": "Drainage Pipework",         "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "LOW"    },
+    { "pattern": "P-SPRINK",    "nrm_l2": "5.11","category": "Sprinkler Pipework",        "unit": "m",  "count_from": ["LWPOLYLINE_LEN"], "confidence": "MEDIUM" }
+  ],
+  "ignore_layers": [
+    "DEFPOINTS", "0", "48-TITLE", "49-VPORT", "07-DIM", "07-DIM2", "46-THIN",
+    "20-HIDE", "20-ID-HIDE", "45-TEXTS", "S-VIEWPORTS", "S-TEXT",
+    "40-TAGRM", "41-TAGGN", "42-TAGES", "43-TAGDT", "36-TAGLVL",
+    "17-GRIDD", "STAIR-TAG", "NORTH", "KEY PLAN", "TITLE"
+  ],
+  "notes": [
+    "Patterns are tried in order; more specific (e.g. 'DOOR-EXT') must come BEFORE less specific ('DOOR').",
+    "Confidence is the FLOOR; the extractor may downgrade if evidence is mixed.",
+    "Add more patterns as new drawing conventions are encountered; do not edit existing ones without bumping version."
+  ]
+}
