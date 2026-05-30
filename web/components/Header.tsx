@@ -1,45 +1,35 @@
 import Link from "next/link";
-import { Bell, ChevronDown, HelpCircle, Building2, Search } from "lucide-react";
-import { HeaderNav } from "@/components/HeaderNav";
+import Image from "next/image";
+import { Bell, ChevronDown, HelpCircle, Search } from "lucide-react";
+import { HeaderNavInline } from "@/components/HeaderNav";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 bg-[var(--background)]/85 backdrop-blur-md border-b border-zinc-200">
+    <header className="sticky top-0 z-50 bg-[#f0f3fa] border-b border-zinc-200">
       <div className="w-full px-5 h-14 flex items-center gap-3">
         {/* Logo */}
-        <Link href="/" className="flex items-center shrink-0 mr-1">
-          <span className="text-xl font-extrabold tracking-tight text-zinc-900">
-            IOX
-          </span>
+        <Link href="/" className="flex items-center shrink-0 mr-1" aria-label="IOX home">
+          <Image
+            src="/iox-logo.svg"
+            alt="IOX"
+            width={1338}
+            height={461}
+            priority
+            className="h-5 w-auto"
+          />
         </Link>
 
-        {/* Project selector */}
+        {/* Inline menu — replaces the old search input */}
+        <HeaderNavInline />
+
+        {/* Search icon (opens command palette) */}
         <button
           type="button"
-          className="flex items-center gap-2 px-3 h-9 bg-white border border-zinc-200 rounded-lg hover:border-zinc-400 transition-colors shrink-0"
+          aria-label="Search"
+          className="size-9 inline-flex items-center justify-center rounded-md hover:bg-zinc-100 transition-colors shrink-0"
         >
-          <Building2 className="size-4 text-zinc-700" strokeWidth={1.75} />
-          <span className="text-sm font-medium text-zinc-900">
-            Skyline Tower
-          </span>
-          <ChevronDown className="size-4 text-zinc-500" strokeWidth={1.75} />
+          <Search className="size-4.5 text-zinc-700" strokeWidth={1.75} />
         </button>
-
-        {/* Search */}
-        <div className="flex-1 relative max-w-[640px] mx-auto">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400"
-            strokeWidth={1.75}
-          />
-          <input
-            type="text"
-            placeholder="Search across projects, documents, costs, BOQs…"
-            className="w-full h-9 pl-10 pr-14 bg-white border border-zinc-200 rounded-lg text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
-          />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-zinc-500 bg-zinc-100 border border-zinc-200 rounded px-1.5 py-0.5">
-            ⌘ K
-          </kbd>
-        </div>
 
         {/* Notifications */}
         <button
@@ -76,9 +66,6 @@ export function Header() {
           <ChevronDown className="size-3.5 text-zinc-500" strokeWidth={1.75} />
         </div>
       </div>
-
-      {/* Module nav strip */}
-      <HeaderNav />
     </header>
   );
 }

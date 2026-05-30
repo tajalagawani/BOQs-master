@@ -62,8 +62,10 @@ const metricCards = [
 
 export function ProjectPulse() {
   return (
-    <aside className="w-[400px] shrink-0 bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col gap-3 h-full overflow-hidden">
-      {/* Header */}
+    // Outer shell — mirrors ModuleCard: white bg, zinc-200 border, rounded-2xl,
+    // soft hover lift via shadow + translate.
+    <aside className="group iox-card-hover w-[400px] shrink-0 bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col gap-3 h-full overflow-hidden transition-all duration-200 hover:border-zinc-300 hover:shadow-[0_8px_30px_-12px_rgba(24,24,27,0.18)]">
+      {/* Header — matches ModuleCard's status-pill row */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-1.5">
           <Activity className="size-3.5 text-zinc-700" strokeWidth={1.75} />
@@ -71,7 +73,8 @@ export function ProjectPulse() {
             Project Pulse
           </span>
         </div>
-        <span className="text-[11px] font-medium text-zinc-700 bg-zinc-100 rounded-md px-1.5 py-0.5">
+        <span className="inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+          <span className="size-1.5 rounded-full bg-emerald-500" />
           Live
         </span>
       </div>
@@ -125,12 +128,13 @@ export function ProjectPulse() {
         </div>
       </div>
 
-      {/* Metric cards 2x2 */}
+      {/* Metric tiles — match ModuleCard inner aesthetic: rounded-xl, zinc-200
+          border, subtle hover lift. */}
       <div className="grid grid-cols-2 gap-2 shrink-0">
         {metricCards.map((m) => (
           <div
             key={m.label}
-            className="rounded-lg border border-zinc-200 p-2 hover:border-zinc-300 transition-colors cursor-pointer"
+            className="group/tile relative rounded-xl bg-white border border-zinc-200 p-2.5 transition-all duration-200 hover:border-zinc-300 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-8px_rgba(24,24,27,0.18)] cursor-pointer"
           >
             <div className="flex items-center justify-between text-zinc-500">
               {m.icon}
@@ -142,7 +146,10 @@ export function ProjectPulse() {
               <span className="text-xl font-bold text-zinc-900 leading-none">
                 {m.value}
               </span>
-              <ChevronRight className="size-3.5 text-zinc-400" strokeWidth={1.75} />
+              <ChevronRight
+                className="size-3.5 text-zinc-400 transition-transform duration-200 group-hover/tile:translate-x-0.5 group-hover/tile:text-zinc-700"
+                strokeWidth={1.75}
+              />
             </div>
             <div className="text-[10px] text-zinc-500 mt-0.5">{m.sub}</div>
           </div>
