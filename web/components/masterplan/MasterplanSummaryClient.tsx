@@ -346,21 +346,23 @@ export default function MasterplanSummaryClient({
   return (
     <div className="min-h-screen bg-zinc-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-900">
-          Masterplan Summary - {masterplan.masterplanName}
-        </h1>
-        <Link
-          href={`/costx/${masterplan.id}`}
-          className="p-2 rounded hover:bg-zinc-50 transition-colors"
-          title="Close"
-        >
-          <CloseIcon className="w-5 h-5 text-gray-500" />
-        </Link>
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-gray-900">
+            Masterplan Summary - {masterplan.masterplanName}
+          </h1>
+          <Link
+            href={`/costx/${masterplan.id}`}
+            className="p-2 rounded hover:bg-zinc-50 transition-colors"
+            title="Close"
+          >
+            <CloseIcon className="w-5 h-5 text-gray-500" />
+          </Link>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-8">
+      <div className="mx-auto max-w-7xl px-6 py-6 space-y-8">
         {/* Section 1: Masterplan High Level Metrics */}
         <div className="space-y-4">
           <SectionHeader

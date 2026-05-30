@@ -1,15 +1,17 @@
+import Link from "next/link";
 import { Bell, ChevronDown, HelpCircle, Building2, Search } from "lucide-react";
+import { HeaderNav } from "@/components/HeaderNav";
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-[var(--background)]/85 backdrop-blur-md border-b border-zinc-200">
       <div className="w-full px-5 h-14 flex items-center gap-3">
         {/* Logo */}
-        <div className="flex items-center shrink-0 mr-1">
+        <Link href="/" className="flex items-center shrink-0 mr-1">
           <span className="text-xl font-extrabold tracking-tight text-zinc-900">
             IOX
           </span>
-        </div>
+        </Link>
 
         {/* Project selector */}
         <button
@@ -74,6 +76,9 @@ export function Header() {
           <ChevronDown className="size-3.5 text-zinc-500" strokeWidth={1.75} />
         </div>
       </div>
+
+      {/* Module nav strip */}
+      <HeaderNav />
     </header>
   );
 }

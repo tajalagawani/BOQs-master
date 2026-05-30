@@ -79,13 +79,13 @@ const themeStyles: Record<ColorTheme, {
     chipText: "text-gray-600",
   },
   teal: {
-    bg: "bg-brand-primary",
+    bg: "bg-zinc-900",
     text: "text-white",
-    subtext: "text-white/70",
+    subtext: "text-zinc-300",
     border: "border-transparent",
-    sparkline: "#4ECDC4",
-    sparklineFill: "rgba(78, 205, 196, 0.3)",
-    chip: "bg-white/20",
+    sparkline: "#10B981",
+    sparklineFill: "rgba(16, 185, 129, 0.3)",
+    chip: "bg-white/15",
     chipText: "text-white",
   },
   blue: {

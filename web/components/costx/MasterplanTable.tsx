@@ -23,7 +23,7 @@ export default function MasterplanTable({
 }: Props) {
   return (
     <table className="w-full text-xs">
-      <thead className="bg-zinc-50 border-b border-zinc-200 sticky top-0">
+      <thead className="bg-zinc-50 border-b border-zinc-200 sticky top-0 z-20">
         <tr className="text-[11px] uppercase tracking-wide text-zinc-500">
           <th className="text-left font-medium px-4 py-2.5 min-w-[320px]">
             <span className="inline-flex items-center gap-1">

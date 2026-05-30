@@ -130,3 +130,18 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
     isViewer: user.role === "VIEWER",
   };
 }
+
+// IOX runs with a mock ADMIN — full access for now. Same shape as roshn so
+// ported actions compile and the real RBAC drops in unchanged later.
+export async function canAccessProject(
+  userId: string,
+  _projectId: string,
+  _action: "read" | "update" | "delete",
+): Promise<boolean> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, isActive: true },
+  });
+  if (!u || !u.isActive) return false;
+  return true;
+}

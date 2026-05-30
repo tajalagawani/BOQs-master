@@ -12,6 +12,10 @@ import {
   ShoppingCart,
   ArrowLeftRight,
   BarChart3,
+  FolderKanban,
+  TrendingUp,
+  Database,
+  Settings,
 } from "lucide-react";
 
 const modules = [
@@ -43,6 +47,35 @@ const modules = [
     description: "Parametric masterplan cost modelling with building, parking, infrastructure and public-realm calculations.",
     href: "/costx",
     backgroundImage: "/card-cost-planning.png",
+  },
+  // ── Cross-module utilities ──
+  {
+    icon: <FolderKanban className="size-6" strokeWidth={1.25} />,
+    title: "Projects",
+    description: "Cross-module view of every masterplan and benchmark project.",
+    href: "/projects",
+    backgroundImage: "/card-cost-planning.png",
+  },
+  {
+    icon: <TrendingUp className="size-6" strokeWidth={1.25} />,
+    title: "Benchmarking",
+    description: "Reference projects with NRM cost breakdowns to calibrate new estimates.",
+    href: "/benchmarking",
+    backgroundImage: "/card-reports.png",
+  },
+  {
+    icon: <Database className="size-6" strokeWidth={1.25} />,
+    title: "Rate Analysis",
+    description: "Browse the full cost-model library — every NRM line, every asset typology.",
+    href: "/cost-model-rate-analysis",
+    backgroundImage: "/card-estimates.png",
+  },
+  {
+    icon: <Settings className="size-6" strokeWidth={1.25} />,
+    title: "Configuration",
+    description: "System-wide defaults — parking ratios, S-curve, parametric matrix, cost factors.",
+    href: "/configuration",
+    backgroundImage: "/card-instructions.png",
   },
   // ── Non-X products ──
   {
@@ -105,7 +138,7 @@ export default function Home() {
         }}
       />
       <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-auto">
         <div className="h-full w-full px-8 py-5 flex gap-6">
           {/* Left column — hero + module grid + status bar */}
           <div className="flex-1 min-w-0 max-w-295 flex flex-col gap-4">

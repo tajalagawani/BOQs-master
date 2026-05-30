@@ -6,10 +6,14 @@ import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 
 import MasterplanTable from "@/components/costx/MasterplanTable";
-import MasterplanSidebar, {
-  type FilterType,
-} from "@/components/costx/MasterplanSidebar";
 import CreateMasterplanModal from "@/components/costx/CreateMasterplanModal";
+
+type FilterType = "all" | "created" | "shared";
+const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
+  { key: "all", label: "All masterplans" },
+  { key: "created", label: "Created by me" },
+  { key: "shared", label: "Shared with me" },
+];
 import Pagination from "@/components/costx/Pagination";
 import ConfirmDialog from "@/components/costx/ConfirmDialog";
 import {
@@ -154,7 +158,6 @@ export default function MasterplanListClient({
   const [pageSize, setPageSize] = useState(100);
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
@@ -343,18 +346,9 @@ export default function MasterplanListClient({
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">
-      <MasterplanSidebar
-        filter={filter}
-        onFilterChange={setFilter}
-        canCreateMasterplan={permissions.canCreateMasterplan}
-        onStartCreate={() => setIsModalOpen(true)}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-
       <main className="flex-1 flex flex-col min-w-0">
         {/* Page header */}
-        <header className="px-5 py-4">
+        <header className="mx-auto w-full max-w-7xl px-6 pt-6 pb-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div>
@@ -391,10 +385,29 @@ export default function MasterplanListClient({
               </button>
             )}
           </div>
+
+          {/* Inline filter tabs */}
+          <nav className="mt-4 flex items-center gap-1 border-b border-zinc-200">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setFilter(opt.key)}
+                className={cn(
+                  "h-9 px-3 text-xs font-medium transition-colors relative -mb-px",
+                  filter === opt.key
+                    ? "text-zinc-900 border-b-2 border-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-800",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </nav>
         </header>
 
         {/* Table container */}
-        <div className="flex-1 min-h-0 px-5 pb-5">
+        <div className="flex-1 min-h-0 mx-auto w-full max-w-7xl px-6 pb-6">
           <div className="h-full flex flex-col bg-white rounded-2xl border border-zinc-200 overflow-hidden">
             {estimates.length === 0 ? (
               <EmptyState
