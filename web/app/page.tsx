@@ -3,19 +3,15 @@ import { ProjectPulse } from "@/components/ProjectPulse";
 import { ModuleCard } from "@/components/ModuleCard";
 import {
   Box,
-  ClipboardList,
   Gavel,
   FileText,
   PieChart,
-  Calculator,
   ShieldCheck,
-  ShoppingCart,
   ArrowLeftRight,
   BarChart3,
   FolderKanban,
   TrendingUp,
   Database,
-  Settings,
 } from "lucide-react";
 
 const modules = [
@@ -70,41 +66,13 @@ const modules = [
     href: "/cost-model-rate-analysis",
     backgroundImage: "/card-estimates.png",
   },
-  {
-    icon: <Settings className="size-6" strokeWidth={1.25} />,
-    title: "Configuration",
-    description: "System-wide defaults — parking ratios, S-curve, parametric matrix, cost factors.",
-    href: "/configuration",
-    backgroundImage: "/card-instructions.png",
-  },
   // ── Non-X products ──
-  {
-    icon: <Calculator className="size-6" strokeWidth={1.25} />,
-    title: "Estimates",
-    description: "Build detailed estimates quickly with assemblies and rate libraries.",
-    href: undefined,
-    backgroundImage: "/card-estimates.png",
-  },
-  {
-    icon: <ClipboardList className="size-6" strokeWidth={1.25} />,
-    title: "Instructions",
-    description: "Create, assign and track instructions with complete transparency.",
-    href: undefined,
-    backgroundImage: "/card-instructions.png",
-  },
   {
     icon: <ShieldCheck className="size-6" strokeWidth={1.25} />,
     title: "Budget Control",
     description: "Track budgets vs actuals and stay ahead of variances.",
     href: undefined,
     backgroundImage: "/card-budget-control.png",
-  },
-  {
-    icon: <ShoppingCart className="size-6" strokeWidth={1.25} />,
-    title: "Procurement",
-    description: "Raise PRs, manage POs and vendor performance in one place.",
-    href: undefined,
-    backgroundImage: "/card-procurement.png",
   },
   {
     icon: <ArrowLeftRight className="size-6" strokeWidth={1.25} />,
@@ -157,7 +125,7 @@ export default function Home() {
             </div>
 
             {/* Module grid — pushed to the right edge of the column */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 auto-rows-[300px] my-auto ml-auto max-w-270 w-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 auto-rows-[300px] ml-auto max-w-270 w-full">
               {modules.map((m) => (
                 <ModuleCard
                   key={m.title}
@@ -175,7 +143,7 @@ export default function Home() {
             </div>
 
             {/* Tiny footer */}
-            <div className="flex items-center justify-between text-[10.5px] text-zinc-500 px-1">
+            <div className="mt-auto flex items-center justify-between text-[10.5px] text-zinc-500 px-1">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="size-3 text-zinc-500" strokeWidth={1.75} />
                 <span>Project data secured and synced in real time</span>
