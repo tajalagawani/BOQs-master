@@ -88,8 +88,19 @@ def bdr(col='FFD0D0D0'):
 
 
 def _is_real_preamble(txt: str) -> bool:
-    """A row is a preamble header if it's a non-blank header row describing
-    a category of items below it. Reject notes and numbered/lettered lists."""
+    """A row is a real material preamble (i.e. it describes WHAT the items
+    below are made of / how they're installed) — NOT a navigation anchor.
+
+    Heuristics (pattern-driven, no project-specific lists):
+      * Reject notes ("Note:", "General Note") and numbered/lettered lists.
+      * Reject pure section anchors: short, ALL-CAPS, optionally ending
+        in "(CONT'D)" — those are sheet-layout headers, not material
+        specs.  When a section anchor follows a real preamble, the
+        real preamble is what items still need merged in.
+      * Accept lines that look like genuine material / installation
+        descriptions: mixed-case prose, semicolons, or long enough
+        to carry spec language.
+    """
     if not txt:
         return False
     s = txt.strip()
@@ -101,6 +112,29 @@ def _is_real_preamble(txt: str) -> bool:
     if s.startswith(('1)', '2)', '3)', '4)', '5)', '6)', '7)', '8)', '9)')):
         return False
     if s.startswith(('a)', 'b)', 'c)', 'd)', 'e)')):
+        return False
+
+    # ── Section-anchor rejection (pure structural) ────────────────────
+    # A section anchor is a short, mostly-uppercase label without the
+    # typographical markers of a material spec: semicolons, parentheses,
+    # numbers, or units. Detect ONLY by structure — no construction
+    # domain vocabulary, no curated keyword lists.
+    letters = [c for c in s if c.isalpha()]
+    cap_ratio = (sum(1 for c in letters if c.isupper()) / len(letters)
+                 if letters else 0)
+    has_semicolon = ';' in s
+    has_digits    = any(c.isdigit() for c in s)
+    word_count    = len(s.split())
+    # Heuristic: short (≤ 8 words AND < 90 chars), mostly uppercase,
+    # no semicolons, no digits. Material preambles have at least one
+    # of: punctuation (;,), measurement digits (mm/MPa/etc.),
+    # multi-clause structure (>8 words), or mixed-case prose.
+    if (cap_ratio >= 0.85 and word_count <= 8 and len(s) < 90
+            and not has_semicolon and not has_digits):
+        return False
+    # '(CONT'D)' / '(Cont'd)' suffix is universal BoQ convention for a
+    # continuation header — always a section anchor, never a preamble.
+    if "cont'd" in lower or "(cont’d)" in lower:
         return False
     return True
 
@@ -272,7 +306,15 @@ def detect_columns(ws):
     """
     Scan the first 10 rows to detect which columns hold:
     item_ref, description, qty, unit, rate, amount
-    Returns a dict of col_name → column_index (1-based)
+    Returns a dict of col_name → column_index (1-based).
+
+    Multi-header BoQs (e.g. cluster-breakdown BoQs that have
+    "Quantity" as a header SPAN with per-cluster sub-columns
+    underneath and a "TOTAL" sub-column on the right) are handled:
+    if a sub-header row between the detected ``qty`` and ``unit``
+    columns contains the word "Total" / "TOTAL", we re-point the
+    qty column to that sub-column. Pure pattern detection — no
+    sheet-name table.
     """
     PATTERNS = {
         'item_ref':    re.compile(r'item|ref|no\.?$|^#$', re.I),
@@ -283,12 +325,15 @@ def detect_columns(ws):
         'amount':      re.compile(r'^amount|^total$|^value$|^aed$|^sum$', re.I),
     }
     cols = {}
+    header_rows: list[int] = []
     for row in ws.iter_rows(min_row=1, max_row=10):
         for cell in row:
             val = str(cell.value or '').strip().replace('\n', ' ').replace('\r', '')
             for name, pat in PATTERNS.items():
                 if name not in cols and pat.search(val):
                     cols[name] = cell.column
+                    if cell.row not in header_rows:
+                        header_rows.append(cell.row)
         if len(cols) >= 4:
             break
 
@@ -298,6 +343,33 @@ def detect_columns(ws):
     for k, v in defaults.items():
         if k not in cols:
             cols[k] = v
+
+    # ── Cluster-breakdown header detection ────────────────────────────
+    # If 'Quantity' is followed by intermediate columns before 'Unit',
+    # those columns might be per-cluster sub-quantities with a 'TOTAL'
+    # sub-column at the rightmost end. Inspect the row(s) immediately
+    # below the detected header row for a 'Total'/'TOTAL' sub-header
+    # within (qty_col + 1 .. unit_col - 1). If found, retarget qty.
+    qty_col, unit_col = cols.get('qty'), cols.get('unit')
+    if qty_col and unit_col and unit_col > qty_col + 1 and header_rows:
+        hdr_row = min(header_rows)
+        # Sub-header rows are typically hdr_row+1 and hdr_row+2
+        for sub_r in (hdr_row + 1, hdr_row + 2):
+            if sub_r > ws.max_row:
+                break
+            # Walk RIGHT-to-LEFT so we prefer the right-most 'Total'
+            # (which is the project-wide TOTAL, not a per-cluster
+            # 'Total' subtotal).
+            for c in range(unit_col - 1, qty_col, -1):
+                v = ws.cell(row=sub_r, column=c).value
+                if v is None:
+                    continue
+                s = str(v).strip().lower()
+                if s in ('total',) or s.upper() == 'TOTAL':
+                    cols['qty'] = c
+                    break
+            if cols['qty'] != qty_col:
+                break  # found one — done
     return cols
 
 
@@ -345,8 +417,12 @@ def read_sheet_items(ws, col_map):
         is_collection = any(x in desc_str for x in
                             ['To Collection', 'Carried To', 'COLLECTION',
                              'Brought Forward', 'Page Total', 'Total to'])
+        # A header row carries a description but no item letter. The
+        # qty / amount cells may legitimately be 0 (cluster-subtotal
+        # artefact in cluster-style BoQs), so don't require them to be
+        # None.  A priced item is identified by the presence of
+        # ``item_ref`` — its absence is the strongest header signal.
         is_header = (item_ref is None and desc is not None
-                     and qty is None and amount is None
                      and not is_collection)
 
         items.append({

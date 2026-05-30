@@ -1,0 +1,424 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  IOX — Unified database schema
+//
+//  ONE Postgres database serves every IOX module. Each module is a section
+//  in this file. Cross-module references are real foreign keys.
+//
+//  Sections:
+//    1. Platform           — User, ActivityLog, FileUpload, SystemSettings
+//    2. CostX module       — Masterplan, Phase, Building/Infra costs, Cost
+//                            Model entries, Parametric Matrix, Cost Factor,
+//                            Benchmark Project, NRM data
+//    3. BOQ module         — BoqRun (file-backed JSON store ported into DB)
+//
+//  Schema fidelity: §2 is verbatim from the roshn app — same model names,
+//  field names, snake_case @@map values, Postgres decimals/arrays/JSON —
+//  so existing calculations & queries from src/lib/calculations and
+//  src/lib/queries continue to work unchanged once their imports are rewritten.
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. PLATFORM
+// ═══════════════════════════════════════════════════════════════════════════
+
+model User {
+  id    String   @id @default(uuid())
+  email String   @unique
+  name  String?
+  role  UserRole @default(VIEWER)
+
+  // Password & Security (unused until auth is wired in — fields kept so future
+  // migration is non-breaking)
+  passwordHash        String?
+  passwordChangedAt   DateTime?
+  mustChangePassword  Boolean   @default(false)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?
+  backupCodes      String[]
+
+  // Access control
+  allowedCountries  String[]
+  allowedDevelopers String[]
+  department        String?
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations — CostX
+  masterplans                 Masterplan[]
+  benchmarkProjects           BenchmarkProject[]
+  projectAssignments          ProjectTeamMember[]
+  benchmarkProjectAssignments BenchmarkProjectTeamMember[]
+
+  // Relations — Platform
+  activityLogs ActivityLog[]
+  fileUploads  FileUpload[]
+
+  // Relations — BOQ
+  boqRuns BoqRun[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model FileUpload {
+  id           String       @id @default(uuid())
+  fileName     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  storagePath  String
+  category     FileCategory
+  uploadedById String
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([uploadedById])
+  @@index([category])
+  @@map("file_uploads")
+}
+
+model SystemSettings {
+  id                  String   @id @default("settings")
+  azureAdEnabled      Boolean  @default(false)
+  azureAdClientId     String?
+  azureAdClientSecret String?
+  azureAdTenantId     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. COSTX MODULE — Parametric Masterplan Modelling
+//    Verbatim from roshn/prisma/schema.prisma — calculations and queries
+//    from that app continue to work unchanged.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model CostModelEntry {
+  id                 String   @id @default(uuid())
+  assetClass         String
+  assetTypeL1        String
+  assetFormL2        String?
+  pricePoint         String?
+  nrmLvl1            String
+  nrmLvl2            String?
+  nrmLvl3            String?
+  unitOfMeasurement  String?
+  sarPerUoM          Decimal? @db.Decimal(12, 2)
+  rcdcCostGfa        Decimal  @db.Decimal(12, 2)
+  benchmarkedCostGfa Decimal? @db.Decimal(12, 2)
+  costBua            Decimal? @db.Decimal(12, 2)
+  costGia            Decimal? @db.Decimal(12, 2)
+  costGfa            Decimal? @db.Decimal(12, 2)
+  extraPath          String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([assetClass, assetTypeL1, assetFormL2, pricePoint, nrmLvl1])
+  @@index([assetClass])
+  @@index([assetTypeL1])
+  @@index([nrmLvl1])
+  @@index([assetClass, assetTypeL1, assetFormL2, pricePoint])
+  @@index([assetClass, assetTypeL1])
+  @@map("cost_model_entries")
+}
+
+model Masterplan {
+  id                  String           @id @default(uuid())
+  name                String
+  description         String?
+  grossLandArea       Decimal          @db.Decimal(12, 2)
+  calculatedPlotArea  Decimal          @db.Decimal(12, 2)
+  balanceExternalArea Decimal          @db.Decimal(12, 2)
+  totalUnits          Int
+  parkingSpaces       Int
+  contingency         Decimal          @db.Decimal(15, 2)
+  totalCost           Decimal          @db.Decimal(15, 2)
+  costPerGfa          Decimal          @db.Decimal(12, 2)
+  assetClass          String
+  assetTypeL1         String
+  assetFormL2         String?
+  status              MasterplanStatus @default(DRAFT)
+  version             Int              @default(1)
+  createdById         String
+  numberOfPhases      Int              @default(1)
+
+  benchmarkProjectId String?
+  benchmarkProject   BenchmarkProject? @relation(fields: [benchmarkProjectId], references: [id])
+
+  country   String?
+  developer String?
+  isPublic  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buildingCosts       BuildingCost[]
+  infrastructureCosts InfrastructureCost[]
+  phases              MasterplanPhase[]
+  createdBy           User                 @relation(fields: [createdById], references: [id])
+  teamMembers         ProjectTeamMember[]
+
+  @@index([createdById])
+  @@index([status])
+  @@index([assetClass])
+  @@index([country])
+  @@index([benchmarkProjectId])
+  @@map("masterplans")
+}
+
+model MasterplanPhase {
+  id           String     @id @default(uuid())
+  masterplanId String
+  phaseNumber  Int
+  phaseName    String
+  startDate    String
+  totalMonths  Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  masterplan   Masterplan @relation(fields: [masterplanId], references: [id], onDelete: Cascade)
+
+  @@unique([masterplanId, phaseNumber])
+  @@index([masterplanId])
+  @@map("masterplan_phases")
+}
+
+model BuildingCost {
+  id           String     @id @default(uuid())
+  masterplanId String
+  nrmLvl1      String
+  costGfa      Decimal    @db.Decimal(12, 2)
+  costPlotArea Decimal    @db.Decimal(12, 2)
+  totalCost    Decimal    @db.Decimal(15, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  masterplan   Masterplan @relation(fields: [masterplanId], references: [id], onDelete: Cascade)
+
+  @@unique([masterplanId, nrmLvl1])
+  @@index([masterplanId])
+  @@map("building_costs")
+}
+
+model InfrastructureCost {
+  id           String     @id @default(uuid())
+  masterplanId String
+  category     String
+  description  String?
+  cost         Decimal    @db.Decimal(15, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  masterplan   Masterplan @relation(fields: [masterplanId], references: [id], onDelete: Cascade)
+
+  @@index([masterplanId])
+  @@map("infrastructure_costs")
+}
+
+model ProjectTeamMember {
+  id           String     @id @default(uuid())
+  masterplanId String
+  userId       String
+  role         TeamRole   @default(VIEWER)
+  assignedAt   DateTime   @default(now())
+  assignedBy   String?
+  masterplan   Masterplan @relation(fields: [masterplanId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([masterplanId, userId])
+  @@index([masterplanId])
+  @@index([userId])
+  @@map("project_team_members")
+}
+
+model ParametricMatrix {
+  id        String   @id @default(uuid())
+  nrmLvl1   String
+  parameter String
+  option    String
+  factor    Decimal  @db.Decimal(5, 4)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([nrmLvl1, parameter, option])
+  @@index([nrmLvl1])
+  @@index([parameter])
+  @@map("parametric_matrix")
+}
+
+model CostFactor {
+  id         String   @id @default(uuid())
+  baseDate   String   @unique
+  costUplift Decimal  @db.Decimal(5, 4)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([baseDate])
+  @@map("cost_factors")
+}
+
+model Configuration {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@map("configurations")
+}
+
+model BenchmarkProject {
+  id            String                       @id @default(uuid())
+  name          String
+  assetClass    String?
+  assetTypeL1   String?
+  assetFormL2   String?
+  location      String?
+  country       String?
+  city          String?
+  developer     String?
+  currency      String?                      @default("SAR")
+  latitude      Decimal?                     @db.Decimal(10, 7)
+  longitude     Decimal?                     @db.Decimal(10, 7)
+  polygon       Json?
+  grossLandArea Decimal?                     @db.Decimal(18, 2)
+  totalCost     Decimal?                     @db.Decimal(18, 2)
+  totalGFA      Decimal?                     @db.Decimal(18, 2)
+  costPerGFA    Decimal?                     @db.Decimal(18, 2)
+  uploadedById  String
+  source        String?
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+  nrmData       BenchmarkNrmData[]
+  uploadedBy    User                         @relation(fields: [uploadedById], references: [id])
+  teamMembers   BenchmarkProjectTeamMember[]
+  masterplans   Masterplan[]
+
+  @@index([uploadedById])
+  @@index([assetClass])
+  @@index([assetTypeL1])
+  @@map("benchmark_projects")
+}
+
+model BenchmarkProjectTeamMember {
+  id         String           @id @default(uuid())
+  projectId  String
+  userId     String
+  role       TeamRole         @default(VIEWER)
+  assignedAt DateTime         @default(now())
+  assignedBy String?
+  project    BenchmarkProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("benchmark_project_team_members")
+}
+
+model BenchmarkNrmData {
+  id          String           @id @default(uuid())
+  projectId   String
+  nrmCategory String
+  costGfa     Decimal          @db.Decimal(18, 2)
+  project     BenchmarkProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, nrmCategory])
+  @@index([projectId])
+  @@map("benchmark_nrm_data")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. BOQ MODULE — Bill of Quantities (POMI-coded imports)
+//    Currently file-backed at /tmp/iox-projects.json. This brings the same
+//    shape into the unified DB so /boqs Recent Projects reads from Prisma.
+//    Actual coded result xlsx files stay on disk under /tmp/iox-runs/{id}/.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model BoqRun {
+  id          String       @id // = run id, short uuid
+  name        String // derived from file name
+  fileName    String // original .xlsx name
+  sourceFile  String? // absolute path to result.xlsx (set when run completes)
+  status      BoqRunStatus @default(PROCESSING)
+  createdById String?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("boq_runs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Enums
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum UserRole {
+  ADMIN
+  DEVELOPMENT_MANAGER
+  VIEWER
+}
+
+enum TeamRole {
+  MANAGER
+  VIEWER
+}
+
+enum MasterplanStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  APPROVED
+}
+
+enum FileCategory {
+  COST_MODEL_CSV
+  BENCHMARK_CSV
+  DOCUMENT
+  IMAGE
+}
+
+enum BoqRunStatus {
+  PROCESSING
+  COMPLETE
+  FAILED
+}

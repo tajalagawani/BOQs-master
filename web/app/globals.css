@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafafa;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --border: #e4e4e7;
+  --muted: #71717a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-inter);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html {
+  background: var(--background);
+}
+body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle hover for module cards */
+.iox-card-hover {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.iox-card-hover:hover {
+  border-color: #18181b;
+}
+.iox-card-hover:hover .iox-arrow {
+  transform: translateX(4px);
+}
+.iox-arrow {
+  transition: transform 0.15s ease;
+}

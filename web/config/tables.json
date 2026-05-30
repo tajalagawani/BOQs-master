@@ -1,0 +1,220 @@
+{
+  "buildingAssets": {
+    "id": "building-assets",
+    "caption": "Building Assets Data Table",
+    "columnGroups": [
+      { "label": "Asset Hierarchy", "colSpan": 4 },
+      { "label": "Plot Details - Input", "colSpan": 6 },
+      { "label": "Plot Details - Calculated", "colSpan": 5 },
+      { "label": "Cost", "colSpan": 5 },
+      { "label": "Adjustment", "colSpan": 1 },
+      { "label": "Final Cost", "colSpan": 1, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "assetClass", "label": "Asset Class", "format": "text", "highlighted": true },
+      { "key": "assetTypeL1", "label": "Asset Type (L1)", "format": "text", "highlighted": true },
+      { "key": "assetTypologyL2", "label": "Asset Typology (L2)", "format": "text", "highlighted": true },
+      { "key": "pricePoint", "label": "Price Points", "format": "text", "groupEnd": true, "highlighted": true },
+      { "key": "phase", "label": "Phase", "format": "text", "highlighted": true },
+      { "key": "baseDate", "label": "Base Date", "format": "text", "highlighted": true },
+      { "key": "plotAreaPerBuilding", "label": "Plot Area Per Building", "align": "right", "format": "number", "highlighted": true },
+      { "key": "gfaPerBuilding", "label": "GFA Per Building", "align": "right", "format": "number", "highlighted": true },
+      { "key": "numberOfBuildings", "label": "No. of Buildings", "align": "right", "format": "number", "highlighted": true },
+      { "key": "levels", "label": "Levels", "align": "right", "format": "number", "groupEnd": true, "highlighted": true },
+      { "key": "totalPlotArea", "label": "Total Plot Area", "align": "right", "format": "number" },
+      { "key": "totalGFA", "label": "Total GFA (M2)", "align": "right", "format": "number" },
+      { "key": "far", "label": "FAR", "align": "right", "format": "number" },
+      { "key": "buildingFootprint", "label": "Bldg Footprint", "align": "right", "format": "number" },
+      { "key": "externalArea", "label": "External Area", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "sarPerM2GFA", "label": "SAR / M2 GFA", "align": "right", "format": "number" },
+      { "key": "netBuildCost", "label": "Net Build Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Req.", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "sarPerM2Total", "label": "SAR / M2 Total", "align": "right", "format": "number" },
+      { "key": "totalCost", "label": "Total Cost (SAR)", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "glazingPercentage", "label": "Glazing Per.", "align": "right", "format": "text", "defaultValue": "None", "groupEnd": true, "highlighted": true },
+      { "key": "finalCost", "label": "Final Cost (SAR)", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": true,
+      "showDragHint": true,
+      "emptyMessage": "No building assets added yet. Click 'Add New Asset' to get started."
+    }
+  },
+  "carParking": {
+    "id": "car-parking",
+    "caption": "Car Parking Data Table",
+    "columnGroups": [
+      { "label": "Asset Hierarchy", "colSpan": 4 },
+      { "label": "Plot Details - Input", "colSpan": 5 },
+      { "label": "Plot Details - Calculated", "colSpan": 4 },
+      { "label": "Cost", "colSpan": 3 },
+      { "label": "Adjustment", "colSpan": 1 },
+      { "label": "Final Cost", "colSpan": 1, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "assetClass", "label": "Asset Class", "format": "text", "highlighted": true },
+      { "key": "assetGroup", "label": "Asset Group", "format": "text", "highlighted": true },
+      { "key": "assetTypology", "label": "Asset Typology", "format": "text", "highlighted": true },
+      { "key": "pricePoints", "label": "Price Points", "format": "text", "groupEnd": true, "defaultValue": "N/A" },
+      { "key": "phase", "label": "Phase", "format": "text", "highlighted": true },
+      { "key": "baseDate", "label": "Base Date", "format": "text", "highlighted": true },
+      { "key": "parkingAreaPerSpace", "label": "Parking Area per Space (m²)", "align": "right", "format": "number" },
+      { "key": "spacesPerLevel", "label": "Spaces Per Level", "align": "right", "format": "number", "highlighted": true },
+      { "key": "numberOfBuildings", "label": "No. of Buildings", "align": "right", "format": "number", "highlighted": true },
+      { "key": "levels", "label": "Levels", "align": "right", "format": "number", "groupEnd": true, "highlighted": true },
+      { "key": "totalParkingSpaces", "label": "Total Parking Spaces", "align": "right", "format": "number" },
+      { "key": "totalPlotArea", "label": "Total Plot Area", "align": "right", "format": "number" },
+      { "key": "totalParkingArea", "label": "Total Parking Area", "align": "right", "format": "number" },
+      { "key": "far", "label": "FAR", "align": "right", "format": "text", "defaultValue": "N/A", "groupEnd": true },
+      { "key": "netBuildCost", "label": "Net Build Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Req.", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "totalCost", "label": "Total Cost (SAR)", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "facadeAdjustment", "label": "Facade Adjust.", "align": "right", "format": "text", "defaultValue": "None", "groupEnd": true, "highlighted": true },
+      { "key": "finalCost", "label": "Final Cost (SAR)", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": true,
+      "showDragHint": true,
+      "emptyMessage": "No car parking assets added yet."
+    }
+  },
+  "additionalAsset": {
+    "id": "additional-asset",
+    "caption": "Additional Assets Data Table",
+    "columnGroups": [
+      { "label": "Asset Hierarchy", "colSpan": 4 },
+      { "label": "Calculation", "colSpan": 4 },
+      { "label": "Cost", "colSpan": 4, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "assetClass", "label": "Asset Class", "format": "text", "highlighted": true },
+      { "key": "assetTypeL1", "label": "Asset Type (L1)", "format": "text", "highlighted": true },
+      { "key": "assetTypologyL2", "label": "Asset Typology (L2)", "format": "text", "highlighted": true },
+      { "key": "pricePoints", "label": "Price Points", "format": "text", "groupEnd": true, "highlighted": true },
+      { "key": "calculationType", "label": "Calc Type", "format": "text", "highlighted": true },
+      { "key": "quantity", "label": "Quantity", "align": "right", "format": "number", "highlighted": true },
+      { "key": "plotArea", "label": "Plot Area (M2)", "align": "right", "format": "number", "highlighted": true },
+      { "key": "phase", "label": "Phase", "format": "text", "groupEnd": true, "highlighted": true },
+      { "key": "sarPerM2GFA", "label": "Rate (SAR)", "align": "right", "format": "number" },
+      { "key": "netBuildCost", "label": "Net Build Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Req.", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "totalCost", "label": "Total Cost (SAR)", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": true,
+      "showDragHint": true,
+      "emptyMessage": "No additional assets added."
+    }
+  },
+  "publicRealm": {
+    "id": "public-realm",
+    "caption": "Public Realm Data Table",
+    "columnGroups": [
+      { "label": "Asset Hierarchy", "colSpan": 4 },
+      { "label": "Plot Details - Input", "colSpan": 3 },
+      { "label": "Plot Details - Calculated", "colSpan": 1 },
+      { "label": "Cost", "colSpan": 4, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "assetClass", "label": "Asset Class", "format": "text", "highlighted": true },
+      { "key": "assetTypeL1", "label": "Asset Type (L1)", "format": "text", "highlighted": true },
+      { "key": "assetTypologyL2", "label": "Asset Typology (L2)", "format": "text", "highlighted": true },
+      { "key": "pricePoint", "label": "Price Points", "format": "text", "groupEnd": true, "highlighted": true },
+      { "key": "phase", "label": "Phase", "format": "text", "highlighted": true },
+      { "key": "parkArea", "label": "Park Area", "align": "right", "format": "number", "highlighted": true },
+      { "key": "numberOfParks", "label": "No. of Parks", "align": "right", "format": "number", "groupEnd": true, "highlighted": true },
+      { "key": "totalParkArea", "label": "Total Park Area", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "sarPerM2", "label": "SAR / M2", "align": "right", "format": "number" },
+      { "key": "netBuildCost", "label": "Net Build Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Req.", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "totalCost", "label": "Total Cost (SAR)", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": true,
+      "showDragHint": true,
+      "emptyMessage": "No public realm assets added."
+    }
+  },
+  "infrastructure": {
+    "id": "infrastructure",
+    "caption": "Infrastructure Data Table",
+    "columnGroups": [
+      { "label": "", "colSpan": 1 },
+      { "label": "Calculated Details", "colSpan": 7 },
+      { "label": "Cost", "colSpan": 6, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "baseDate", "label": "Base Date", "format": "text", "highlighted": true, "groupEnd": true },
+      { "key": "assetDensity", "label": "Asset Density", "format": "text" },
+      { "key": "grossLandArea", "label": "Gross Land Area", "align": "right", "format": "number" },
+      { "key": "totalPlotArea", "label": "Total Plot Area", "align": "right", "format": "number" },
+      { "key": "totalGLA", "label": "Total GLA (M2)", "align": "right", "format": "number" },
+      { "key": "grossFAR", "label": "Gross FAR", "align": "right", "format": "decimal" },
+      { "key": "phase", "label": "Phase", "format": "text", "highlighted": true },
+      { "key": "balanceExternalArea", "label": "Balance External Area", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "sarPerM2GLA", "label": "SAR / M2 GLA", "align": "right", "format": "number" },
+      { "key": "netInfrastructureCost", "label": "Net Infrastructure Cost", "align": "right", "format": "number" },
+      { "key": "primaryCost", "label": "Primary Cost", "align": "right", "format": "number" },
+      { "key": "secondaryCost", "label": "Secondary Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Requirements", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "totalInfrastructureCost", "label": "Total Infrastructure Cost", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": false,
+      "showDragHint": false,
+      "emptyMessage": "Infrastructure costs will be auto-calculated based on building assets."
+    }
+  },
+  "otherCosts": {
+    "id": "other-costs",
+    "caption": "Other Costs Data Table",
+    "columnGroups": [
+      { "label": "Asset Hierarchy", "colSpan": 4 },
+      { "label": "Plot Details - Input", "colSpan": 6 },
+      { "label": "Plot Details - Calculated", "colSpan": 5 },
+      { "label": "Cost", "colSpan": 5 },
+      { "label": "Adjustment", "colSpan": 1 },
+      { "label": "Final Cost", "colSpan": 1, "noBorder": true }
+    ],
+    "columns": [
+      { "key": "assetClass", "label": "Asset Class", "format": "text", "highlighted": true },
+      { "key": "assetTypeL1", "label": "Asset Type (L1)", "format": "text", "highlighted": true },
+      { "key": "assetTypologyL2", "label": "Asset Typology (L2)", "format": "text", "highlighted": true },
+      { "key": "pricePoint", "label": "Price Points", "format": "text", "groupEnd": true, "highlighted": true },
+      { "key": "phase", "label": "Phase", "format": "text", "highlighted": true },
+      { "key": "baseDate", "label": "Base Date", "format": "text", "highlighted": true },
+      { "key": "plotAreaPerBuilding", "label": "Plot Area Per Building", "align": "right", "format": "number", "highlighted": true },
+      { "key": "gfaPerBuilding", "label": "GFA Per Building", "align": "right", "format": "number", "highlighted": true },
+      { "key": "numberOfBuildings", "label": "No. of Buildings", "align": "right", "format": "number", "highlighted": true },
+      { "key": "levels", "label": "Levels", "align": "right", "format": "number", "groupEnd": true, "highlighted": true },
+      { "key": "totalPlotArea", "label": "Total Plot Area", "align": "right", "format": "number" },
+      { "key": "totalGFA", "label": "Total GFA (M2)", "align": "right", "format": "number" },
+      { "key": "far", "label": "FAR", "align": "right", "format": "number" },
+      { "key": "buildingFootprint", "label": "Bldg Footprint", "align": "right", "format": "number" },
+      { "key": "externalArea", "label": "External Area", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "sarPerM2GFA", "label": "SAR / M2 GFA", "align": "right", "format": "number" },
+      { "key": "netBuildCost", "label": "Net Build Cost", "align": "right", "format": "number" },
+      { "key": "generalRequirements", "label": "General Req.", "align": "right", "format": "percentage", "highlighted": true },
+      { "key": "sarPerM2Total", "label": "SAR / M2 Total", "align": "right", "format": "number" },
+      { "key": "totalCost", "label": "Total Cost (SAR)", "align": "right", "format": "number", "groupEnd": true },
+      { "key": "glazingPercentage", "label": "Glazing Per.", "align": "right", "format": "text", "defaultValue": "None", "groupEnd": true, "highlighted": true },
+      { "key": "finalCost", "label": "Final Cost (SAR)", "align": "right", "format": "number", "className": "font-medium" }
+    ],
+    "features": {
+      "zebra": true,
+      "stickyHeader": true,
+      "stickyActions": false,
+      "showDragHint": true
+    }
+  }
+}
