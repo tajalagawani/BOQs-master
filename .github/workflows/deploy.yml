@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'docs/**'   # /platform/docs reads from this tree at runtime
       - '.github/workflows/deploy.yml'
   workflow_dispatch:   # manual trigger from the Actions tab
 
