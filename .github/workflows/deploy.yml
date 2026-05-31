@@ -34,6 +34,10 @@ jobs:
           HEROUI_AUTH_TOKEN: ${{ secrets.HEROUI_AUTH_TOKEN }}
         run: npm ci --no-audit --no-fund
 
+      - name: Generate Prisma client
+        working-directory: web
+        run: npx prisma generate
+
       - name: Production build
         working-directory: web
         env:
