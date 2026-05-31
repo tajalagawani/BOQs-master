@@ -48,7 +48,7 @@ export const PLATFORM_TABS: PlatformTab[] = [
 export function PlatformNav() {
   const pathname = usePathname() || "/platform";
   return (
-    <nav className="bg-white border-b border-zinc-200 sticky top-14 z-30">
+    <nav className="bg-white border-b border-zinc-200 sticky top-12 z-30">
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex items-center gap-0.5 overflow-x-auto">
           {PLATFORM_TABS.map((t) => {

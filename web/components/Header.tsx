@@ -8,10 +8,29 @@ import { HeaderNavInline } from "@/components/HeaderNav";
 // Header imports lives in the client bundle. Do NOT add any server-only
 // import here (prisma, fs, auth helpers) — it'll break the build with
 // "Module not found: Can't resolve 'tls'/'util/types'" from pg.
-export function Header() {
+interface HeaderProps {
+  /** Visual style — defaults to the IOX home/app blue bar.
+   *  - "default"     → bg-[#f0f3fa] with bottom border (apps)
+   *  - "transparent" → no background, no border (rarely used)
+   *  - "white"       → solid white, no border (/platform — blends
+   *                    with the white sidebar) */
+  variant?: "default" | "transparent" | "white";
+  /** Optional content rendered immediately after the IOX logo,
+   *  separated by a thin vertical divider. /platform uses this to
+   *  brand the section without a duplicate strip in the sidebar. */
+  brand?: React.ReactNode;
+}
+
+const VARIANT_CLS: Record<NonNullable<HeaderProps["variant"]>, string> = {
+  default: "bg-[#f0f3fa] border-b border-zinc-200",
+  transparent: "bg-transparent",
+  white: "bg-white",
+};
+
+export function Header({ variant = "default", brand }: HeaderProps = {}) {
   return (
-    <header className="sticky top-0 z-50 bg-[#f0f3fa] border-b border-zinc-200">
-      <div className="w-full px-5 h-14 flex items-center gap-3">
+    <header className={`sticky top-0 z-50 ${VARIANT_CLS[variant]}`}>
+      <div className="w-full px-5 h-12 flex items-center gap-3">
         {/* Logo */}
         <Link href="/" className="flex items-center shrink-0 mr-1" aria-label="IOX home">
           <Image
@@ -23,6 +42,15 @@ export function Header() {
             className="h-5 w-auto"
           />
         </Link>
+
+        {/* Optional section brand — rendered after the logo with a
+            slim vertical divider. /platform passes its label here. */}
+        {brand && (
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="h-6 w-px bg-zinc-300/80" aria-hidden />
+            {brand}
+          </div>
+        )}
 
         {/* Inline menu — replaces the old search input */}
         <HeaderNavInline />

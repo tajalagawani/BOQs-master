@@ -105,6 +105,49 @@ jobs:
               echo "[deploy] package-lock.json unchanged — skipping npm ci"
             fi'
 
+      - name: Sync platform-integration env vars to VM
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_OWNER: ${{ secrets.GH_OWNER }}
+          GH_REPO: ${{ secrets.GH_REPO }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_LOG_ANALYTICS_WORKSPACE_ID: ${{ secrets.AZURE_LOG_ANALYTICS_WORKSPACE_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          # Build the env block locally so the secrets never appear in
+          # remote shell history. Then atomically swap the marked region
+          # in /home/iox/app/web/.env using sed sentinels.
+          tmp=$(mktemp)
+          {
+            echo "# ━━━ MANAGED BY DEPLOY WORKFLOW — DO NOT EDIT BY HAND ━━━"
+            [ -n "$GH_TOKEN" ]                          && echo "GH_TOKEN=$GH_TOKEN"
+            [ -n "$GH_OWNER" ]                          && echo "GH_OWNER=$GH_OWNER"
+            [ -n "$GH_REPO" ]                           && echo "GH_REPO=$GH_REPO"
+            [ -n "$AZURE_TENANT_ID" ]                   && echo "AZURE_TENANT_ID=$AZURE_TENANT_ID"
+            [ -n "$AZURE_SUBSCRIPTION_ID" ]             && echo "AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID"
+            [ -n "$AZURE_RESOURCE_GROUP" ]              && echo "AZURE_RESOURCE_GROUP=$AZURE_RESOURCE_GROUP"
+            [ -n "$AZURE_LOG_ANALYTICS_WORKSPACE_ID" ]  && echo "AZURE_LOG_ANALYTICS_WORKSPACE_ID=$AZURE_LOG_ANALYTICS_WORKSPACE_ID"
+            [ -n "$AZURE_CLIENT_ID" ]                   && echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID"
+            [ -n "$AZURE_CLIENT_SECRET" ]               && echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET"
+            echo "# ━━━ END MANAGED BLOCK ━━━"
+          } > "$tmp"
+          scp -o ServerAliveInterval=15 "$tmp" \
+            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/tmp/iox-platform-env
+          rm -f "$tmp"
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            touch .env
+            # Strip any prior managed block, then append the fresh one
+            awk "/^# ━━━ MANAGED BY DEPLOY WORKFLOW/{skip=1} !skip; /^# ━━━ END MANAGED BLOCK/{skip=0}" .env > .env.next
+            cat /tmp/iox-platform-env >> .env.next
+            mv .env.next .env
+            chmod 600 .env
+            rm -f /tmp/iox-platform-env
+            echo "[deploy] platform env synced ($(wc -l < .env) total lines)"'
+
       - name: Regenerate Prisma client on VM (schema may have changed)
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e

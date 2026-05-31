@@ -77,8 +77,11 @@ const SECTIONS: NavSection[] = [
 export function PlatformSidebar() {
   const pathname = usePathname() || "/platform";
   return (
-    <aside className="hidden md:flex w-[212px] shrink-0 flex-col bg-white border-r border-zinc-200 overflow-y-auto">
-      <div className="px-4 py-4 border-b border-zinc-100">
+    <aside className="hidden md:flex w-[212px] shrink-0 flex-col overflow-y-auto">
+      {/* Sidebar brand block — visually hidden via opacity-0 because the
+          same label now also appears in the Header `brand` slot. Keeping
+          the markup preserves vertical spacing + screen-reader text. */}
+      <div className="px-4 py-4 border-b border-zinc-100 opacity-0" aria-hidden="true">
         <div className="text-[10.5px] uppercase tracking-[0.12em] text-zinc-400 font-semibold">
           IOX
         </div>

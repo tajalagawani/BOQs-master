@@ -7,6 +7,22 @@ export const metadata = {
   description: "Internal platform dashboard — docs, KPIs, ops, monitoring",
 };
 
+function PlatformBrand() {
+  return (
+    <div className="leading-tight">
+      <div className="text-[9.5px] uppercase tracking-[0.14em] text-zinc-400 font-semibold">
+        IOX
+      </div>
+      <div className="text-[12.5px] font-semibold text-zinc-900 -mt-0.5">
+        Platform
+      </div>
+      <div className="text-[10px] text-zinc-500 leading-none">
+        Internal control plane
+      </div>
+    </div>
+  );
+}
+
 export default function PlatformLayout({
   children,
 }: {
@@ -14,8 +30,7 @@ export default function PlatformLayout({
 }) {
   return (
     <>
-      <Header />
-      {/* Mobile-only horizontal tab strip; sidebar hides under md: */}
+      <Header variant="transparent" brand={<PlatformBrand />} />
       <div className="md:hidden shrink-0">
         <PlatformNav />
       </div>
