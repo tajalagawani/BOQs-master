@@ -11,10 +11,28 @@ interface Props {
   nodes: DocNode[];
   /** Roots to start with expanded — usually inferred from the active doc slug */
   initialOpenSlugs?: string[];
+  /** Force every directory open on first render. Overrides initialOpenSlugs. */
+  expandAll?: boolean;
 }
 
-export function DocsTree({ nodes, initialOpenSlugs = [] }: Props) {
-  const [open, setOpen] = useState<Set<string>>(new Set(initialOpenSlugs));
+function collectDirSlugs(nodes: DocNode[]): string[] {
+  const slugs: string[] = [];
+  const walk = (list: DocNode[]) => {
+    for (const n of list) {
+      if (n.kind === "dir") {
+        slugs.push(n.slug);
+        if (n.children?.length) walk(n.children);
+      }
+    }
+  };
+  walk(nodes);
+  return slugs;
+}
+
+export function DocsTree({ nodes, initialOpenSlugs = [], expandAll }: Props) {
+  const [open, setOpen] = useState<Set<string>>(() =>
+    expandAll ? new Set(collectDirSlugs(nodes)) : new Set(initialOpenSlugs),
+  );
   const pathname = usePathname() || "";
   const activeSlug = pathname.replace(/^\/platform\/docs\/?/, "");
 
