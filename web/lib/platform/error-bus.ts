@@ -139,3 +139,13 @@ export function installRuntimeHandlers() {
     originalConsoleError(...args);
   };
 }
+
+function stringifyArg(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (v instanceof Error) return v.stack ?? v.message;
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return String(v);
+  }
+}

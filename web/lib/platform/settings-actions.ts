@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { Octokit } from "@octokit/rest";
 import { ResourceManagementClient } from "@azure/arm-resources";
-import { LogsQueryClient, Durations } from "@azure/monitor-query";
+import { LogsQueryClient, Durations, LogsQueryResultStatus } from "@azure/monitor-query";
 import {
   ClientSecretCredential,
   DefaultAzureCredential,
@@ -141,7 +141,13 @@ export async function testLogAnalyticsConnection(): Promise<ConnectionTestResult
       "Heartbeat | take 1 | project TimeGenerated",
       { duration: Durations.oneDay },
     );
-    const rows = res.tables?.[0]?.rows ?? [];
+    const tables =
+      res.status === LogsQueryResultStatus.Success
+        ? res.tables
+        : res.status === LogsQueryResultStatus.PartialFailure
+          ? (res.partialTables ?? [])
+          : [];
+    const rows = tables[0]?.rows ?? [];
     return {
       ok: true,
       message: rows.length > 0 ? "Workspace responding" : "Workspace responding (no Heartbeat data yet)",

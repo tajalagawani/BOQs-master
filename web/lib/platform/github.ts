@@ -537,24 +537,27 @@ export async function listOpenPullRequests(perPage = 10): Promise<CiPullRequest[
  * Helpers
  * ------------------------------------------------------------------------- */
 
-function toCiRun(run: {
+/** Loose shape of Octokit's workflow-run payload — we only read what we need. */
+type GhRun = {
   id: number;
-  name: string | null;
+  name?: string | null;
   display_title: string;
   status: string | null;
   conclusion: string | null;
   event: string;
   head_branch: string | null;
   head_sha: string;
-  head_commit: { message?: string | null } | null;
-  actor: { login?: string | null; avatar_url?: string | null } | null;
+  head_commit?: { message?: string | null } | null;
+  actor?: { login?: string | null; avatar_url?: string | null } | null;
   html_url: string;
   created_at: string;
   updated_at: string;
   run_started_at?: string | null;
-  run_attempt: number;
+  run_attempt?: number;
   workflow_id: number;
-}): CiRun {
+};
+
+function toCiRun(run: GhRun): CiRun {
   const start = run.run_started_at ?? run.created_at;
   const end = run.updated_at;
   const durationSec =
@@ -577,7 +580,7 @@ function toCiRun(run: {
     createdAt: run.created_at,
     updatedAt: run.updated_at,
     durationSec,
-    attempt: run.run_attempt,
+    attempt: run.run_attempt ?? 1,
     workflowId: run.workflow_id,
   };
 }

@@ -91,9 +91,23 @@ export default async function CiRunPage({ params }: PageProps) {
         <h1 className="mt-3 pl-2 text-[20px] font-semibold text-zinc-900 leading-tight">
           {run.name}
         </h1>
-        <p className="mt-1 pl-2 text-[13px] text-zinc-700 leading-relaxed">
-          {run.commitMessage.split("\n")[0]}
-        </p>
+        {(() => {
+          const lines = run.commitMessage.split("\n");
+          const subject = lines[0];
+          const body = lines.slice(1).join("\n").trim();
+          return (
+            <>
+              <p className="mt-1 pl-2 text-[13px] text-zinc-700 leading-relaxed font-medium">
+                {subject}
+              </p>
+              {body && (
+                <pre className="mt-2 pl-2 text-[12px] text-zinc-600 leading-relaxed whitespace-pre-wrap break-words font-sans max-w-full">
+                  {body}
+                </pre>
+              )}
+            </>
+          );
+        })()}
 
         <dl className="mt-4 pl-2 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2.5 text-[12px]">
           <Field

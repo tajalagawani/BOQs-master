@@ -1,6 +1,11 @@
 import "server-only";
 
-import { Durations } from "@azure/monitor-query";
+import {
+  Durations,
+  LogsQueryResultStatus,
+  type LogsQueryResult,
+  type LogsTable,
+} from "@azure/monitor-query";
 import { logsClient } from "./azure";
 import { getPlatformEnv, logAnalyticsConfigured } from "./platform-env";
 
@@ -121,7 +126,7 @@ export async function getRecentSyslogErrors(limit = 20): Promise<SyslogEntry[]> 
       { duration: Durations.sevenDays },
     );
     const rows: SyslogEntry[] = [];
-    for (const table of res.tables ?? []) {
+    for (const table of tablesOf(res)) {
       for (const row of table.rows ?? []) {
         rows.push({
           ts: String(row[0] ?? ""),
@@ -139,6 +144,14 @@ export async function getRecentSyslogErrors(limit = 20): Promise<SyslogEntry[]> 
   }
 }
 
+/** Normalise the Success / PartialFailure union into a flat tables array. */
+function tablesOf(res: LogsQueryResult): LogsTable[] {
+  if (res.status === LogsQueryResultStatus.Success) return res.tables;
+  if (res.status === LogsQueryResultStatus.PartialFailure)
+    return res.partialTables ?? [];
+  return [];
+}
+
 async function queryMetric(query: string, window: MonitoringWindow): Promise<MetricPoint[]> {
   try {
     const env = await getPlatformEnv();
@@ -149,7 +162,7 @@ async function queryMetric(query: string, window: MonitoringWindow): Promise<Met
       { duration: durationFor(window) },
     );
     const points: MetricPoint[] = [];
-    for (const table of res.tables ?? []) {
+    for (const table of tablesOf(res)) {
       for (const row of table.rows ?? []) {
         points.push({
           ts: String(row[0] ?? ""),
