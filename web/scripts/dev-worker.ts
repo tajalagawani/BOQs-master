@@ -12,7 +12,7 @@
  * It pings the worker every 5 seconds. Cheap — when the queue is
  * empty the drain returns immediately.
  */
-const URL = "http://localhost:3000/procurex/api/worker/extraction";
+const WORKER_URL = "http://localhost:3000/procurex/api/worker/extraction";
 const INTERVAL_MS = 5_000;
 
 let inflight = false;
@@ -23,7 +23,7 @@ async function tick() {
   inflight = true;
   const startedAt = Date.now();
   try {
-    const res = await fetch(URL, { method: "GET" });
+    const res = await fetch(WORKER_URL, { method: "GET" });
     if (!res.ok) {
       // 401 / 500 / etc — print once, keep trying
       console.warn(`[dev-worker] HTTP ${res.status}`);
@@ -54,10 +54,10 @@ async function tick() {
   }
 }
 
-console.log(`[dev-worker] starting — polling ${URL} every ${INTERVAL_MS / 1000}s`);
+console.log(`[dev-worker] starting — polling ${WORKER_URL} every ${INTERVAL_MS / 1000}s`);
 console.log(`[dev-worker] only emits a line when there's actual work; silence = empty queue`);
 
-await tick();
+void tick();
 setInterval(tick, INTERVAL_MS);
 
 // Keep process alive (setInterval handles it but be explicit)

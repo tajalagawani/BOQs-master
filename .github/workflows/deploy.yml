@@ -1,0 +1,112 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:   # manual trigger from the Actions tab
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false   # don't abort an in-flight deploy
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web
+        env:
+          HEROUI_AUTH_TOKEN: ${{ secrets.HEROUI_AUTH_TOKEN }}
+        run: npm ci --no-audit --no-fund
+
+      - name: Production build
+        working-directory: web
+        env:
+          NODE_OPTIONS: '--max-old-space-size=6144'
+        run: npm run build
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AZURE_VM_SSH_KEY }}
+
+      - name: Trust VM host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync source on VM
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app
+            git fetch origin main
+            git reset --hard origin/main'
+
+      - name: Rsync production build (.next/) to VM
+        run: |
+          rsync -az --delete \
+            --exclude="dev/" --exclude="cache/" \
+            -e "ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            web/.next/ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/home/iox/app/web/.next/
+
+      - name: Sync node_modules if package-lock changed
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            # Cheap check — re-install only when lock changed since last deploy
+            if ! cmp -s package-lock.json .last-deployed-lock 2>/dev/null; then
+              echo "[deploy] package-lock.json changed — running npm ci"
+              source /tmp/iox-bootstrap.env
+              HEROUI_AUTH_TOKEN="$HEROUI_AUTH_TOKEN" npm ci --no-audit --no-fund
+              cp package-lock.json .last-deployed-lock
+            else
+              echo "[deploy] package-lock.json unchanged — skipping npm ci"
+            fi'
+
+      - name: Apply any new Drizzle migrations
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            DB="$DATABASE_URL_UNPOOLED"
+            # Track applied migrations in a tiny table; re-apply only new ones
+            psql "$DB" -c "CREATE TABLE IF NOT EXISTS _iox_drizzle_applied (filename text PRIMARY KEY, applied_at timestamptz DEFAULT NOW());" >/dev/null
+            for sql in drizzle/migrations/*.sql; do
+              base=$(basename "$sql")
+              done=$(psql "$DB" -t -A -c "SELECT 1 FROM _iox_drizzle_applied WHERE filename = '"'"'$base'"'"';")
+              if [ "$done" = "1" ]; then
+                echo "  ✓ $base (skipped — already applied)"
+              else
+                echo "  → $base"
+                psql "$DB" -v ON_ERROR_STOP=0 -q -f "$sql" >/dev/null 2>&1 || true
+                psql "$DB" -c "INSERT INTO _iox_drizzle_applied (filename) VALUES ('"'"'$base'"'"') ON CONFLICT DO NOTHING;" >/dev/null
+              fi
+            done'
+
+      - name: Reload pm2
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            pm2 reload ecosystem.config.cjs --update-env
+            sleep 3
+            pm2 status'
+
+      - name: Smoke test the public IP
+        run: |
+          curl -sf -o /dev/null -w "  / → HTTP %{http_code}\n" http://${{ secrets.AZURE_VM_HOST }}/
+          curl -sf -o /dev/null -w "  /procurex/sign-in → HTTP %{http_code}\n" http://${{ secrets.AZURE_VM_HOST }}/procurex/sign-in
