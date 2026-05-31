@@ -62,12 +62,21 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Sync source on VM
+      - name: Rsync source to VM (no git creds needed — repo can be private)
         run: |
-          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
-            cd /home/iox/app
-            git fetch origin main
-            git reset --hard origin/main'
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='.next/' \
+            --exclude='web/.env' \
+            --exclude='web/.env.*' \
+            --exclude='web/node_modules/' \
+            --exclude='web/.next/' \
+            --exclude='web/uploads/' \
+            --exclude='web/runs/' \
+            -e "ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            ./ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/home/iox/app/
 
       - name: Rsync production build (.next/) to VM
         run: |
