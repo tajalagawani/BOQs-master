@@ -7,13 +7,31 @@ import {
   ExternalLink,
   Calendar,
   Globe2,
+  Rocket,
+  CheckCircle2,
 } from "lucide-react";
 import { requirePlatformAccess } from "@/lib/platform/auth";
 import { listReleases } from "@/lib/platform/releases";
+import { listRecentRuns } from "@/lib/platform/github";
+import { githubConfigured } from "@/lib/platform/platform-env";
 
 export default async function ReleasesPage() {
   await requirePlatformAccess();
   const releases = await listReleases();
+
+  // Pull successful deploy.yml runs since the latest curated release so
+  // the page reflects every actual production deploy — not just the
+  // hand-written markdown notes.
+  const latestReleaseDate = releases[0]?.date ?? releases[0]?.releasedAt ?? "";
+  const ghOk = await githubConfigured();
+  const recentRuns = ghOk ? await listRecentRuns(40) : [];
+  const cutoff = latestReleaseDate ? new Date(latestReleaseDate).getTime() : 0;
+  const deploysSince = recentRuns.filter(
+    (r) =>
+      r.name.toLowerCase().includes("deploy") &&
+      r.conclusion === "success" &&
+      new Date(r.createdAt).getTime() >= cutoff,
+  );
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-6 space-y-6">
@@ -35,6 +53,69 @@ export default async function ReleasesPage() {
         >
           Release procedure <ExternalLink className="size-3" strokeWidth={1.75} />
         </Link>
+      </header>
+
+      {/* Live deploys since latest curated release */}
+      {deploysSince.length > 0 && (
+        <section>
+          <header className="flex items-baseline justify-between mb-2.5 px-1">
+            <div>
+              <h2 className="text-[12.5px] font-semibold text-zinc-900 inline-flex items-center gap-1.5">
+                <Rocket className="size-3 text-emerald-600" strokeWidth={2} />
+                Live deploys since {releases[0]?.version ?? "last release"}
+              </h2>
+              <p className="text-[11px] text-zinc-500">
+                Successful deploy-workflow runs from CI. Reflects every
+                production deploy without waiting for a release note.
+              </p>
+            </div>
+            <span className="text-[11px] text-zinc-500 tabular-nums">
+              {deploysSince.length} deploys
+            </span>
+          </header>
+          <ol className="bg-white border border-zinc-200 rounded-2xl divide-y divide-zinc-100 overflow-hidden">
+            {deploysSince.map((r) => (
+              <li key={r.id} className="px-4 py-2.5 hover:bg-zinc-50/60 transition-colors">
+                <Link
+                  href={`/platform/cicd/runs/${r.id}`}
+                  className="flex items-center gap-3 min-w-0"
+                >
+                  <span className="size-6 rounded-full bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 inline-flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="size-3" strokeWidth={2} />
+                  </span>
+                  <code className="text-[10.5px] font-mono text-zinc-500 bg-zinc-50 rounded px-1.5 py-0.5 shrink-0">
+                    {r.commitSha.slice(0, 7)}
+                  </code>
+                  <span className="text-[12.5px] text-zinc-900 truncate flex-1">
+                    {r.commitMessage.split("\n")[0]}
+                  </span>
+                  {r.authorLogin && (
+                    <span className="text-[11px] text-zinc-500 shrink-0 hidden sm:inline">
+                      {r.authorLogin}
+                    </span>
+                  )}
+                  <time className="text-[10.5px] text-zinc-400 tabular-nums shrink-0">
+                    {timeAgo(r.createdAt)}
+                  </time>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {/* Curated release notes */}
+      <header className="flex items-baseline justify-between mb-2.5 px-1">
+        <div>
+          <h2 className="text-[12.5px] font-semibold text-zinc-900">Curated release notes</h2>
+          <p className="text-[11px] text-zinc-500">
+            Hand-written milestones from{" "}
+            <code className="text-[10.5px] bg-zinc-100 px-1 py-0.5 rounded">
+              docs/operations/release-notes/
+            </code>
+            .
+          </p>
+        </div>
       </header>
 
       {releases.length === 0 ? (
@@ -109,4 +190,17 @@ export default async function ReleasesPage() {
       )}
     </div>
   );
+}
+
+function timeAgo(iso: string): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const d = Math.floor(hr / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
