@@ -42,6 +42,14 @@ jobs:
         working-directory: web
         env:
           NODE_OPTIONS: '--max-old-space-size=6144'
+          # Placeholders satisfy modules/core/env.ts's zod schema during
+          # `next build`. The real values live in /home/iox/app/web/.env on
+          # the VM and are picked up at runtime — the build never actually
+          # connects to any of these.
+          DATABASE_URL: 'postgresql://build:build@localhost:5432/build'
+          DATABASE_URL_UNPOOLED: 'postgresql://build:build@localhost:5432/build'
+          AUTH_SECRET: 'build-time-placeholder-not-used-at-runtime'
+          ANTHROPIC_API_KEY: 'sk-ant-build-time-placeholder'
         run: npm run build
 
       - name: Setup SSH agent
