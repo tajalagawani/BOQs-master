@@ -12,6 +12,12 @@ concurrency:
   group: deploy-main
   cancel-in-progress: false   # don't abort an in-flight deploy
 
+env:
+  # Opt into Node 24 for JS actions (actions/checkout, setup-node, etc).
+  # Node 20 is deprecated on GH runners; from 2026-06-16 it becomes
+  # the default, this just makes the warning go away early.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -97,6 +103,23 @@ jobs:
               cp package-lock.json .last-deployed-lock
             else
               echo "[deploy] package-lock.json unchanged — skipping npm ci"
+            fi'
+
+      - name: Regenerate Prisma client on VM (schema may have changed)
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            # Prisma 7 does not auto-generate on npm ci, and rsync brings in
+            # an updated schema.prisma — without this step the runtime
+            # client is stale (e.g. missing platformSetting) and pages 500.
+            # Cheap fingerprint check: only regenerate when schema changed.
+            sum=$(sha256sum prisma/schema.prisma | cut -d" " -f1)
+            if [ "$sum" != "$(cat .last-deployed-prisma-schema 2>/dev/null)" ]; then
+              echo "[deploy] schema.prisma changed — regenerating client"
+              npx prisma generate
+              echo "$sum" > .last-deployed-prisma-schema
+            else
+              echo "[deploy] schema.prisma unchanged — skipping prisma generate"
             fi'
 
       - name: Apply any new Drizzle migrations
