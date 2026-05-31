@@ -1,0 +1,73 @@
+name: Bug report
+description: Report a defect in IOX (any module)
+labels: [bug]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - P1 — Site down or data loss
+        - P2 — Major feature broken
+        - P3 — Minor bug / degraded UX
+        - P4 — Cosmetic / docs
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - Home
+        - CostX
+        - BOQs
+        - ProcureX
+        - Projects
+        - Benchmarking
+        - Rate Analysis
+        - Configuration
+        - Infrastructure / CI
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Route (URL path)
+      placeholder: e.g. /procurex/projects/abc123/setup?step=2
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as SUPER_ADMIN
+        2. Go to ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      value: |
+        - Browser:
+        - URL:
+        - Logged in as:
+        - Approx time:
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots (optional)
+      render: shell

@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is .gitignore'd.
+subscription_id     = "5d5e49c7-1fe0-4d54-827b-57844c2dd0aa"
+tenant_id           = "5c1c05b1-7b56-45e5-b38e-c9aea88f4588"
+ssh_public_key_path = "~/.ssh/iox_vm.pub"
+# All other variables have sensible defaults — override only if needed.

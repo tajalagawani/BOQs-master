@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="15" failures="1" errors="0" time="0.634764375">
+    <testsuite name="web/tests/unit/calculations.test.ts" timestamp="2026-05-31T15:06:21.520Z" hostname="Tajs-MacBook-Pro-2.local" tests="4" failures="0" errors="0" skipped="0" time="0.001937">
+        <testcase classname="web/tests/unit/calculations.test.ts" name="round (decimal places) &gt; rounds to 2dp by default" time="0.000773708">
+        </testcase>
+        <testcase classname="web/tests/unit/calculations.test.ts" name="round (decimal places) &gt; rounds to a given dp" time="0.000293125">
+        </testcase>
+        <testcase classname="web/tests/unit/calculations.test.ts" name="masterplan derived totals (smoke) &gt; plot area * sar/m² ≈ construction cost" time="0.000098083">
+        </testcase>
+        <testcase classname="web/tests/unit/calculations.test.ts" name="masterplan derived totals (smoke) &gt; contingency at 5% adds the expected amount" time="0.000054583">
+        </testcase>
+    </testsuite>
+    <testsuite name="web/tests/unit/formatters.test.ts" timestamp="2026-05-31T15:06:21.522Z" hostname="Tajs-MacBook-Pro-2.local" tests="1" failures="1" errors="0" skipped="0" time="0">
+        <testcase classname="web/tests/unit/formatters.test.ts" name="web/tests/unit/formatters.test.ts" time="0">
+            <failure message="Cannot find package &apos;@/utils/formatters&apos; imported from /Users/taj/Downloads/BOQs-master/web/tests/unit/formatters.test.ts" type="Error">
+Error: Cannot find package &apos;@/utils/formatters&apos; imported from /Users/taj/Downloads/BOQs-master/web/tests/unit/formatters.test.ts
+ ❯ web/tests/unit/formatters.test.ts:3:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: &apos;ERR_MODULE_NOT_FOUND&apos; }
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="web/tests/integration/routes.test.ts" timestamp="2026-05-31T15:06:21.523Z" hostname="Tajs-MacBook-Pro-2.local" tests="10" failures="0" errors="0" skipped="0" time="0.632827375">
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET / → 200" time="0.058479459">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /costx → 200" time="0.154621">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /boqs → 200" time="0.022482292">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /benchmarking → 200" time="0.042122875">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /cost-model-rate-analysis → 200" time="0.031060791">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /configuration → 200" time="0.144489333">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /projects → 200" time="0.040193125">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="public routes &gt; GET /procurex/sign-in → 200" time="0.019549625">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="auth-gated routes &gt; GET /procurex → 200,307,500" time="0.111498208">
+        </testcase>
+        <testcase classname="web/tests/integration/routes.test.ts" name="API health &gt; auth CSRF endpoint exists" time="0.007487792">
+        </testcase>
+    </testsuite>
+</testsuites>

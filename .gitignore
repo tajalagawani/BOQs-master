@@ -1,0 +1,10 @@
+# Repo-root junk that isn't covered by web/.gitignore
+node_modules/
+.vite/
+.DS_Store
+
+# Local test outputs (the platform /tests page reads these — commit the
+# latest XML/JSON if you want it visible on prod; ignore the .junit-history
+# unless you want to surface the trend chart there too)
+tests/.junit-history/
+tests/.k6-history/

@@ -119,6 +119,28 @@ jobs:
               fi
             done'
 
+      - name: Apply any manual Prisma migrations
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            DB="$DATABASE_URL_UNPOOLED"
+            psql "$DB" -c "CREATE TABLE IF NOT EXISTS _iox_manual_applied (filename text PRIMARY KEY, applied_at timestamptz DEFAULT NOW());" >/dev/null
+            if [ -d prisma/migrations/manual ]; then
+              for sql in prisma/migrations/manual/*.sql; do
+                [ -f "$sql" ] || continue
+                base=$(basename "$sql")
+                done=$(psql "$DB" -t -A -c "SELECT 1 FROM _iox_manual_applied WHERE filename = '"'"'$base'"'"';")
+                if [ "$done" = "1" ]; then
+                  echo "  ✓ $base (skipped — already applied)"
+                else
+                  echo "  → $base"
+                  psql "$DB" -v ON_ERROR_STOP=1 -q -f "$sql"
+                  psql "$DB" -c "INSERT INTO _iox_manual_applied (filename) VALUES ('"'"'$base'"'"') ON CONFLICT DO NOTHING;" >/dev/null
+                fi
+              done
+            fi'
+
       - name: Reload pm2
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e

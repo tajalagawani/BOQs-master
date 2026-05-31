@@ -1,9 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, ChevronDown, HelpCircle, Search } from "lucide-react";
+import { Bell, ChevronDown, HelpCircle, LayoutDashboard, Search } from "lucide-react";
 import { HeaderNavInline } from "@/components/HeaderNav";
+import { getPlatformUser } from "@/lib/platform/auth";
 
-export function Header() {
+export async function Header() {
+  const platformUser = await getPlatformUser().catch(() => null);
+  const canSeePlatform =
+    platformUser?.role === "SUPER_ADMIN" || platformUser?.role === "PLATFORM_ADMIN";
+
   return (
     <header className="sticky top-0 z-50 bg-[#f0f3fa] border-b border-zinc-200">
       <div className="w-full px-5 h-14 flex items-center gap-3">
@@ -21,6 +26,19 @@ export function Header() {
 
         {/* Inline menu — replaces the old search input */}
         <HeaderNavInline />
+
+        {/* Platform dashboard — gated to platform admins */}
+        {canSeePlatform && (
+          <Link
+            href="/platform"
+            aria-label="Platform dashboard"
+            title="Platform dashboard"
+            className="h-9 px-2.5 inline-flex items-center gap-1.5 rounded-md hover:bg-zinc-100 transition-colors shrink-0 text-zinc-700"
+          >
+            <LayoutDashboard className="size-4.5" strokeWidth={1.75} />
+            <span className="hidden lg:inline text-[12.5px] font-medium">Platform</span>
+          </Link>
+        )}
 
         {/* Search icon (opens command palette) */}
         <button

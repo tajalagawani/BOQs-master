@@ -1,0 +1,273 @@
+openapi: 3.1.0
+info:
+  title: IOX API
+  version: 0.1.0
+  description: |
+    HTTP API for the IOX platform. Covers the auth surface, file/document
+    handling, extraction stream, and project/template endpoints exposed by
+    the ProcureX module. Server actions (Next.js RPC-style) are NOT listed
+    here — they're internal-only and discoverable via the source under
+    `modules/*/actions.ts`.
+  contact:
+    name: IOX Tech Lead
+    email: taj.alagawani@gmail.com
+servers:
+  - url: http://20.203.125.83
+    description: Dev / demo (live)
+  - url: http://localhost:3000
+    description: Local
+
+tags:
+  - name: auth
+    description: NextAuth session + CSRF (mounted at root)
+  - name: documents
+    description: Upload + retrieve tender documents (ProcureX)
+  - name: extraction
+    description: SSE streams for live AI extraction progress
+  - name: projects
+    description: ProcureX project snapshots
+  - name: templates
+    description: Downloadable tenderer templates
+  - name: workers
+    description: Background extraction queue drain
+
+paths:
+  # ── Auth ─────────────────────────────────────────────────────────────────
+  /api/auth/csrf:
+    get:
+      tags: [auth]
+      summary: Get CSRF token (required before credentials POST)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  csrfToken: { type: string }
+
+  /api/auth/session:
+    get:
+      tags: [auth]
+      summary: Current session
+      responses:
+        "200":
+          description: Session object (may be empty)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:    { type: string }
+                          email: { type: string, format: email }
+                          name:  { type: string }
+                      expires: { type: string, format: date-time }
+                  - type: object
+                    description: empty when unauthenticated
+
+  /api/auth/callback/credentials:
+    post:
+      tags: [auth]
+      summary: Credentials sign-in
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [email, password, csrfToken]
+              properties:
+                email:       { type: string, format: email }
+                password:    { type: string, format: password }
+                csrfToken:   { type: string }
+                callbackUrl: { type: string, default: "/procurex" }
+      responses:
+        "302":
+          description: Redirect to callbackUrl on success
+        "401":
+          description: Bad credentials
+
+  /api/auth/signout:
+    post:
+      tags: [auth]
+      summary: Sign out — clears the session cookie
+
+  # ── ProcureX documents ───────────────────────────────────────────────────
+  /procurex/api/documents/upload:
+    post:
+      tags: [documents]
+      summary: Upload to Vercel Blob (production path)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, documentId]
+              properties:
+                file:       { type: string, format: binary }
+                documentId: { type: string, format: uuid }
+      responses:
+        "200": { description: Upload succeeded, extraction enqueued }
+        "401": { description: Unauthenticated }
+        "403": { description: Document not owned by user }
+        "404": { description: documentId not found }
+
+  /procurex/api/documents/upload-local:
+    post:
+      tags: [documents]
+      summary: Upload to local disk (dev fallback — no Blob token)
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/paths/~1procurex~1api~1documents~1upload/post/requestBody/content/multipart~1form-data/schema"
+      responses:
+        "200": { description: Same shape as the Blob path }
+
+  /procurex/api/documents/{documentId}:
+    delete:
+      tags: [documents]
+      summary: Soft-delete a document (sets deleted_at)
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string, format: uuid }
+      security: [{ session: [] }]
+
+  /procurex/api/files/{documentId}:
+    get:
+      tags: [documents]
+      summary: Serve the raw uploaded file (public — UUID is unguessable)
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: File bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Unknown id or not yet uploaded }
+
+  # ── Extraction streams ───────────────────────────────────────────────────
+  /procurex/api/extraction/stream/{documentId}:
+    get:
+      tags: [extraction]
+      summary: SSE — live extraction-job progress for one document
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema: { type: string, format: uuid }
+      security: [{ session: [] }]
+      responses:
+        "200":
+          description: text/event-stream of progress events
+
+  /procurex/api/extraction/stream-project/{projectId}:
+    get:
+      tags: [extraction]
+      summary: SSE — progress for ALL jobs in a project
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      security: [{ session: [] }]
+      responses:
+        "200":
+          description: text/event-stream
+
+  # ── Projects ─────────────────────────────────────────────────────────────
+  /procurex/api/projects/{projectId}/full:
+    get:
+      tags: [projects]
+      summary: Full project snapshot — every nested entity
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      security: [{ session: [] }]
+
+  /procurex/api/projects/{projectId}/snapshot:
+    get:
+      tags: [projects]
+      summary: Lightweight project snapshot — headers + status counts
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+      security: [{ session: [] }]
+
+  # ── Templates ────────────────────────────────────────────────────────────
+  /procurex/api/templates/tenderer:
+    get:
+      tags: [templates]
+      summary: Download blank tenderer-submission template (XLSX)
+      responses:
+        "200":
+          description: XLSX file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+
+  # ── Workers ──────────────────────────────────────────────────────────────
+  /procurex/api/worker/extraction:
+    get:
+      tags: [workers]
+      summary: Drain pending extraction jobs (Vercel Cron entry point)
+      description: |
+        In production this is hit by Vercel Cron every minute. Locally,
+        `scripts/dev-worker.ts` polls it every 5 s. If `CRON_SECRET` is
+        set in env, callers must send `Authorization: Bearer <secret>`.
+      security:
+        - cronSecret: []
+      responses:
+        "200":
+          description: Drain outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drained:   { type: integer }
+                  succeeded: { type: integer }
+                  failed:    { type: integer }
+                  requeued:  { type: integer }
+                  reclaimed: { type: integer }
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        jobId:      { type: string, format: uuid }
+                        status:     { type: string, enum: [succeeded, failed, requeued] }
+                        iterations: { type: integer }
+                        error:      { type: string, nullable: true }
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: authjs.session-token
+      description: Set by NextAuth credentials sign-in
+    cronSecret:
+      type: http
+      scheme: bearer
+      bearerFormat: shared-secret
+      description: Optional, only enforced when CRON_SECRET env var is set

@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose new functionality or an enhancement
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - P2 — Major capability gap
+        - P3 — Notable improvement
+        - P4 — Nice-to-have
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module the request affects
+      options:
+        - Home
+        - CostX
+        - BOQs
+        - ProcureX
+        - Projects
+        - Benchmarking
+        - Rate Analysis
+        - Configuration
+        - Cross-module / Platform
+        - Infrastructure / CI
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't the user do today, or what's painful?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: input
+    id: kpi
+    attributes:
+      label: Closes which KPI (if any)
+      placeholder: e.g. C3-SC2
+  - type: textarea
+    id: notes
+    attributes:
+      label: Other context (links, screenshots)
