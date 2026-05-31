@@ -279,9 +279,9 @@ The diagram below shows how a request flows from the browser through the platfor
 ```mermaid
 sequenceDiagram
   participant B as Browser
-  participant N as Next.js (App Router)
-  participant A as NextAuth handler<br/>(/api/auth/[...nextauth])
-  participant S as getSession()<br/>(lib/session.ts)
+  participant N as "Next.js (App Router)"
+  participant A as "NextAuth handler /api/auth"
+  participant S as "getSession lib/session.ts"
   participant P as permissions.ts
   participant DB as Postgres
 
@@ -289,11 +289,11 @@ sequenceDiagram
   B->>A: POST /api/auth/callback/credentials
   A->>DB: getUserByEmail (Drizzle, px_user)
   A->>A: bcrypt.compare passwordHash
-  A-->>B: Set-Cookie: authjs.session-token (JWT)
+  A-->>B: Set-Cookie authjs.session-token JWT
 
   B->>N: GET /procurex/projects (cookie attached)
-  N->>A: auth() resolves JWT → session.user.id
-  N->>P: canAccessProject(userId, projectId, "read")
+  N->>A: auth resolves JWT to session.user.id
+  N->>P: canAccessProject(userId, projectId, read)
   P->>DB: prisma.user.findUnique (role + isActive)
   P-->>N: true / false
   N-->>B: 200 page / 403
@@ -301,8 +301,8 @@ sequenceDiagram
   Note over B,S: IOX-native path — mock session
   B->>N: GET /costx/masterplans/123
   N->>S: getSession()
-  S->>DB: prisma.user.findUnique<br/>(email = arjun.mehta@iox.local)
-  S-->>N: { user: { id, role: ADMIN } }
+  S->>DB: prisma.user.findUnique email arjun
+  S-->>N: user with id and role ADMIN
   N->>P: canAccessMasterplan(userId, masterplanId)
   P->>DB: role + team membership
   P-->>N: true (ADMIN short-circuit)

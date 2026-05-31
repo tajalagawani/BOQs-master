@@ -34,9 +34,9 @@ Indexes: `workflow_run_kind_idx`, `workflow_run_project_idx (projectId, createdA
 ```mermaid
 stateDiagram-v2
     [*] --> queued: insert row
-    queued --> running: agent starts, startedAt = now()
-    running --> succeeded: output set, finishedAt = now()
-    running --> failed: error set, finishedAt = now()
+    queued --> running: agent starts, startedAt set
+    running --> succeeded: output set, finishedAt set
+    running --> failed: error set, finishedAt set
     succeeded --> [*]
     failed --> [*]
 ```
@@ -360,7 +360,7 @@ Indexes: `report_workspace_idx (workspaceId, createdAt)`, `report_project_idx (p
 stateDiagram-v2
     [*] --> queued: caller inserts row
     queued --> rendering: worker picks up
-    rendering --> ready: blobUrl set, generatedAt = now()
+    rendering --> ready: blobUrl set, generatedAt set
     rendering --> failed: error set
     ready --> [*]
     failed --> [*]

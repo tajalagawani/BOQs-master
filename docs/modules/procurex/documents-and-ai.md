@@ -147,77 +147,77 @@ Drain entrypoint [`worker/extraction/route.ts`](../../../web/app/procurex/api/wo
 sequenceDiagram
     autonumber
     participant U as User
-    participant UI as Step-2 UI
-    participant API as upload-local route
+    participant UI as "Step-2 UI"
+    participant API as "upload-local route"
     participant DB as Postgres
-    participant Q as Queue (px_extraction_job)
-    participant W as Worker (cron / dev-worker)
+    participant Q as "Queue px_extraction_job"
+    participant W as "Worker cron or dev-worker"
     participant WF as extractDocumentWorkflow
     participant FP as Fingerprint
-    participant AG as runAgent / runChunkedAgent
-    participant AN as Anthropic API
+    participant AG as "runAgent or runChunkedAgent"
+    participant AN as "Anthropic API"
     participant P as Persistor
 
     U->>UI: drop file into slot
-    UI->>API: POST /procurex/api/documents/upload-local (file + documentId)
-    API->>DB: writeLocalFile → uploads/<ws>/<doc>-<name>
-    API->>DB: UPDATE px_document SET status='uploaded', blobUrl, blobPathname
-    API->>Q: enqueueExtraction (maxAttempts=1)
-    API-->>UI: 200 {documentId, url}
-    API->>W: fire-and-forget POST /api/worker/extraction
-    W->>Q: claimNextJob (FOR UPDATE SKIP LOCKED)
-    W->>WF: extractDocumentWorkflow({documentId, buffer, ...})
-    WF->>FP: preExtractDocument → fingerprintDocument → checkSlotMatch
+    UI->>API: POST upload-local with file and documentId
+    API->>DB: writeLocalFile to uploads ws doc name
+    API->>DB: UPDATE px_document SET status uploaded blobUrl blobPathname
+    API->>Q: enqueueExtraction maxAttempts 1
+    API-->>UI: 200 with documentId and url
+    API->>W: fire-and-forget POST worker extraction
+    W->>Q: claimNextJob FOR UPDATE SKIP LOCKED
+    W->>WF: extractDocumentWorkflow with documentId buffer
+    WF->>FP: preExtractDocument then fingerprintDocument then checkSlotMatch
     alt slot mismatch
-        WF->>DB: workflow_run.status=failed, document.status=rejected
-        WF-->>W: ok=false, terminal
+        WF->>DB: workflow_run status failed document status rejected
+        WF-->>W: ok false terminal
     else slot ok
-        WF->>AG: runAgent (surface ≤ 700k) OR runChunkedAgent (> 700k)
-        loop per iteration / per leaf
-            AG->>AN: messages.stream (Sonnet/Haiku + thinking + cache)
-            AN-->>AG: content blocks (text, tool_use, thinking)
-            AG->>W: onProgress → publishProgress + UPDATE px_extraction_job.progress
+        WF->>AG: runAgent if surface under 700k else runChunkedAgent
+        loop per iteration or per leaf
+            AG->>AN: messages.stream Sonnet or Haiku plus thinking and cache
+            AN-->>AG: content blocks text tool_use thinking
+            AG->>W: onProgress and publishProgress and UPDATE px_extraction_job progress
         end
-        AG-->>WF: verdict + ledger + totals
-        WF->>WF: validateVerdict (Zod + coverage)
+        AG-->>WF: verdict and ledger and totals
+        WF->>WF: validateVerdict Zod plus coverage
         alt partial chunks OR validation fail
-            WF->>DB: markRunFailed, document.status=rejected
-            WF-->>W: ok=false, terminal
+            WF->>DB: markRunFailed document status rejected
+            WF-->>W: ok false terminal
         else ok
-            WF->>P: persist(validation.value, context)
-            WF->>DB: workflow_run.status=succeeded, document.status=scanned
-            WF-->>W: ok=true
+            WF->>P: persist validation.value context
+            WF->>DB: workflow_run status succeeded document status scanned
+            WF-->>W: ok true
         end
     end
-    W->>Q: markSucceeded / markFailedOrRequeue
+    W->>Q: markSucceeded or markFailedOrRequeue
 ```
 
 ### Decision tree
 
 ```mermaid
 flowchart TD
-    A[Upload arrives] --> B{Category skip-list?<br/>boq-template / pte / addenda}
+    A[Upload arrives] --> B{"Category skip-list?<br/>boq-template / pte / addenda"}
     B -- yes --> Z1[Deterministic parser path]
     B -- no --> C[Enqueue px_extraction_job]
     C --> D[Worker claim]
     D --> E[preExtractDocument]
     E --> F{Fingerprint vs slot}
     F -- mismatch --> Z2[Wrong slot terminal failure]
-    F -- match / uncertain --> G{surface.length > 700_000?}
+    F -- "match / uncertain" --> G{"surface.length > 700_000?"}
     G -- no --> H[Single-shot Sonnet]
     G -- yes --> I[Chunked Haiku]
-    I --> I1{AI_CHUNKED_MAX_UNITS cap?}
-    I1 -- exceeded --> I2[Process first N, skip rest, _dev_cap warning]
+    I --> I1{"AI_CHUNKED_MAX_UNITS cap?"}
+    I1 -- exceeded --> I2["Process first N, skip rest, _dev_cap warning"]
     I1 -- ok --> I3[Process all units]
     I2 --> J
     I3 --> J
     H --> J[Validate verdict]
-    J --> K{Coverage warnings _chunk_*?}
+    J --> K{"Coverage warnings _chunk_*?"}
     K -- yes --> Z3[Partial extraction terminal failure]
-    K -- no --> L{Zod validation?}
+    K -- no --> L{"Zod validation?"}
     L -- fail --> Z4[Validation terminal failure]
-    L -- ok --> M[Persistor → write to spec tables]
-    M --> N[workflow_run succeeded + document.scanned]
+    L -- ok --> M["Persistor → write to spec tables"]
+    M --> N["workflow_run succeeded + document.scanned"]
 ```
 
 ## Environment surface

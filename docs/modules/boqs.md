@@ -20,21 +20,21 @@ A BOQs "project" in IOX has exactly one source workbook behind it. The flow is:
 
 ```mermaid
 flowchart TD
-    A[User on /boqs/import] -->|drop .xlsx| B[POST /api/upload]
-    B -->|writes /tmp/iox-runs/runId/input.xlsx| C[meta.json status=uploaded]
-    B -->|prisma.boqRun.create| D[(BoqRun row<br/>status=PROCESSING)]
-    C --> E[redirect /boqs/import/runId/review]
-    E -->|inspectXlsx| F[SheetReview UI<br/>typed column pills]
-    F -->|user overrides kind| F
-    F -->|POST /api/run/runId/start<br/>body: mapping| G[spawn python3 pomi_coder_app.py]
-    G -->|stdout/stderr| H[run.log]
-    G --> I[redirect /boqs/import/runId<br/>LiveLog SSE]
-    H -->|EventSource /api/run/runId/log| I
-    G -->|on close code=0| J[result.xlsx written]
-    J --> K[updateMeta status=complete<br/>updateProject sourceFile=result.xlsx]
-    K -->|user clicks Open project| L[/boqs/runId/]
-    L -->|loadProjectData MASTER BOQs| M[BoqWorkspace render]
-    K -. optional .-> N[/boqs/import/runId/master/<br/>ResultViewer all sheets]
+    A["User on /boqs/import"] -->|"drop .xlsx"| B["POST /api/upload"]
+    B -->|"writes /tmp/iox-runs/runId/input.xlsx"| C["meta.json status=uploaded"]
+    B -->|"prisma.boqRun.create"| D[("BoqRun row<br/>status=PROCESSING")]
+    C --> E["redirect /boqs/import/runId/review"]
+    E -->|"inspectXlsx"| F["SheetReview UI<br/>typed column pills"]
+    F -->|"user overrides kind"| F
+    F -->|"POST /api/run/runId/start<br/>body: mapping"| G["spawn python3 pomi_coder_app.py"]
+    G -->|"stdout/stderr"| H["run.log"]
+    G --> I["redirect /boqs/import/runId<br/>LiveLog SSE"]
+    H -->|"EventSource /api/run/runId/log"| I
+    G -->|"on close code=0"| J["result.xlsx written"]
+    J --> K["updateMeta status=complete<br/>updateProject sourceFile=result.xlsx"]
+    K -->|"user clicks Open project"| L["/boqs/runId/"]
+    L -->|"loadProjectData MASTER BOQs"| M["BoqWorkspace render"]
+    K -. optional .-> N["/boqs/import/runId/master/<br/>ResultViewer all sheets"]
 
     style D fill:#e0e7ff,stroke:#4338ca
     style J fill:#dcfce7,stroke:#15803d

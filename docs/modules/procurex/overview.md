@@ -159,16 +159,16 @@ The new-project wizard is composed of six step components colocated under `web/a
 
 ```mermaid
 graph TD
-  Root[/procurex/]
-  SignIn[/procurex/sign-in/]
-  NewProject[/procurex/projects/new/]
-  Detail[/procurex/projects/projectId/]
-  Setup[/procurex/projects/projectId/setup/]
-  BoQ[/procurex/projects/projectId/boq/]
-  PTC[/procurex/projects/projectId/ptc/]
-  Analysis[/procurex/projects/projectId/analysis/]
-  Review[/procurex/projects/projectId/review/bidderId/]
-  Report[/procurex/projects/projectId/report/]
+  Root["/procurex"]
+  SignIn["/procurex/sign-in"]
+  NewProject["/procurex/projects/new"]
+  Detail["/procurex/projects/projectId"]
+  Setup["/procurex/projects/projectId/setup"]
+  BoQ["/procurex/projects/projectId/boq"]
+  PTC["/procurex/projects/projectId/ptc"]
+  Analysis["/procurex/projects/projectId/analysis"]
+  Review["/procurex/projects/projectId/review/bidderId"]
+  Report["/procurex/projects/projectId/report"]
 
   Root --> NewProject
   Root --> Detail
@@ -217,24 +217,24 @@ In non-production environments it also lists dev seed users (`listDevSeedUsers()
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant Page as /procurex/sign-in (RSC)
-  participant Action as signInAction (Server Action)
-  participant NextAuth as NextAuth /api/auth/*
-  participant DB as px_user / px_workspace
-  participant Home as /procurex (RSC)
+  participant Page as "/procurex/sign-in RSC"
+  participant Action as "signInAction Server Action"
+  participant NextAuth as "NextAuth /api/auth"
+  participant DB as "px_user / px_workspace"
+  participant Home as "/procurex RSC"
 
-  U->>Page: GET /procurex/sign-in?callbackUrl=/procurex
-  Page->>DB: listDevSeedUsers() (dev only)
+  U->>Page: GET /procurex/sign-in with callbackUrl
+  Page->>DB: listDevSeedUsers (dev only)
   DB-->>Page: dev users
-  Page-->>U: form (+ dev quick-fill grid)
-  U->>Action: POST form (email, password, callbackUrl)
-  Action->>NextAuth: signIn("credentials", {...})
+  Page-->>U: form plus dev quick-fill grid
+  U->>Action: POST form with email password callbackUrl
+  Action->>NextAuth: signIn credentials
   NextAuth->>DB: verify credentials
   DB-->>NextAuth: user row
-  NextAuth-->>U: Set-Cookie session + redirect(callbackUrl)
+  NextAuth-->>U: Set-Cookie session and redirect to callbackUrl
   U->>Home: GET /procurex
-  Home->>DB: requireUserId() + getProjectsForUser(uid)
-  DB-->>Home: workspace-scoped projects + bidder counts
+  Home->>DB: requireUserId and getProjectsForUser uid
+  DB-->>Home: workspace-scoped projects and bidder counts
   Home-->>U: ProcurexWorkspace grid
 ```
 

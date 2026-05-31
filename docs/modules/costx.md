@@ -18,17 +18,17 @@ The CostX module spans eleven Prisma models. The relational core is `Masterplan`
 ```mermaid
 erDiagram
     User ||--o{ Masterplan : "createdBy"
-    User ||--o{ ProjectTeamMember : assigned
+    User ||--o{ ProjectTeamMember : "assigned"
     Masterplan ||--o{ BuildingCost : "summary rows"
     Masterplan ||--o{ InfrastructureCost : "summary rows"
-    Masterplan ||--o{ MasterplanPhase : phases
-    Masterplan ||--o{ ProjectTeamMember : team
+    Masterplan ||--o{ MasterplanPhase : "phases"
+    Masterplan ||--o{ ProjectTeamMember : "team"
     Masterplan }o--o| BenchmarkProject : "optional benchmark"
-    CostModelEntry ||..o{ BuildingCost : "rate source (logical)"
-    CostModelEntry ||..o{ InfrastructureCost : "rate source (logical)"
+    CostModelEntry ||..o{ BuildingCost : "rate source logical"
+    CostModelEntry ||..o{ InfrastructureCost : "rate source logical"
     ParametricMatrix ||..o{ CostModelEntry : "scales rcdcCostGfa"
     CostFactor ||..o{ CostModelEntry : "baseDate uplift"
-    Configuration ||..|| Masterplan : "version blob (key=masterplan_version_<id>_<v>)"
+    Configuration ||..|| Masterplan : "version blob"
 ```
 
 ### `Masterplan`
@@ -181,17 +181,17 @@ The CostX cost pipeline is **deterministic, synchronous, and recomputed on every
 
 ```mermaid
 flowchart TD
-    A[User edits a field<br/>e.g. gfaPerBuilding] --> B[handleUpdate*<br/>cascades dropdown clears]
-    B --> C[recalculate*Asset<br/>per-section pure fn]
-    C --> D[getTotalRateFromCostModel<br/>4-tuple lookup, SUM rcdcCostGfa across NRM]
-    D --> E[area math:<br/>totalGFA, totalPlotArea, FAR, footprint]
-    E --> F[net build cost<br/>= totalGFA × rate]
-    F --> G[totalCost<br/>= netBuildCost × 1 + genReq%/100]
-    G --> H[finalCost<br/>= totalCost × 1 + parametric%]
-    H --> I[setVersions → useEffect cascade]
-    I --> J[Infrastructure auto-recalc<br/>FAR → density → rate × GLA]
-    I --> K[OtherCosts auto-recalc<br/>%age × constructionCost]
-    J --> L[Roll-up totals + auto-save 1s debounce]
+    A["User edits a field<br/>e.g. gfaPerBuilding"] --> B["handleUpdate*<br/>cascades dropdown clears"]
+    B --> C["recalculate*Asset<br/>per-section pure fn"]
+    C --> D["getTotalRateFromCostModel<br/>4-tuple lookup, SUM rcdcCostGfa across NRM"]
+    D --> E["area math:<br/>totalGFA, totalPlotArea, FAR, footprint"]
+    E --> F["net build cost<br/>= totalGFA × rate"]
+    F --> G["totalCost<br/>= netBuildCost × 1 + genReq%/100"]
+    G --> H["finalCost<br/>= totalCost × 1 + parametric%"]
+    H --> I["setVersions → useEffect cascade"]
+    I --> J["Infrastructure auto-recalc<br/>FAR → density → rate × GLA"]
+    I --> K["OtherCosts auto-recalc<br/>%age × constructionCost"]
+    J --> L["Roll-up totals + auto-save 1s debounce"]
     K --> L
 ```
 
@@ -259,13 +259,13 @@ A `Masterplan` flows through four `MasterplanStatus` states. `DRAFT` is the crea
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT: POST /api/costx/masterplans
-    DRAFT --> ACTIVE: kickoff / first stakeholder review
+    [*] --> DRAFT: POST api costx masterplans
+    DRAFT --> ACTIVE: kickoff or first stakeholder review
     ACTIVE --> APPROVED: sign-off captured
-    ACTIVE --> ARCHIVED: superseded / cancelled
+    ACTIVE --> ARCHIVED: superseded or cancelled
     APPROVED --> ARCHIVED: project closeout
     DRAFT --> ARCHIVED: abandoned before kickoff
-    ARCHIVED --> ACTIVE: reopen (rare)
+    ARCHIVED --> ACTIVE: reopen rare
     APPROVED --> [*]
     ARCHIVED --> [*]
 ```

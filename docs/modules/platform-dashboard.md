@@ -89,15 +89,15 @@ The five sidebar sections are:
 ```mermaid
 graph LR
   subgraph Layout
-    H[Header transparent + brand slot]
-    S[PlatformSidebar 212px md+]
-    N[PlatformNav mobile only]
-    M[main bg-zinc-50 overflow-y-auto]
+    H["Header transparent + brand slot"]
+    S["PlatformSidebar 212px md+"]
+    N["PlatformNav mobile only"]
+    M["main bg-zinc-50 overflow-y-auto"]
   end
   H --> N
   N --> S
   S --> M
-  M --> Page[Page content]
+  M --> Page["Page content"]
 ```
 
 ## The 14 tabs
@@ -126,18 +126,18 @@ gated by `requirePlatformAccess()`, with data fetched in parallel via
 
 ```mermaid
 graph TD
-  Root[/platform/]
+  Root["/platform"]
   Root --> W[Workspace]
   Root --> St[Status]
   Root --> Eng[Engineering]
-  Root --> AR[Activity & Reference]
+  Root --> AR["Activity and Reference"]
   Root --> Ad[Admin]
   W --> Ov[Overview]
   W --> Dc[Docs]
   St --> Kp[KPIs]
   St --> Rl[Releases]
   St --> Df[Defects]
-  Eng --> Ci[CI/CD]
+  Eng --> Ci["CI/CD"]
   Eng --> Ts[Tests]
   Eng --> Pf[Performance]
   Eng --> Inf[Infrastructure]
@@ -365,23 +365,23 @@ diagnostic display.
 
 ```mermaid
 sequenceDiagram
-  participant Page as /platform/cicd
+  participant Page as "/platform/cicd"
   participant Env as platform-env.ts
   participant Store as settings-store.ts
-  participant DB as Postgres platform_setting
-  participant Secrets as secrets.ts (AES-256-GCM)
+  participant DB as "Postgres platform_setting"
+  participant Secrets as "secrets.ts AES-256-GCM"
   participant Default as DEFAULTS
 
   Page->>Env: githubConfigured()
   Env->>Store: resolvePlatformSettings()
-  Store->>DB: SELECT * FROM platform_setting
+  Store->>DB: SELECT all FROM platform_setting
   DB-->>Store: rows
-  Store->>Secrets: decrypt(row.value) when isSecret
+  Store->>Secrets: decrypt row.value when isSecret
   Secrets-->>Store: plaintext
-  Store->>Store: for each SETTING_KEYS:
-  Store->>Store: db ? db : process.env[k] ? env : DEFAULTS[k]
+  Store->>Store: for each SETTING_KEYS
+  Store->>Store: prefer db then env then DEFAULTS
   Store-->>Env: ResolvedSettings + __sources
-  Env-->>Page: { GH_TOKEN, GH_OWNER, GH_REPO, ... }
+  Env-->>Page: GH_TOKEN GH_OWNER GH_REPO etc
 ```
 
 A separate synchronous snapshot `platformEnvSync` reads from `process.env`
@@ -453,16 +453,16 @@ Node.js process.
 ```mermaid
 graph LR
   subgraph Producers
-    P1[process.uncaughtException]
-    P2[process.unhandledRejection]
-    P3[onRequestError - RSC/route/middleware]
-    P4[console.error - patched]
-    P5[lib/platform/* catch blocks]
+    P1["process.uncaughtException"]
+    P2["process.unhandledRejection"]
+    P3["onRequestError - RSC/route/middleware"]
+    P4["console.error - patched"]
+    P5["lib/platform/* catch blocks"]
   end
-  Producers --> Bus[error-bus.ts<br/>ring buffer 500<br/>EventEmitter]
-  Bus --> SSE[/api/platform/errors/stream<br/>SSE route]
-  Bus --> Init[getRecentErrors 100<br/>initial render]
-  SSE --> Client[ErrorStream component<br/>EventSource]
+  Producers --> Bus["error-bus.ts<br/>ring buffer 500<br/>EventEmitter"]
+  Bus --> SSE["/api/platform/errors/stream<br/>SSE route"]
+  Bus --> Init["getRecentErrors 100<br/>initial render"]
+  SSE --> Client["ErrorStream component<br/>EventSource"]
   Init --> Client
 ```
 

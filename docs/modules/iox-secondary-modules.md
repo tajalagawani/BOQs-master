@@ -73,22 +73,22 @@ Three Prisma models drive Benchmarking. Their schema is verbatim from `web/prism
 
 ```mermaid
 erDiagram
-  BenchmarkProject ||--o{ BenchmarkNrmData : "nrmData"
-  BenchmarkProject ||--o{ BenchmarkProjectTeamMember : "teamMembers"
-  BenchmarkProject }o--o{ Masterplan : "linked via Masterplan.benchmarkProjectId"
-  BenchmarkProject }o--|| User : "uploadedBy"
-  BenchmarkProjectTeamMember }o--|| User : "user"
-  BenchmarkNrmData {
-    string nrmCategory
-    decimal costGfa
-  }
-  BenchmarkProject {
-    string name
-    string assetClass
-    string assetTypeL1
-    string country
-    decimal costPerGFA
-  }
+    BenchmarkProject ||--o{ BenchmarkNrmData : has
+    BenchmarkProject ||--o{ BenchmarkProjectTeamMember : has
+    BenchmarkProject }o--o{ Masterplan : "linked via benchmarkProjectId"
+    BenchmarkProject }o--|| User : uploadedBy
+    BenchmarkProjectTeamMember }o--|| User : user
+    BenchmarkNrmData {
+        string nrmCategory
+        decimal costGfa
+    }
+    BenchmarkProject {
+        string name
+        string assetClass
+        string assetTypeL1
+        string country
+        decimal costPerGFA
+    }
 ```
 
 ### Routes
@@ -195,11 +195,11 @@ The unique tuple is the natural key: an asset (class, type, form, price-point) h
 
 ```mermaid
 flowchart LR
-  Config[Configuration page<br/>CostModellingPanel<br/>writes CostModelEntry] --> Table[(cost_model_entries)]
-  Table --> Rate[Rate Analysis<br/>read-only charts]
-  Table --> CostX[CostX<br/>parametric calc]
-  Table --> Bench[Benchmarking<br/>RCDC baseline]
-  Table --> Drops[Configuration dropdowns<br/>via getDropdownOptions]
+    Config["Configuration page<br/>CostModellingPanel<br/>writes CostModelEntry"] --> Table[("cost_model_entries")]
+    Table --> Rate["Rate Analysis<br/>read-only charts"]
+    Table --> CostX["CostX<br/>parametric calc"]
+    Table --> Bench["Benchmarking<br/>RCDC baseline"]
+    Table --> Drops["Configuration dropdowns<br/>via getDropdownOptions"]
 ```
 
 The same row drives four downstream consumers. Rate Analysis is the analytical lens; CostX is the calculation engine; Benchmarking averages it into the RCDC baseline; and Configuration's `DropdownOptionsPanel` derives asset-class / asset-type option lists from it via `getDropdownOptions(...)` in `web/utils/dropdownOptions.ts`.
@@ -258,30 +258,30 @@ BOQ runs (`BoqRun`) and ProcureX projects are **not** currently unioned in — t
 
 ```mermaid
 flowchart TB
-  subgraph Sources
-    MP[(masterplans table)]
-    BP[(benchmark_projects table)]
-  end
+    subgraph Sources
+        MP[("masterplans table")]
+        BP[("benchmark_projects table")]
+    end
 
-  subgraph Page[app/projects/page.tsx]
-    GM[getMasterplans userId]
-    GB[getBenchmarkProjects userId]
-    Map[map to ProjectListEntry]
-  end
+    subgraph Page["app/projects/page.tsx"]
+        GM["getMasterplans(userId)"]
+        GB["getBenchmarkProjects(userId)"]
+        Map["map → ProjectListEntry"]
+    end
 
-  subgraph Client[ProjectsClient]
-    Search[search + filter]
-    Grid[2x5 card wall]
-  end
+    subgraph Client["ProjectsClient"]
+        Search["search + filter"]
+        Grid["2x5 card wall"]
+    end
 
-  MP --> GM
-  BP --> GB
-  GM --> Map
-  GB --> Map
-  Map --> Search
-  Search --> Grid
-  Grid -->|Masterplan card| CostX[/costx/:id]
-  Grid -->|Benchmark card| Bench[/benchmarking?focus=:id]
+    MP --> GM
+    BP --> GB
+    GM --> Map
+    GB --> Map
+    Map --> Search
+    Search --> Grid
+    Grid -->|Masterplan card| CostX["/costx/:id"]
+    Grid -->|Benchmark card| Bench["/benchmarking?focus=:id"]
 ```
 
 ### Routes

@@ -81,34 +81,34 @@ Cross-module super-admin behaviour is layered on top: see `docs/security/access-
 
 ```mermaid
 sequenceDiagram
-    participant U as User (browser)
-    participant P as /procurex/sign-in page
-    participant H as /api/auth/[...nextauth]
-    participant A as authorize() (auth.ts)
-    participant DB as Postgres (px_*)
-    participant E as signIn event
+    participant U as "User browser"
+    participant P as "/procurex/sign-in page"
+    participant H as "/api/auth/nextauth"
+    participant A as "authorize auth.ts"
+    participant DB as "Postgres px_*"
+    participant E as "signIn event"
     participant W as ensureWorkspaceForUser
     participant AL as px_audit_log
 
     U->>P: GET sign-in page
-    P-->>U: Form (or dev quick-fill if isDevSeed)
-    U->>H: POST credentials (email, password)
-    H->>A: invoke authorize()
-    A->>DB: SELECT * FROM px_user WHERE email = ?
-    DB-->>A: user row (or null)
-    A->>A: bcrypt.compare(password, passwordHash)
-    A-->>H: { id, email, name } | null
-    H->>H: mint JWT, set session cookie
+    P-->>U: Form or dev quick-fill if isDevSeed
+    U->>H: POST credentials with email and password
+    H->>A: invoke authorize
+    A->>DB: SELECT FROM px_user WHERE email
+    DB-->>A: user row or null
+    A->>A: bcrypt.compare password passwordHash
+    A-->>H: id email name or null
+    H->>H: mint JWT and set session cookie
     H->>E: fire signIn event
-    E->>W: ensureWorkspaceForUser(user.id)
+    E->>W: ensureWorkspaceForUser user.id
     W->>DB: SELECT membership
     alt no workspace yet
-        W->>DB: INSERT px_workspace (slug, name)
-        W->>DB: INSERT px_workspace_member (role=owner)
-        W->>AL: recordAudit("workspace.bootstrap")
+        W->>DB: INSERT px_workspace slug name
+        W->>DB: INSERT px_workspace_member role owner
+        W->>AL: recordAudit workspace.bootstrap
     end
     W-->>E: workspaceId
-    H-->>U: 302 → /procurex (cookie attached)
+    H-->>U: 302 to /procurex with cookie attached
 ```
 
 If `authorize()` returns `null`, NextAuth surfaces `CredentialsSignin` and the page re-renders with a banner — this is the path D-006 was masking when Arjun's `px_user` row was missing.
@@ -146,15 +146,15 @@ The IOX platform admin surface at `/platform/audit` shows a single timeline acro
 
 ```mermaid
 flowchart TD
-    A[listAuditEvents] --> B[Promise.all]
-    B --> C[Prisma activity_logs<br/>findMany take=200<br/>include user]
-    B --> D[Drizzle px_audit_log<br/>select limit 200<br/>orderBy createdAt desc]
-    C --> E[Map → AuditEvent<br/>module: IOX<br/>actor: user.name or email]
+    A[listAuditEvents] --> B["Promise.all"]
+    B --> C["Prisma activity_logs<br/>findMany take=200<br/>include user"]
+    B --> D["Drizzle px_audit_log<br/>select limit 200<br/>orderBy createdAt desc"]
+    C --> E["Map → AuditEvent<br/>module IOX<br/>actor user.name or email"]
     D --> F[Collect actorUserIds]
-    F --> G[Side query: SELECT id,email<br/>FROM px_user WHERE id = ANY ...]
+    F --> G["Side query SELECT id email<br/>FROM px_user WHERE id = ANY"]
     G --> H[Build pxActorMap]
-    H --> I[Map → AuditEvent<br/>module: ProcureX<br/>actor: email or actorKind]
-    E --> J[Concat + sort by ts desc<br/>slice 200]
+    H --> I["Map → AuditEvent<br/>module ProcureX<br/>actor email or actorKind"]
+    E --> J["Concat + sort by ts desc<br/>slice 200"]
     I --> J
     J --> K[Return AuditEvent array]
 ```
