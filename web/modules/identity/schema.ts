@@ -1,0 +1,76 @@
+import {
+  boolean,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core"
+import type { AdapterAccountType } from "next-auth/adapters"
+
+// Auth.js standard tables (https://authjs.dev/reference/adapter/drizzle).
+// Extended with our app-specific fields (password_hash for credentials,
+// is_dev_seed for the dev role quick-fill flow).
+
+export const users = pgTable("px_user", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name"),
+  email: text("email").unique().notNull(),
+  emailVerified: timestamp("email_verified", { mode: "date" }),
+  image: text("image"),
+
+  // Credentials provider (dev quick-fills + future email/password)
+  passwordHash: text("password_hash"),
+
+  // Dev / seed marker — gates the quick-fill panel
+  isDevSeed: boolean("is_dev_seed").default(false).notNull(),
+  devRoleLabel: text("dev_role_label"),
+
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const accounts = pgTable(
+  "px_account",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").$type<AdapterAccountType>().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (account) => [
+    primaryKey({ columns: [account.provider, account.providerAccountId] }),
+  ],
+)
+
+export const sessions = pgTable("px_session", {
+  sessionToken: text("session_token").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+})
+
+export const verificationTokens = pgTable(
+  "px_verification_token",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
+)
+
+export type User = typeof users.$inferSelect
+export type NewUser = typeof users.$inferInsert

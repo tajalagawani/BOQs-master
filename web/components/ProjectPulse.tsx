@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Activity,
   Calendar,
@@ -10,7 +11,18 @@ import {
   ShoppingCart,
   ShieldCheck,
   ChevronRight,
+  ArrowUpRight,
 } from "lucide-react";
+import type { ReactNode } from "react";
+
+export interface ProjectPulseAction {
+  icon: ReactNode;
+  label: string;
+  description: string;
+  /** Use `href` for navigation, or `onClick` for in-page actions (e.g. open a modal). */
+  href?: string;
+  onClick?: () => void;
+}
 
 const recentActivity = [
   {
@@ -60,7 +72,15 @@ const metricCards = [
   },
 ];
 
-export function ProjectPulse() {
+interface ProjectPulseProps {
+  /** Optional action tiles rendered at the top, above the project hero. */
+  actions?: ProjectPulseAction[];
+  /** Optional slot rendered between the actions and the project hero —
+      typically a controlled search input owned by a parent client component. */
+  searchSlot?: ReactNode;
+}
+
+export function ProjectPulse({ actions, searchSlot }: ProjectPulseProps = {}) {
   return (
     // Outer shell — mirrors ModuleCard: white bg, zinc-200 border, rounded-2xl,
     // soft hover lift via shadow + translate.
@@ -78,6 +98,55 @@ export function ProjectPulse() {
           Live
         </span>
       </div>
+
+      {/* Optional action tiles — when present, sit above the project hero. */}
+      {actions && actions.length > 0 && (
+        <div className="grid grid-cols-1 gap-2 shrink-0">
+          {actions.map((a, idx) => {
+            const inner = (
+              <>
+                <div className="size-8 shrink-0 rounded-lg bg-zinc-100 inline-flex items-center justify-center text-zinc-700 group-hover/action:bg-zinc-900 group-hover/action:text-white transition-colors duration-200">
+                  {a.icon}
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-[12px] font-semibold text-zinc-900 leading-tight">
+                    {a.label}
+                  </div>
+                  <div className="text-[10.5px] text-zinc-500 leading-snug truncate">
+                    {a.description}
+                  </div>
+                </div>
+                <ArrowUpRight
+                  className="size-3.5 text-zinc-400 group-hover/action:text-zinc-900 transition-colors duration-200 shrink-0"
+                  strokeWidth={2}
+                />
+              </>
+            );
+            const classes =
+              "group/action relative rounded-xl bg-white border border-zinc-200 p-2.5 flex items-center gap-2.5 transition-all duration-200 hover:border-zinc-300 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-8px_rgba(24,24,27,0.18)]";
+            if (a.onClick) {
+              return (
+                <button
+                  key={a.label + idx}
+                  type="button"
+                  onClick={a.onClick}
+                  className={classes + " w-full"}
+                >
+                  {inner}
+                </button>
+              );
+            }
+            return (
+              <Link key={a.href ?? a.label + idx} href={a.href ?? "#"} className={classes}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Optional search slot — supplied by parent so state can be shared. */}
+      {searchSlot && <div className="shrink-0">{searchSlot}</div>}
 
       {/* Project hero */}
       <div className="flex gap-2.5 shrink-0">

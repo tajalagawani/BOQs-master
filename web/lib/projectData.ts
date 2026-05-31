@@ -148,14 +148,21 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
   const last = ws.actualRowCount || 0;
   const counter: Record<string, number> = {};
 
+  // Safe column read — `want()` returns 0 when a header is missing, but
+  // exceljs's `getCell(0)` throws "0 is out of bounds". Coerce 0 → null
+  // and return null for any missing column so downstream s()/n() default
+  // to empty string / 0 instead of crashing the whole load.
+  const at = (row: ExcelJS.Row, col: number) =>
+    col >= 1 ? cellValue(row.getCell(col)) : null;
+
   for (let r = hdrRow + 1; r <= last; r++) {
     const row = ws.getRow(r);
-    const desc = s(cellValue(row.getCell(C.desc)));
+    const desc = s(at(row, C.desc));
     if (!desc) continue;
 
-    const ref = s(cellValue(row.getCell(C.ref)));
-    const subRaw = s(cellValue(row.getCell(C.sub)));
-    const secRaw = s(cellValue(row.getCell(C.section)));
+    const ref = s(at(row, C.ref));
+    const subRaw = s(at(row, C.sub));
+    const secRaw = s(at(row, C.section));
     const grouping = subRaw || secRaw || "Uncategorised";
     const { code: secCode, name: secName } = splitSection(grouping);
     const key = secCode || secName;
@@ -164,23 +171,23 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
     const seq = counter[key];
     const code = `${key}.${String(seq).padStart(3, "0")}`;
 
-    const sheetName = s(cellValue(row.getCell(C.batch))) || "";
+    const sheetName = s(at(row, C.batch)) || "";
 
     items.push({
       code,
       ref,
       description: desc,
-      unit: s(cellValue(row.getCell(C.unit))),
-      quantity: n(cellValue(row.getCell(C.qty))),
-      rate: n(cellValue(row.getCell(C.rate))),
-      amount: n(cellValue(row.getCell(C.amount))),
+      unit: s(at(row, C.unit)),
+      quantity: n(at(row, C.qty)),
+      rate: n(at(row, C.rate)),
+      amount: n(at(row, C.amount)),
       pomiSection: secRaw,
       pomiSubSection: subRaw,
-      nrm: s(cellValue(row.getCell(C.nrm))),
-      nrmDescription: s(cellValue(row.getCell(C.nrmDesc))),
-      stage: s(cellValue(row.getCell(C.stage))),
-      confidence: n(cellValue(row.getCell(C.conf))),
-      flag: s(cellValue(row.getCell(C.flag))),
+      nrm: s(at(row, C.nrm)),
+      nrmDescription: s(at(row, C.nrmDesc)),
+      stage: s(at(row, C.stage)),
+      confidence: n(at(row, C.conf)),
+      flag: s(at(row, C.flag)),
       sheetName,
     });
   }

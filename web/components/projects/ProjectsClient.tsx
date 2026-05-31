@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
-import { Search, MapPin, Building2, BarChart3 } from "lucide-react";
-import { cn } from "@/lib/cn";
+import type { Key } from "react-aria-components/Breadcrumbs";
+import { Search } from "lucide-react";
+import { Segment } from "@heroui-pro/react";
+import { ProjectCard } from "./ProjectCard";
 
 export type ProjectKind = "Masterplan" | "Benchmark";
 
@@ -22,14 +23,25 @@ export interface ProjectListEntry {
   href: string;
 }
 
-const formatSAR = (n: number | null) => {
-  if (n === null || isNaN(n)) return "—";
-  if (n >= 1_000_000_000) return `SAR ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `SAR ${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `SAR ${(n / 1_000).toFixed(1)}K`;
-  return `SAR ${n.toLocaleString()}`;
-};
-const formatArea = (n: number | null) => (n === null ? "—" : `${n.toLocaleString()} m²`);
+// Reuse the home page card backgrounds, alternating by kind so the wall
+// reads with the same texture as the module grid.
+const masterplanBackgrounds = [
+  "/card-cost-planning.png",
+  "/card-parametric.png",
+  "/card-estimates.png",
+  "/card-budget-control.png",
+];
+const benchmarkBackgrounds = [
+  "/card-reports.png",
+  "/card-instructions.png",
+  "/card-change-orders.png",
+  "/card-procurement.png",
+];
+
+function pickBackground(kind: ProjectKind, idx: number): string {
+  const pool = kind === "Masterplan" ? masterplanBackgrounds : benchmarkBackgrounds;
+  return pool[idx % pool.length];
+}
 
 export default function ProjectsClient({ projects }: { projects: ProjectListEntry[] }) {
   const [search, setSearch] = useState("");
@@ -64,50 +76,63 @@ export default function ProjectsClient({ projects }: { projects: ProjectListEntr
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-6">
-      {/* Header */}
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Projects</h1>
-        <p className="text-xs text-zinc-500 mt-1">
-          {filtered.length} of {projects.length} project{projects.length === 1 ? "" : "s"}
+    <div className="w-fit">
+      {/* Hero — same scale + rhythm as <Greeting /> on the home page. */}
+      <div className="mt-6 lg:mt-10 max-w-2xl shrink-0">
+        <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium mb-1">
+          Module
+        </div>
+        <h1 className="text-[clamp(28px,3.6vw,46px)] leading-[1.05] font-semibold tracking-tight text-zinc-900">
+          Projects<span style={{ color: "#60B78C" }}>.</span>
+        </h1>
+        <p className="mt-2 text-[12.5px] text-zinc-500 leading-relaxed max-w-lg">
+          {filtered.length} of {projects.length} project
+          {projects.length === 1 ? "" : "s"} — open a card to jump straight
+          into CostX or the benchmarking workspace.
         </p>
-      </header>
+      </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[280px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400" strokeWidth={1.75} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, developer, or location"
-            className="w-full h-10 pl-10 pr-3 bg-white border border-zinc-200 rounded-lg text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
-          />
-        </div>
+      {/* Search — sits under the hero, on its own row. */}
+      <div className="mt-4 relative max-w-md">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400"
+          strokeWidth={1.75}
+        />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, developer or location"
+          className="w-full h-9 pl-9 pr-3 bg-white border border-zinc-200 rounded-2xl text-sm placeholder:text-zinc-400 shadow-[0_2px_8px_-4px_rgba(24,24,27,0.08)] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
+        />
+      </div>
 
-        <div className="inline-flex bg-zinc-100 rounded-lg p-0.5">
-          {(["All", "Masterplan", "Benchmark"] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setKind(k)}
-              className={cn(
-                "h-9 px-3 text-xs font-medium rounded-md transition-colors",
-                kind === k ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900",
-              )}
-            >
-              {k}{" "}
-              <span className="text-zinc-400 ml-1">
-                {k === "All" ? counts.all : k === "Masterplan" ? counts.masterplan : counts.benchmark}
-              </span>
-            </button>
+      {/* Filter row — Segment + asset-class select. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2.5">
+
+        <Segment
+          selectedKey={kind}
+          onSelectionChange={(key: Key) => setKind(key as ProjectKind | "All")}
+        >
+          {(
+            [
+              { id: "All", label: "All", count: counts.all },
+              { id: "Masterplan", label: "Masterplan", count: counts.masterplan },
+              { id: "Benchmark", label: "Benchmark", count: counts.benchmark },
+            ] as const
+          ).map((t) => (
+            <Segment.Item key={t.id} id={t.id}>
+              <Segment.Separator />
+              {t.label}
+              <span className="text-zinc-400 ml-1">{t.count}</span>
+            </Segment.Item>
           ))}
-        </div>
+        </Segment>
 
         <select
           value={assetClass}
           onChange={(e) => setAssetClass(e.target.value)}
-          className="h-10 px-3 bg-white border border-zinc-200 rounded-lg text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+          className="h-9 px-2.5 bg-white border border-zinc-200 rounded-lg text-xs text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
         >
           {assetClassOptions.map((o) => (
             <option key={o} value={o}>
@@ -117,74 +142,43 @@ export default function ProjectsClient({ projects }: { projects: ProjectListEntr
         </select>
       </div>
 
-      {/* Project grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((p) => (
-          <Link
-            key={`${p.kind}-${p.id}`}
-            href={p.href}
-            className="group bg-white border border-zinc-200 rounded-xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all"
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="min-w-0">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
-                    p.kind === "Masterplan"
-                      ? "bg-zinc-900 text-white"
-                      : "bg-emerald-50 text-emerald-700 border border-emerald-200",
-                  )}
-                >
-                  {p.kind === "Masterplan" ? (
-                    <Building2 className="size-3" strokeWidth={2} />
-                  ) : (
-                    <BarChart3 className="size-3" strokeWidth={2} />
-                  )}
-                  {p.kind}
-                </span>
-                <h3 className="text-sm font-semibold text-zinc-900 mt-2 line-clamp-2 group-hover:text-zinc-700">
-                  {p.name}
-                </h3>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {p.developer && (
-                <div className="text-xs text-zinc-600 truncate">{p.developer}</div>
-              )}
-              {(p.city || p.country) && (
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
-                  <MapPin className="size-3" strokeWidth={1.75} />
-                  <span>{[p.city, p.country].filter(Boolean).join(", ")}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 pt-3 border-t border-zinc-100">
-              <div>
-                <div className="text-[10px] uppercase text-zinc-400 font-medium">GLA</div>
-                <div className="text-xs font-semibold text-zinc-800">{formatArea(p.gla)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase text-zinc-400 font-medium">Total cost</div>
-                <div className="text-xs font-semibold text-zinc-800">{formatSAR(p.totalCost)}</div>
-              </div>
-            </div>
-
-            {p.assetClass && (
-              <div className="mt-3 inline-flex bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2 py-0.5 rounded">
-                {p.assetClass}
-              </div>
-            )}
-          </Link>
+      {/* Card grid — mirrors the home page (5 cols × 2 rows on xl,
+          280px tall, ~220px wide cells). */}
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 grid-rows-2 auto-rows-[280px]">
+        {filtered.slice(0, 10).map((p, i) => (
+          <div key={`${p.kind}-${p.id}`} className="w-55 h-[280px]">
+            <ProjectCard
+              kind={p.kind}
+              name={p.name}
+              assetClass={p.assetClass}
+              developer={p.developer}
+              city={p.city}
+              country={p.country}
+              totalCost={p.totalCost}
+              gla={p.gla}
+              href={p.href}
+              backgroundImage={pickBackground(p.kind, i)}
+            />
+          </div>
         ))}
 
         {filtered.length === 0 && (
           <div className="col-span-full text-center py-12">
-            <p className="text-sm text-zinc-500">No projects match your filters.</p>
+            <p className="text-sm text-zinc-500">
+              No projects match your filters.
+            </p>
           </div>
         )}
       </div>
+
+      {/* Overflow notice — mirrors the home page's fixed-shape grid by
+          only rendering the first 10 cards; remainder is hinted below. */}
+      {filtered.length > 10 && (
+        <p className="mt-3 text-[11px] text-zinc-500">
+          Showing the first 10 of {filtered.length} matching projects. Refine
+          the filters to narrow further.
+        </p>
+      )}
     </div>
   );
 }

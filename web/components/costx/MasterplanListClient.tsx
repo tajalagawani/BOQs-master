@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import type { Key } from "react-aria-components/Breadcrumbs";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, LayoutGrid, Table as TableIcon, Search, ShieldCheck } from "lucide-react";
+import { Segment } from "@heroui-pro/react";
 
 import MasterplanTable from "@/components/costx/MasterplanTable";
 import CreateMasterplanModal from "@/components/costx/CreateMasterplanModal";
+import { ProjectPulse, type ProjectPulseAction } from "@/components/ProjectPulse";
+import { CostxCard, type CostxCardStatus } from "@/components/costx/CostxCard";
 
 type FilterType = "all" | "created" | "shared";
 const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
@@ -159,6 +164,8 @@ export default function MasterplanListClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
     id: string | null;
@@ -181,8 +188,18 @@ export default function MasterplanListClient({
     } else if (filter === "shared") {
       f = f.filter((mp) => mp.createdBy.email !== currentUserEmail);
     }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      f = f.filter(
+        (mp) =>
+          mp.name.toLowerCase().includes(q) ||
+          (mp.description ?? "").toLowerCase().includes(q) ||
+          (mp.assetClass ?? "").toLowerCase().includes(q) ||
+          (mp.createdBy.name ?? mp.createdBy.email).toLowerCase().includes(q),
+      );
+    }
     return f;
-  }, [initialMasterplans, projectFilter, filter, currentUserEmail]);
+  }, [initialMasterplans, projectFilter, filter, currentUserEmail, search]);
 
   const modalUsers = useMemo(() => {
     if (!filteredProject?.teamMembers?.length) return users;
@@ -344,101 +361,240 @@ export default function MasterplanListClient({
 
   const clearProjectFilter = () => router.push("/costx");
 
+  /* ----- Sidebar actions + search (rendered inside ProjectPulse) ----- */
+  const sidebarActions: ProjectPulseAction[] = permissions.canCreateMasterplan
+    ? [
+        {
+          icon: <Plus className="size-4" strokeWidth={1.75} />,
+          label: "Create Masterplan",
+          description: "Start a new masterplan estimate.",
+          onClick: () => setIsModalOpen(true),
+        },
+      ]
+    : [];
+
+  /* ----- Cards-view data (cap at 10 to keep the 5×2 wall like home) ----- */
+  const cardEntries = filteredMasterplans.slice(0, 10).map((mp) => ({
+    id: mp.id,
+    name: mp.name,
+    status: mp.status as CostxCardStatus,
+    assetClass: [mp.assetClass, mp.assetTypeL1].filter(Boolean).join(" · ") || null,
+    createdBy: mp.createdBy.name ?? mp.createdBy.email ?? null,
+    gla: mp.grossLandArea ? `${mp.grossLandArea.toLocaleString()} m²` : null,
+    totalCost: mp.totalCost
+      ? mp.totalCost >= 1_000_000_000
+        ? `SAR ${(mp.totalCost / 1_000_000_000).toFixed(2)}B`
+        : mp.totalCost >= 1_000_000
+          ? `SAR ${(mp.totalCost / 1_000_000).toFixed(2)}M`
+          : `SAR ${mp.totalCost.toLocaleString()}`
+      : null,
+    href: `/costx/${mp.id}`,
+  }));
+
+  const cardBackgrounds = [
+    "/card-cost-planning.png",
+    "/card-parametric.png",
+    "/card-estimates.png",
+    "/card-reports.png",
+    "/card-budget-control.png",
+    "/card-change-orders.png",
+    "/card-procurement.png",
+    "/card-boqs.png",
+  ];
+
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden">
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Page header */}
-        <header className="mx-auto w-full max-w-7xl px-6 pt-6 pb-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
-                  All masterplans
-                </h1>
-                <p className="text-xs text-zinc-500">
-                  Total: {filteredMasterplans.length} masterplan
-                  {filteredMasterplans.length === 1 ? "" : "s"}
-                </p>
+    <div className="h-full w-full px-6 lg:px-8 py-3 lg:py-4 grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
+      {/* Left column — strict no-scroll, matches the home shell. */}
+      <div className="min-w-0 min-h-0 flex flex-col items-center">
+        <div className={view === "cards" ? "w-fit" : "w-full max-w-[1200px]"}>
+          {/* Hero — same scale + rhythm as <Greeting /> on the home page. */}
+          <div className="mt-6 lg:mt-10 max-w-2xl shrink-0">
+            <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium mb-1">
+              Module
+            </div>
+            <h1 className="text-[clamp(28px,3.6vw,46px)] leading-[1.05] font-semibold tracking-tight text-zinc-900">
+              Cost<span style={{ color: "#60B78C" }}>X</span>
+              <span style={{ color: "#60B78C" }}>.</span>
+            </h1>
+            <p className="mt-2 text-[12.5px] text-zinc-500 leading-relaxed max-w-lg">
+              {filteredMasterplans.length} masterplan
+              {filteredMasterplans.length === 1 ? "" : "s"}
+              {filteredProject ? ` in ${filteredProject.name}` : ""} — open a
+              card to jump into the cost workspace.
+            </p>
+          </div>
+
+          {/* Search — sits under the hero, ahead of the controls. */}
+          <div className="mt-4 relative max-w-md">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400"
+              strokeWidth={1.75}
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search masterplans"
+              className="w-full h-9 pl-9 pr-3 bg-white border border-zinc-200 rounded-2xl text-sm placeholder:text-zinc-400 shadow-[0_2px_8px_-4px_rgba(24,24,27,0.08)] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
+            />
+          </div>
+
+          {/* Controls row: view toggle · filter chips · project chip */}
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            {/* View toggle — Cards / Table */}
+            <Segment
+              selectedKey={view}
+              onSelectionChange={(key: Key) => setView(key as "cards" | "table")}
+            >
+              <Segment.Item id="cards">
+                <Segment.Separator />
+                <span className="inline-flex items-center gap-1">
+                  <LayoutGrid className="size-3.5" strokeWidth={1.75} />
+                  Cards
+                </span>
+              </Segment.Item>
+              <Segment.Item id="table">
+                <Segment.Separator />
+                <span className="inline-flex items-center gap-1">
+                  <TableIcon className="size-3.5" strokeWidth={1.75} />
+                  Table
+                </span>
+              </Segment.Item>
+            </Segment>
+
+            {/* All / Created / Shared chips */}
+            <Segment
+              selectedKey={filter}
+              onSelectionChange={(key: Key) => setFilter(key as FilterType)}
+            >
+              {FILTER_OPTIONS.map((opt) => (
+                <Segment.Item key={opt.key} id={opt.key}>
+                  <Segment.Separator />
+                  {opt.label}
+                </Segment.Item>
+              ))}
+            </Segment>
+
+            {filteredProject && (
+              <div className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-zinc-100 text-zinc-800 text-[11px] rounded-full">
+                <span>Project: {filteredProject.name}</span>
+                <button
+                  type="button"
+                  onClick={clearProjectFilter}
+                  className="size-5 inline-flex items-center justify-center rounded-full hover:bg-zinc-200"
+                  title="Clear filter"
+                >
+                  <X className="size-3" strokeWidth={2} />
+                </button>
               </div>
-              {filteredProject && (
-                <div className="flex items-center gap-1.5 pl-3 pr-1 py-1 bg-zinc-100 text-zinc-800 text-xs rounded-full">
-                  <span>Project: {filteredProject.name}</span>
-                  <button
-                    type="button"
-                    onClick={clearProjectFilter}
-                    className="size-5 inline-flex items-center justify-center rounded-full hover:bg-zinc-200"
-                    title="Clear filter"
-                  >
-                    <X className="size-3" strokeWidth={2} />
-                  </button>
-                </div>
+            )}
+          </div>
+
+          {/* Cards view — same 5×2 geometry as app/page.tsx */}
+          {view === "cards" && (
+            <>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 grid-rows-2 auto-rows-[280px]">
+                {cardEntries.map((c, i) => (
+                  <div key={c.id} className="w-55 h-[280px]">
+                    <CostxCard
+                      name={c.name}
+                      status={c.status}
+                      assetClass={c.assetClass}
+                      createdBy={c.createdBy}
+                      totalCost={c.totalCost}
+                      gla={c.gla}
+                      href={c.href}
+                      backgroundImage={cardBackgrounds[i % cardBackgrounds.length]}
+                    />
+                  </div>
+                ))}
+
+                {cardEntries.length === 0 && (
+                  <div className="col-span-full">
+                    <div className="rounded-2xl border border-zinc-200 bg-white">
+                      <EmptyState
+                        hasFilter={!!filteredProject}
+                        projectName={filteredProject?.name}
+                        canCreate={permissions.canCreateMasterplan}
+                        onCreate={() => setIsModalOpen(true)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {filteredMasterplans.length > 10 && (
+                <p className="mt-3 text-[11px] text-zinc-500">
+                  Showing the first 10 of {filteredMasterplans.length} matching
+                  masterplans — switch to the table view to see them all.
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Table view — preserves the existing table + pagination. */}
+          {view === "table" && (
+            <div className="mt-4 bg-white rounded-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[calc(100vh-280px)]">
+              {estimates.length === 0 ? (
+                <EmptyState
+                  hasFilter={!!filteredProject}
+                  projectName={filteredProject?.name}
+                  canCreate={permissions.canCreateMasterplan}
+                  onCreate={() => setIsModalOpen(true)}
+                />
+              ) : (
+                <>
+                  <div className="flex-1 min-h-0 overflow-auto">
+                    <MasterplanTable
+                      estimates={pagedEstimates}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      canEdit={permissions.canCreateMasterplan}
+                      canDelete={permissions.isAdmin}
+                    />
+                  </div>
+                  <Pagination
+                    currentPage={currentPage}
+                    totalRecords={estimates.length}
+                    pageSize={pageSize}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </>
               )}
             </div>
-            {permissions.canCreateMasterplan && (
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="h-10 px-4 inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium rounded-full"
-              >
-                <Plus className="size-4" strokeWidth={2} />
-                Create Masterplan
-              </button>
-            )}
+          )}
+        </div>
+
+        <div className="flex-1 min-h-0" />
+
+        {/* Footer — same as home. */}
+        <div className="shrink-0 self-stretch flex items-center justify-between text-[10.5px] text-zinc-500 px-1 pt-2">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/iox-logo.svg"
+              alt="IOX"
+              width={1338}
+              height={461}
+              className="h-4 w-auto"
+            />
+            <span className="text-zinc-300">|</span>
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="size-3 text-zinc-500" strokeWidth={1.75} />
+              <span>Project data secured and synced in real time</span>
+            </div>
           </div>
-
-          {/* Inline filter tabs */}
-          <nav className="mt-4 flex items-center gap-1 border-b border-zinc-200">
-            {FILTER_OPTIONS.map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setFilter(opt.key)}
-                className={cn(
-                  "h-9 px-3 text-xs font-medium transition-colors relative -mb-px",
-                  filter === opt.key
-                    ? "text-zinc-900 border-b-2 border-zinc-900"
-                    : "text-zinc-500 hover:text-zinc-800",
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </nav>
-        </header>
-
-        {/* Table container */}
-        <div className="flex-1 min-h-0 mx-auto w-full max-w-7xl px-6 pb-6">
-          <div className="h-full flex flex-col bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-            {estimates.length === 0 ? (
-              <EmptyState
-                hasFilter={!!filteredProject}
-                projectName={filteredProject?.name}
-                canCreate={permissions.canCreateMasterplan}
-                onCreate={() => setIsModalOpen(true)}
-              />
-            ) : (
-              <>
-                <div className="flex-1 overflow-auto">
-                  <MasterplanTable
-                    estimates={pagedEstimates}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    canEdit={permissions.canCreateMasterplan}
-                    canDelete={permissions.isAdmin}
-                  />
-                </div>
-                <Pagination
-                  currentPage={currentPage}
-                  totalRecords={estimates.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={setPageSize}
-                />
-              </>
-            )}
+          <div className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            <span>All systems normal</span>
           </div>
         </div>
-      </main>
+      </div>
+
+      {/* Right column — ProjectPulse with Create action. */}
+      <div className="hidden xl:flex min-h-0">
+        <ProjectPulse actions={sidebarActions} />
+      </div>
 
       {/* Create / Edit modal */}
       <CreateMasterplanModal

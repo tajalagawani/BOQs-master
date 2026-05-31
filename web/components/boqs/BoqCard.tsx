@@ -1,0 +1,159 @@
+import Link from "next/link";
+import { ArrowUpRight, MapPin, FileSpreadsheet } from "lucide-react";
+import { cn } from "@/lib/cn";
+
+export type BoqCardStatus = "Active" | "Draft" | "Archived" | "Imported" | "Processing" | "Failed";
+
+interface BoqCardProps {
+  name: string;
+  status: BoqCardStatus;
+  location: string | null;
+  items: number | null;
+  total: string | null;
+  updatedRelative: string | null;
+  href: string;
+  backgroundImage?: string;
+}
+
+const statusStyles: Record<
+  BoqCardStatus,
+  { badge: string; arrow: string; dot: string }
+> = {
+  Active: {
+    badge: "text-emerald-700 bg-emerald-50 border-emerald-200",
+    arrow: "group-hover:bg-emerald-600 group-hover:text-white",
+    dot: "bg-emerald-500",
+  },
+  Imported: {
+    badge: "text-emerald-700 bg-emerald-50 border-emerald-200",
+    arrow: "group-hover:bg-emerald-600 group-hover:text-white",
+    dot: "bg-emerald-500",
+  },
+  Draft: {
+    badge: "text-amber-700 bg-amber-50 border-amber-200",
+    arrow: "group-hover:bg-amber-600 group-hover:text-white",
+    dot: "bg-amber-500",
+  },
+  Processing: {
+    badge: "text-sky-700 bg-sky-50 border-sky-200",
+    arrow: "group-hover:bg-sky-600 group-hover:text-white",
+    dot: "bg-sky-500",
+  },
+  Archived: {
+    badge: "text-zinc-600 bg-zinc-100 border-zinc-200",
+    arrow: "group-hover:bg-zinc-200 group-hover:text-zinc-900",
+    dot: "bg-zinc-400",
+  },
+  Failed: {
+    badge: "text-rose-700 bg-rose-50 border-rose-200",
+    arrow: "group-hover:bg-rose-600 group-hover:text-white",
+    dot: "bg-rose-500",
+  },
+};
+
+export function BoqCard({
+  name,
+  status,
+  location,
+  items,
+  total,
+  updatedRelative,
+  href,
+  backgroundImage,
+}: BoqCardProps) {
+  const tone = statusStyles[status];
+
+  return (
+    <Link href={href} className="block h-full">
+      <div
+        className={cn(
+          "group iox-card-hover relative h-full rounded-2xl bg-white border border-zinc-200 p-4 flex flex-col overflow-hidden transition-all duration-200",
+          "hover:border-zinc-300 hover:shadow-[0_8px_30px_-12px_rgba(24,24,27,0.18)] hover:-translate-y-0.5",
+        )}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-zinc-50 to-transparent"
+        />
+
+        {backgroundImage && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-65 mix-blend-multiply"
+            style={{
+              backgroundImage: `url(${backgroundImage})`,
+              backgroundSize: "120%",
+              backgroundPosition: "right -20% bottom -10%",
+              backgroundRepeat: "no-repeat",
+              maskImage:
+                "linear-gradient(to bottom left, transparent 0%, transparent 22%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.85) 90%)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom left, transparent 0%, transparent 22%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.85) 90%)",
+            }}
+          />
+        )}
+
+        <div className="relative flex justify-end mb-1.5 shrink-0">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide border rounded-full px-2 py-0.5",
+              tone.badge,
+            )}
+          >
+            <span className={cn("size-1.5 rounded-full", tone.dot)} />
+            {status}
+          </span>
+        </div>
+
+        <h3 className="relative text-[14px] font-semibold text-zinc-900 leading-snug line-clamp-2 shrink-0">
+          {name}
+        </h3>
+
+        <div className="relative mt-1 flex-1 min-h-0 overflow-hidden space-y-1">
+          {location && (
+            <p className="flex items-center gap-1 text-[11px] text-zinc-500 leading-snug truncate">
+              <MapPin className="size-3 shrink-0" strokeWidth={1.75} />
+              <span className="truncate">{location}</span>
+            </p>
+          )}
+          {items !== null && (
+            <p className="flex items-center gap-1 text-[11px] text-zinc-500 leading-snug truncate">
+              <FileSpreadsheet className="size-3 shrink-0" strokeWidth={1.75} />
+              <span>{items.toLocaleString()} items</span>
+            </p>
+          )}
+          {updatedRelative && (
+            <p className="text-[10.5px] text-zinc-400 leading-snug">
+              {updatedRelative}
+            </p>
+          )}
+        </div>
+
+        {total && (
+          <div className="relative pt-2 mt-2 border-t border-zinc-100 shrink-0">
+            <div className="text-[9px] uppercase text-zinc-400 font-medium tracking-wide">
+              Total
+            </div>
+            <div className="text-[11px] font-semibold text-zinc-800 truncate">
+              {total}
+            </div>
+          </div>
+        )}
+
+        <div className="relative mt-2 flex items-center justify-between shrink-0">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 group-hover:text-zinc-900">
+            Open
+          </span>
+          <span
+            className={cn(
+              "size-7 rounded-full bg-zinc-100 text-zinc-500 inline-flex items-center justify-center transition-colors duration-200",
+              tone.arrow,
+            )}
+          >
+            <ArrowUpRight className="size-3.5" strokeWidth={2} />
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}

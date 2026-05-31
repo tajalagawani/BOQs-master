@@ -40,3 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# ProcureX local uploads (user-uploaded tender PDFs / XLSX)
+/uploads/
+
+# BOQ import run artefacts (per-run xlsx + mapping json + logs)
+/runs/
+
+# Local-only dev DB studio
+/drizzle/migrations/meta/
