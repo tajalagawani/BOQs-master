@@ -17,6 +17,98 @@
 /* HeroUI Pro components used in IOX. */
 @import "@heroui-pro/react/css/components/segment.css";
 
+/* RatesX (Omnium) theme tokens — see modules/rates/omnium-tokens.css for the
+   reference copy. Tokens are scoped to .omnium-rates so they never leak into
+   the rest of IOX. Inlined here because Tailwind v4's PostCSS resolver only
+   walks @import paths from the file root. */
+.omnium-rates {
+  --om-background: #ffffff;
+  --om-foreground: #0b1220;
+  --om-card: #ffffff;
+  --om-card-foreground: #0b1220;
+  --om-popover: #ffffff;
+  --om-popover-foreground: #0b1220;
+  --om-primary: #0b1220;
+  --om-primary-foreground: #fafafa;
+  --om-secondary: #f1f5f9;
+  --om-secondary-foreground: #0b1220;
+  --om-muted: #f1f5f9;
+  --om-muted-foreground: #64748b;
+  --om-accent: #f1f5f9;
+  --om-accent-foreground: #0b1220;
+  --om-destructive: #ef4444;
+  --om-destructive-foreground: #fafafa;
+  --om-border: #e2e8f0;
+  --om-input: #e2e8f0;
+  --om-ring: #0b1220;
+  --om-radius: 0.625rem;
+}
+.omnium-rates.dark,
+.dark .omnium-rates {
+  --om-background: #060912;
+  --om-foreground: #f8fafc;
+  --om-card: #0a0f1a;
+  --om-card-foreground: #f8fafc;
+  --om-popover: #0a0f1a;
+  --om-popover-foreground: #f8fafc;
+  --om-primary: #f8fafc;
+  --om-primary-foreground: #0b1220;
+  --om-secondary: #1e293b;
+  --om-secondary-foreground: #f8fafc;
+  --om-muted: #1e293b;
+  --om-muted-foreground: #94a3b8;
+  --om-accent: #1e293b;
+  --om-accent-foreground: #f8fafc;
+  --om-destructive: #7f1d1d;
+  --om-destructive-foreground: #f8fafc;
+  --om-border: #1e293b;
+  --om-input: #1e293b;
+  --om-ring: #cbd5e1;
+}
+.omnium-rates *,
+.omnium-rates *::before,
+.omnium-rates *::after { border-color: var(--om-border); }
+
+.omnium-rates .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.omnium-rates .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--om-border);
+  border-radius: 9999px;
+}
+.omnium-rates .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.omnium-rates .sticky-top    { position: sticky; top: 0; }
+.omnium-rates .sticky-top-2  { position: sticky; top: 34px; }
+.omnium-rates .sticky-left   { position: sticky; left: 0; }
+.omnium-rates .grid-scroller { scroll-behavior: smooth; }
+.omnium-rates .grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.32) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.32) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.omnium-rates .glow-ring {
+  box-shadow:
+    0 0 0 1px var(--om-border),
+    0 8px 24px -12px rgba(15, 23, 42, 0.18);
+}
+@keyframes om-fade-in   { from { opacity: 0 } }
+@keyframes om-fade-out  { to   { opacity: 0 } }
+@keyframes om-zoom-in   { from { transform: scale(0.95) } }
+@keyframes om-zoom-out  { to   { transform: scale(0.95) } }
+.omnium-rates [data-state="open"].animate-in,
+.omnium-rates .animate-in[data-state="open"] {
+  animation: om-fade-in 150ms ease-out, om-zoom-in 150ms ease-out;
+}
+.omnium-rates [data-state="closed"].animate-out,
+.omnium-rates .animate-out[data-state="closed"] {
+  animation: om-fade-out 120ms ease-in, om-zoom-out 120ms ease-in forwards;
+}
+.omnium-rates [data-state="open"]            { animation: om-fade-in 120ms ease-out; }
+.omnium-rates [data-state="open"][data-side] { animation: om-fade-in 120ms ease-out, om-zoom-in 120ms ease-out; }
+.omnium-rates .fade-in-0,
+.omnium-rates .fade-out-0,
+.omnium-rates .zoom-in-95,
+.omnium-rates .zoom-out-95 { }
+
 :root {
   --background: #fafafa;
   --foreground: #09090b;
@@ -30,7 +122,23 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-border: var(--border);
-  --color-muted: var(--muted);
+  /* Prefer --om-muted (light slate #f1f5f9) so `bg-muted` is a surface tone,
+     not the dark zinc-500 text color used elsewhere. */
+  --color-muted: var(--om-muted, var(--muted));
+  --color-muted-foreground: var(--om-muted-foreground, #71717a);
+  --color-card-foreground: var(--om-card-foreground, #09090b);
+  --color-popover: var(--om-popover, #ffffff);
+  --color-popover-foreground: var(--om-popover-foreground, #09090b);
+  --color-primary: var(--om-primary, #18181b);
+  --color-primary-foreground: var(--om-primary-foreground, #fafafa);
+  --color-secondary: var(--om-secondary, #f4f4f5);
+  --color-secondary-foreground: var(--om-secondary-foreground, #18181b);
+  --color-accent: var(--om-accent, #f4f4f5);
+  --color-accent-foreground: var(--om-accent-foreground, #18181b);
+  --color-destructive: var(--om-destructive, #ef4444);
+  --color-destructive-foreground: var(--om-destructive-foreground, #fafafa);
+  --color-input: var(--om-input, #e4e4e7);
+  --color-ring: var(--om-ring, #18181b);
   --font-sans: var(--font-inter);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }

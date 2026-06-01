@@ -5,7 +5,6 @@ import {
   Gavel,
   FileText,
   PieChart,
-  ShieldCheck,
   ArrowLeftRight,
   BarChart3,
   FolderKanban,
@@ -68,10 +67,11 @@ const modules: HomeModule[] = [
   },
   // ── Non-X products ──
   {
-    icon: <ShieldCheck className="size-6" strokeWidth={1.25} />,
-    title: "Budget Control",
-    description: "Track budgets vs actuals and stay ahead of variances.",
-    href: undefined,
+    icon: <Database className="size-6" strokeWidth={1.25} />,
+    title: "RatesX",
+    description:
+      "Construction rates intelligence — projects, benchmarks, materials and commodities across every sector.",
+    href: "/rates",
     backgroundImage: "/card-budget-control.png",
   },
   {

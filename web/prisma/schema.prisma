@@ -71,6 +71,9 @@ model User {
   // Relations — BOQ
   boqRuns BoqRun[]
 
+  // Relations — RatesX
+  ratesUploads RatesUpload[]
+
   @@index([email])
   @@index([role])
   @@index([isActive])
@@ -405,6 +408,37 @@ model BoqRun {
   @@index([status])
   @@index([createdAt])
   @@map("boq_runs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. RATESX module — Construction rates intelligence (ported from Omnium)
+//
+//    One row per (section, tab) snapshot. The data is stored as JSONB to
+//    track the open Omnium schema-per-tab design — Buildings::Rates has 21
+//    columns, Buildings::Benchmarks has 21 of a different shape, Materials
+//    has its own, etc. (see modules/rates/lib/schemas.ts for the contract).
+//    `extraColumns` carries synthetic column descriptors discovered when an
+//    uploaded file has headers the canonical schema doesn't know about.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model RatesUpload {
+  id            String   @id @default(uuid())
+  section       String
+  tab           String
+  name          String
+  size          BigInt
+  rowCount      Int
+  sheetName     String?
+  rows          Json
+  extraColumns  Json     @default("[]")
+  uploadedById  String?
+  uploadedBy    User?    @relation(fields: [uploadedById], references: [id])
+  uploadedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([section, tab])
+  @@index([section])
+  @@map("rates_uploads")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
