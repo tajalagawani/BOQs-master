@@ -2,7 +2,7 @@
 
 **Released:** 2026-05-31
 **Commit range:** `c293ad5..30b6c1b`
-**Production URL:** http://20.203.125.83/platform
+**Staging URL:** http://20.203.125.83/platform
 
 ## Headline
 
@@ -98,7 +98,7 @@ every column of the Schedule 1 Appendix A sign-off matrix.
 | Item | Workaround / Plan |
 |---|---|
 | Azure SP can't be created — account lacks `roleAssignments/write` | Subscription Owner creates it OR grants UAA on `iox-rg` |
-| Without an SP, Monitoring + Infrastructure show empty data on prod (locally they work via `az login`) | Same as above |
+| Without an SP, Monitoring + Infrastructure show empty data on staging (locally they work via `az login`) | Same as above |
 | `tests/unit/formatters.test.ts` fails (`@/utils/formatters` unmerged) | Fix or delete the import; surfaces as a live red badge on `/platform/tests` |
 | k6 / vitest history charts empty until you snapshot to `.junit-history/` and `.k6-history/` | Add to CI as separate cron job |
 
@@ -112,7 +112,7 @@ every column of the Schedule 1 Appendix A sign-off matrix.
 | `/platform/tests` shows 14/15 passing (`formatters` red) | ✅ |
 | `/platform/errors` SSE stream stays open | ✅ |
 | `/platform/settings` Test-connection buttons return live status | ✅ |
-| `platform_setting` table exists in prod Postgres | ✅ |
+| `platform_setting` table exists in staging Postgres | ✅ |
 
 ## Approval
 

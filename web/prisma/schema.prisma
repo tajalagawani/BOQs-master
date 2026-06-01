@@ -72,7 +72,9 @@ model User {
   boqRuns BoqRun[]
 
   // Relations — RatesX
-  ratesUploads RatesUpload[]
+  ratesUploads     RatesUpload[]
+  ratesUploadsV2   RatesUploadV2[]
+  ratesMarketTests RatesMarketTestQuery[]
 
   @@index([email])
   @@index([role])
@@ -439,6 +441,532 @@ model RatesUpload {
   @@unique([section, tab])
   @@index([section])
   @@map("rates_uploads")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RATES v2 — normalized model (24 dim + 1 lineage + 5 facts + 1 side table).
+// SQL lives in prisma/migrations/manual/rates_v2/migration.sql. Generated /
+// tsvector columns (description_norm, description_tsv) are owned by Postgres
+// and intentionally excluded from these models; query them via $queryRaw or
+// the v_rates_* views.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Dimensions ───────────────────────────────────────────────────────────
+
+model RatesDimSection {
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique
+  label         String
+  displayOrder  Int      @default(0) @map("display_order")
+  createdAt     DateTime @default(now())  @map("created_at") @db.Timestamptz(6)
+
+  tabs       RatesDimTab[]
+  uploads    RatesUploadV2[]
+  rateItems  RatesFactRateItem[]
+
+  @@map("rates_dim_section")
+}
+
+model RatesDimTab {
+  id            String   @id @default(uuid()) @db.Uuid
+  sectionId     String   @map("section_id") @db.Uuid
+  label         String
+  displayOrder  Int      @default(0) @map("display_order")
+  createdAt     DateTime @default(now())  @map("created_at") @db.Timestamptz(6)
+
+  section    RatesDimSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  uploads    RatesUploadV2[]
+  rateItems  RatesFactRateItem[]
+
+  @@unique([sectionId, label])
+  @@map("rates_dim_tab")
+}
+
+model RatesDimCountry {
+  id    String  @id @default(uuid()) @db.Uuid
+  iso2  String? @unique
+  iso3  String? @unique
+  name  String  @unique
+
+  cities         RatesDimCity[]
+  employers      RatesDimEmployer[]
+  contractors    RatesDimContractor[]
+  projects       RatesDimProject[]
+  materialPrices RatesFactMaterialPrice[]
+
+  @@map("rates_dim_country")
+}
+
+model RatesDimCity {
+  id         String  @id @default(uuid()) @db.Uuid
+  countryId  String? @map("country_id") @db.Uuid
+  name       String
+
+  country  RatesDimCountry? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  projects RatesDimProject[]
+
+  @@unique([countryId, name])
+  @@map("rates_dim_city")
+}
+
+model RatesDimCurrency {
+  id        String  @id @default(uuid()) @db.Uuid
+  iso4217   String  @unique
+  symbol    String?
+  decimals  Int     @default(2) @db.SmallInt
+
+  projects          RatesDimProject[]
+  rateItems         RatesFactRateItem[]
+  projectBenchmarks RatesFactProjectBenchmark[]
+  materialPrices    RatesFactMaterialPrice[]
+
+  @@map("rates_dim_currency")
+}
+
+model RatesDimUom {
+  id     String  @id @default(uuid()) @db.Uuid
+  code   String  @unique
+  label  String
+  family String?
+
+  rateItems      RatesFactRateItem[]
+  designRatios   RatesFactDesignRatio[]
+  materialPrices RatesFactMaterialPrice[]
+
+  @@map("rates_dim_uom")
+}
+
+model RatesDimAssetClass {
+  id    String @id @default(uuid()) @db.Uuid
+  label String @unique
+
+  assetTypes        RatesDimAssetType[]
+  projects          RatesDimProject[]
+  designRatioRatios RatesFactDesignRatioAssetType[]
+
+  @@map("rates_dim_asset_class")
+}
+
+model RatesDimAssetType {
+  id            String @id @default(uuid()) @db.Uuid
+  assetClassId  String @map("asset_class_id") @db.Uuid
+  label         String
+
+  assetClass        RatesDimAssetClass @relation(fields: [assetClassId], references: [id], onDelete: Cascade)
+  assetForms        RatesDimAssetForm[]
+  projects          RatesDimProject[]
+  designRatioRatios RatesFactDesignRatioAssetType[]
+
+  @@unique([assetClassId, label])
+  @@map("rates_dim_asset_type")
+}
+
+model RatesDimAssetForm {
+  id           String  @id @default(uuid()) @db.Uuid
+  assetTypeId  String? @map("asset_type_id") @db.Uuid
+  label        String
+
+  assetType         RatesDimAssetType? @relation(fields: [assetTypeId], references: [id], onDelete: Cascade)
+  projects          RatesDimProject[]
+  designRatioRatios RatesFactDesignRatioAssetType[]
+
+  @@unique([assetTypeId, label])
+  @@map("rates_dim_asset_form")
+}
+
+model RatesDimEmployer {
+  id         String  @id @default(uuid()) @db.Uuid
+  name       String  @unique
+  countryId  String? @map("country_id") @db.Uuid
+
+  country  RatesDimCountry? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  projects RatesDimProject[]
+
+  @@map("rates_dim_employer")
+}
+
+model RatesDimContractor {
+  id         String  @id @default(uuid()) @db.Uuid
+  name       String  @unique
+  countryId  String? @map("country_id") @db.Uuid
+
+  country  RatesDimCountry? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  projects RatesDimProject[]
+
+  @@map("rates_dim_contractor")
+}
+
+model RatesDimContractType {
+  id    String @id @default(uuid()) @db.Uuid
+  label String @unique
+
+  projects RatesDimProject[]
+
+  @@map("rates_dim_contract_type")
+}
+
+model RatesDimStatus {
+  id    String @id @default(uuid()) @db.Uuid
+  label String @unique
+
+  projects RatesDimProject[]
+
+  @@map("rates_dim_status")
+}
+
+model RatesDimProject {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  aliasL1         String?  @map("alias_l1")
+  aliasL2         String?  @map("alias_l2")
+  countryId       String?  @map("country_id") @db.Uuid
+  cityId          String?  @map("city_id") @db.Uuid
+  assetClassId    String?  @map("asset_class_id") @db.Uuid
+  assetTypeId     String?  @map("asset_type_id") @db.Uuid
+  assetFormId     String?  @map("asset_form_id") @db.Uuid
+  employerId      String?  @map("employer_id") @db.Uuid
+  contractorId    String?  @map("contractor_id") @db.Uuid
+  contractTypeId  String?  @map("contract_type_id") @db.Uuid
+  statusId        String?  @map("status_id") @db.Uuid
+  currencyId      String?  @map("currency_id") @db.Uuid
+  baseDate        DateTime? @map("base_date") @db.Date
+  buaM2           Decimal? @map("bua_m2") @db.Decimal(14, 2)
+  giaM2           Decimal? @map("gia_m2") @db.Decimal(14, 2)
+  gfaM2           Decimal? @map("gfa_m2") @db.Decimal(14, 2)
+  keys            Int?
+  procurement     String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  country       RatesDimCountry?      @relation(fields: [countryId], references: [id])
+  city          RatesDimCity?         @relation(fields: [cityId], references: [id])
+  assetClass    RatesDimAssetClass?   @relation(fields: [assetClassId], references: [id])
+  assetType     RatesDimAssetType?    @relation(fields: [assetTypeId], references: [id])
+  assetForm     RatesDimAssetForm?    @relation(fields: [assetFormId], references: [id])
+  employer      RatesDimEmployer?     @relation(fields: [employerId], references: [id])
+  contractor    RatesDimContractor?   @relation(fields: [contractorId], references: [id])
+  contractType  RatesDimContractType? @relation(fields: [contractTypeId], references: [id])
+  status        RatesDimStatus?       @relation(fields: [statusId], references: [id])
+  currency      RatesDimCurrency?     @relation(fields: [currencyId], references: [id])
+
+  rateItems         RatesFactRateItem[]
+  projectBenchmarks RatesFactProjectBenchmark[]
+
+  @@unique([name, baseDate])
+  @@index([assetClassId, assetTypeId, baseDate])
+  @@index([countryId, baseDate])
+  @@map("rates_dim_project")
+}
+
+model RatesDimPomiSection {
+  id    String @id @default(uuid()) @db.Uuid
+  code  String @unique @db.Char(1)
+  label String
+
+  subSections RatesDimPomiSubSection[]
+  rateItems   RatesFactRateItem[]
+
+  @@map("rates_dim_pomi_section")
+}
+
+model RatesDimPomiSubSection {
+  id              String @id @default(uuid()) @db.Uuid
+  pomiSectionId   String @map("pomi_section_id") @db.Uuid
+  label           String
+
+  pomiSection RatesDimPomiSection @relation(fields: [pomiSectionId], references: [id], onDelete: Cascade)
+  rateItems   RatesFactRateItem[]
+
+  @@unique([pomiSectionId, label])
+  @@map("rates_dim_pomi_sub_section")
+}
+
+model RatesDimNrmL1 {
+  id    String @id @default(uuid()) @db.Uuid
+  code  String @unique
+  label String
+
+  l2Children        RatesDimNrmL2[]
+  rateItems         RatesFactRateItem[]
+  projectBenchmarks RatesFactProjectBenchmark[]
+  designRatios      RatesFactDesignRatio[]
+
+  @@map("rates_dim_nrm_l1")
+}
+
+model RatesDimNrmL2 {
+  id        String @id @default(uuid()) @db.Uuid
+  nrmL1Id   String @map("nrm_l1_id") @db.Uuid
+  code      String
+  label     String
+
+  parent       RatesDimNrmL1   @relation(fields: [nrmL1Id], references: [id], onDelete: Cascade)
+  l3Children   RatesDimNrmL3[]
+  rateItems    RatesFactRateItem[]
+  designRatios RatesFactDesignRatio[]
+
+  @@unique([nrmL1Id, code])
+  @@map("rates_dim_nrm_l2")
+}
+
+model RatesDimNrmL3 {
+  id        String @id @default(uuid()) @db.Uuid
+  nrmL2Id   String @map("nrm_l2_id") @db.Uuid
+  code      String
+  label     String
+
+  parent       RatesDimNrmL2 @relation(fields: [nrmL2Id], references: [id], onDelete: Cascade)
+  rateItems    RatesFactRateItem[]
+  designRatios RatesFactDesignRatio[]
+
+  @@unique([nrmL2Id, code])
+  @@map("rates_dim_nrm_l3")
+}
+
+model RatesDimCesmmRef {
+  id    String @id @default(uuid()) @db.Uuid
+  code  String @unique
+  label String
+
+  rateItems RatesFactRateItem[]
+
+  @@map("rates_dim_cesmm_ref")
+}
+
+model RatesDimCsiCode {
+  id    String @id @default(uuid()) @db.Uuid
+  code  String @unique
+  label String
+
+  designRatios RatesFactDesignRatio[]
+
+  @@map("rates_dim_csi_code")
+}
+
+model RatesDimMaterial {
+  id     String  @id @default(uuid()) @db.Uuid
+  label  String  @unique
+  family String?
+
+  prices RatesFactMaterialPrice[]
+
+  @@map("rates_dim_material")
+}
+
+model RatesDimMepSystem {
+  id    String @id @default(uuid()) @db.Uuid
+  label String @unique
+
+  subsystems        RatesDimMepSubsystem[]
+  projectBenchmarks RatesFactProjectBenchmark[]
+
+  @@map("rates_dim_mep_system")
+}
+
+model RatesDimMepSubsystem {
+  id            String @id @default(uuid()) @db.Uuid
+  mepSystemId   String @map("mep_system_id") @db.Uuid
+  label         String
+
+  mepSystem         RatesDimMepSystem @relation(fields: [mepSystemId], references: [id], onDelete: Cascade)
+  projectBenchmarks RatesFactProjectBenchmark[]
+
+  @@unique([mepSystemId, label])
+  @@map("rates_dim_mep_subsystem")
+}
+
+// ── Lineage ──────────────────────────────────────────────────────────────
+
+model RatesUploadV2 {
+  id              String   @id @default(uuid()) @db.Uuid
+  sectionId       String   @map("section_id") @db.Uuid
+  tabId           String?  @map("tab_id") @db.Uuid
+  fileName        String   @map("file_name")
+  sizeBytes       BigInt   @map("size_bytes")
+  sheetName       String?  @map("sheet_name")
+  rowCount        Int      @default(0) @map("row_count")
+  parserName      String   @map("parser_name")
+  parserVersion   String?  @map("parser_version")
+  schemaVersion   String?  @map("schema_version")
+  status          String   @default("parsed")          // parsed | loaded | failed
+  error           String?
+  uploadedById    String?  @map("uploaded_by_id")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  loadedAt        DateTime? @map("loaded_at") @db.Timestamptz(6)
+  extraColumns    Json     @default("[]") @map("extra_columns")
+  rawSample       Json?    @map("raw_sample")
+
+  section    RatesDimSection @relation(fields: [sectionId], references: [id])
+  tab        RatesDimTab?    @relation(fields: [tabId],     references: [id])
+  uploadedBy User?           @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  rateItems         RatesFactRateItem[]
+  projectBenchmarks RatesFactProjectBenchmark[]
+  designRatios      RatesFactDesignRatio[]
+  materialPrices    RatesFactMaterialPrice[]
+
+  @@index([sectionId])
+  @@index([uploadedAt(sort: Desc)])
+  @@map("rates_upload_v2")
+}
+
+// ── Facts ────────────────────────────────────────────────────────────────
+
+model RatesFactRateItem {
+  id                  String   @id @default(uuid()) @db.Uuid
+  uploadId            String   @map("upload_id") @db.Uuid
+  sectionId           String   @map("section_id") @db.Uuid
+  tabId               String?  @map("tab_id") @db.Uuid
+  projectId           String?  @map("project_id") @db.Uuid
+  pomiSectionId       String?  @map("pomi_section_id") @db.Uuid
+  pomiSubId           String?  @map("pomi_sub_id") @db.Uuid
+  nrmL1Id             String?  @map("nrm_l1_id") @db.Uuid
+  nrmL2Id             String?  @map("nrm_l2_id") @db.Uuid
+  nrmL3Id             String?  @map("nrm_l3_id") @db.Uuid
+  cesmmRefId          String?  @map("cesmm_ref_id") @db.Uuid
+  description         String
+  quantity            Decimal? @db.Decimal(18, 4)
+  unitId              String?  @map("unit_id") @db.Uuid
+  currencyId          String?  @map("currency_id") @db.Uuid
+  rate                Decimal? @db.Decimal(18, 4)
+  amount              Decimal? @db.Decimal(20, 4)
+  baseDate            DateTime? @map("base_date") @db.Date
+  inflationRate       Decimal? @map("inflation_rate") @db.Decimal(8, 4)
+  isOutlier           Boolean  @default(false) @map("is_outlier")
+  confidence          Int?     @db.SmallInt
+  classificationStage String?  @map("classification_stage") // rule | fuzzy | ai | manual
+  insertedAt          DateTime @default(now()) @map("inserted_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @map("updated_at")  @db.Timestamptz(6)
+
+  upload      RatesUploadV2           @relation(fields: [uploadId],      references: [id], onDelete: Cascade)
+  section     RatesDimSection         @relation(fields: [sectionId],     references: [id])
+  tab         RatesDimTab?            @relation(fields: [tabId],         references: [id])
+  project     RatesDimProject?        @relation(fields: [projectId],     references: [id])
+  pomiSection RatesDimPomiSection?    @relation(fields: [pomiSectionId], references: [id])
+  pomiSub     RatesDimPomiSubSection? @relation(fields: [pomiSubId],     references: [id])
+  nrmL1       RatesDimNrmL1?          @relation(fields: [nrmL1Id],       references: [id])
+  nrmL2       RatesDimNrmL2?          @relation(fields: [nrmL2Id],       references: [id])
+  nrmL3       RatesDimNrmL3?          @relation(fields: [nrmL3Id],       references: [id])
+  cesmmRef    RatesDimCesmmRef?       @relation(fields: [cesmmRefId],    references: [id])
+  unit        RatesDimUom?            @relation(fields: [unitId],        references: [id])
+  currency    RatesDimCurrency?       @relation(fields: [currencyId],    references: [id])
+
+  @@index([projectId])
+  @@index([pomiSectionId])
+  @@index([nrmL1Id])
+  @@index([nrmL2Id])
+  @@index([unitId])
+  @@index([currencyId])
+  @@index([baseDate])
+  @@index([uploadId])
+  @@map("rates_fact_rate_item")
+}
+
+model RatesFactProjectBenchmark {
+  id              String   @id @default(uuid()) @db.Uuid
+  uploadId        String   @map("upload_id") @db.Uuid
+  projectId       String   @map("project_id") @db.Uuid
+  nrmL1Id         String?  @map("nrm_l1_id") @db.Uuid
+  mepSystemId     String?  @map("mep_system_id") @db.Uuid
+  mepSubsystemId  String?  @map("mep_subsystem_id") @db.Uuid
+  buaM2           Decimal? @map("bua_m2") @db.Decimal(14, 2)
+  giaM2           Decimal? @map("gia_m2") @db.Decimal(14, 2)
+  gfaM2           Decimal? @map("gfa_m2") @db.Decimal(14, 2)
+  keys            Int?
+  totalCost       Decimal? @map("total_cost") @db.Decimal(20, 2)
+  currencyId      String?  @map("currency_id") @db.Uuid
+  costPerBua      Decimal? @map("cost_per_bua") @db.Decimal(18, 4)
+  costPerGia      Decimal? @map("cost_per_gia") @db.Decimal(18, 4)
+  costPerGfa      Decimal? @map("cost_per_gfa") @db.Decimal(18, 4)
+  insertedAt      DateTime @default(now()) @map("inserted_at") @db.Timestamptz(6)
+
+  upload       RatesUploadV2         @relation(fields: [uploadId],       references: [id], onDelete: Cascade)
+  project      RatesDimProject       @relation(fields: [projectId],      references: [id], onDelete: Cascade)
+  nrmL1        RatesDimNrmL1?        @relation(fields: [nrmL1Id],        references: [id])
+  mepSystem    RatesDimMepSystem?    @relation(fields: [mepSystemId],    references: [id])
+  mepSubsystem RatesDimMepSubsystem? @relation(fields: [mepSubsystemId], references: [id])
+  currency     RatesDimCurrency?     @relation(fields: [currencyId],     references: [id])
+
+  @@index([projectId, nrmL1Id])
+  @@index([mepSystemId])
+  @@map("rates_fact_project_benchmark")
+}
+
+model RatesFactDesignRatio {
+  id          String   @id @default(uuid()) @db.Uuid
+  uploadId    String   @map("upload_id") @db.Uuid
+  nrmL1Id     String?  @map("nrm_l1_id") @db.Uuid
+  nrmL2Id     String?  @map("nrm_l2_id") @db.Uuid
+  nrmL3Id     String?  @map("nrm_l3_id") @db.Uuid
+  csiCodeId   String?  @map("csi_code_id") @db.Uuid
+  unitId      String?  @map("unit_id") @db.Uuid
+  insertedAt  DateTime @default(now()) @map("inserted_at") @db.Timestamptz(6)
+
+  upload    RatesUploadV2     @relation(fields: [uploadId],   references: [id], onDelete: Cascade)
+  nrmL1     RatesDimNrmL1?    @relation(fields: [nrmL1Id],    references: [id])
+  nrmL2     RatesDimNrmL2?    @relation(fields: [nrmL2Id],    references: [id])
+  nrmL3     RatesDimNrmL3?    @relation(fields: [nrmL3Id],    references: [id])
+  csiCode   RatesDimCsiCode?  @relation(fields: [csiCodeId],  references: [id])
+  unit      RatesDimUom?      @relation(fields: [unitId],     references: [id])
+
+  ratios RatesFactDesignRatioAssetType[]
+
+  @@index([nrmL1Id, nrmL2Id])
+  @@map("rates_fact_design_ratio")
+}
+
+model RatesFactDesignRatioAssetType {
+  ratioId        String  @map("ratio_id") @db.Uuid
+  assetClassId   String  @map("asset_class_id") @db.Uuid
+  assetTypeId    String  @map("asset_type_id") @db.Uuid
+  assetFormId    String  @map("asset_form_id") @db.Uuid
+  ratioValue     Decimal @map("ratio_value") @db.Decimal(18, 6)
+
+  ratio       RatesFactDesignRatio @relation(fields: [ratioId],      references: [id], onDelete: Cascade)
+  assetClass  RatesDimAssetClass   @relation(fields: [assetClassId], references: [id])
+  assetType   RatesDimAssetType    @relation(fields: [assetTypeId],  references: [id])
+  assetForm   RatesDimAssetForm    @relation(fields: [assetFormId],  references: [id])
+
+  @@id([ratioId, assetClassId, assetTypeId, assetFormId])
+  @@map("rates_fact_design_ratio_asset_type")
+}
+
+model RatesFactMaterialPrice {
+  id           String   @id @default(uuid()) @db.Uuid
+  uploadId     String   @map("upload_id") @db.Uuid
+  materialId   String   @map("material_id") @db.Uuid
+  countryId    String?  @map("country_id") @db.Uuid
+  currencyId   String?  @map("currency_id") @db.Uuid
+  unitId       String?  @map("unit_id") @db.Uuid
+  price        Decimal  @db.Decimal(18, 4)
+  vintageDate  DateTime @map("vintage_date") @db.Date
+  source       String?
+  notes        String?
+  insertedAt   DateTime @default(now()) @map("inserted_at") @db.Timestamptz(6)
+
+  upload    RatesUploadV2    @relation(fields: [uploadId],   references: [id], onDelete: Cascade)
+  material  RatesDimMaterial @relation(fields: [materialId], references: [id])
+  country   RatesDimCountry? @relation(fields: [countryId],  references: [id])
+  currency  RatesDimCurrency? @relation(fields: [currencyId], references: [id])
+  unit      RatesDimUom?     @relation(fields: [unitId],     references: [id])
+
+  @@index([materialId, countryId, vintageDate(sort: Desc)])
+  @@map("rates_fact_material_price")
+}
+
+model RatesMarketTestQuery {
+  id             String   @id @default(uuid()) @db.Uuid
+  askedByUserId  String?  @map("asked_by_user_id")
+  question       String
+  context        Json?
+  response       Json?
+  askedAt        DateTime @default(now()) @map("asked_at") @db.Timestamptz(6)
+
+  askedBy User? @relation(fields: [askedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([askedAt(sort: Desc)])
+  @@map("rates_market_test_query")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

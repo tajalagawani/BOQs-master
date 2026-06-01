@@ -16,6 +16,9 @@
 
 /* HeroUI Pro components used in IOX. */
 @import "@heroui-pro/react/css/components/segment.css";
+@import "@heroui-pro/react/css/components/composed-chart.css";
+@import "@heroui-pro/react/css/components/line-chart.css";
+@import "@heroui-pro/react/css/components/chart-tooltip.css";
 
 /* RatesX (Omnium) theme tokens — see modules/rates/omnium-tokens.css for the
    reference copy. Tokens are scoped to .omnium-rates so they never leak into

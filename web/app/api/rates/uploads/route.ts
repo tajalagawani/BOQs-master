@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { dispatchUpload } from "@/modules/rates/lib/db/load-dispatch";
 
 export async function GET() {
   try {
@@ -56,6 +57,9 @@ export async function POST(req: Request) {
       );
     }
     const { user } = await getSession();
+
+    // 1) Legacy blob — keep populating so the existing rates-table UI
+    //    keeps working until the read path is swapped.
     const saved = await prisma.ratesUpload.upsert({
       where: { section_tab: { section, tab } },
       create: {
@@ -79,7 +83,37 @@ export async function POST(req: Request) {
         uploadedById: user.id,
       },
     });
-    return NextResponse.json({ ok: true, id: saved.id });
+
+    // 2) Normalize into the v2 fact tables (dimensions + facts + lineage).
+    //    Failure here is logged but does not fail the request — the blob is
+    //    already saved so the UI keeps working.
+    let v2: Awaited<ReturnType<typeof dispatchUpload>> | { kind: "error"; result: { reason: string } } = {
+      kind: "noop",
+      result: { reason: "no rows" },
+    };
+    if (rows.length > 0) {
+      try {
+        v2 = await dispatchUpload({
+          sectionLabel: section,
+          tabLabel: tab,
+          rows: rows as Record<string, unknown>[],
+          upload: {
+            fileName:    meta?.name ?? `${section} :: ${tab}`,
+            sizeBytes:   meta?.size ?? 0,
+            sheetName:   meta?.sheetName ?? null,
+            parserName:  "rates-uploads-route",
+            parserVersion: "1",
+            uploadedById: user.id,
+            extraColumns,
+          },
+        });
+      } catch (e) {
+        console.error("[rates v2 dispatch] failed:", e);
+        v2 = { kind: "error", result: { reason: (e as Error).message } };
+      }
+    }
+
+    return NextResponse.json({ ok: true, id: saved.id, v2 });
   } catch (err) {
     return NextResponse.json(
       { error: (err as Error).message },

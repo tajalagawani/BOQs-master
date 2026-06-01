@@ -488,7 +488,7 @@ Key files:
   forwards every new entry as `event: error\ndata: <RuntimeError JSON>\n\n`.
   Pings every 25 s for keep-alive. Auth-checked via `getPlatformUser()` —
   returns 403 (not redirect) so `EventSource` clients see the failure.
-  `X-Accel-Buffering: no` disables nginx buffering on prod.
+  `X-Accel-Buffering: no` disables nginx buffering on staging.
 
 > [!WARNING]
 > Because the bus is per-process and pm2 runs one Node instance per app, the

@@ -5,7 +5,7 @@
 
 **Report date:** 2026-05-31
 **Reviewed commit range:** `b68a0a4..c293ad5`
-**Production URL:** http://20.203.125.83
+**Staging URL:** http://20.203.125.83
 **Reviewer:** Taj Noah (Tech Lead) · awaiting assessor sign-off
 
 ## Executive summary
