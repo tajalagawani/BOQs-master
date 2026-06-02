@@ -1,5 +1,5 @@
 // /costx/[id] — masterplan editor route. Mirrors
-// roshn/src/app/masterplan-estimates/[id]/page.tsx.
+// Ported from the source app: masterplan-estimates/[id] page.
 
 export const dynamic = "force-dynamic";
 

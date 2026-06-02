@@ -118,7 +118,7 @@ every column of the Schedule 1 Appendix A sign-off matrix.
 
 | Approver | Role | Approved at | Notes |
 |---|---|---|---|
-| Taj Noah | Product Owner + Tech Lead | 2026-05-31 | First in-app surface for the assessor framework — supports Schedule 1 review without leaving the app. |
+| Taj Noah | Tech Lead | 2026-05-31 | First in-app surface for the assessor framework — supports Schedule 1 review without leaving the app. |
 
 ## Next milestones
 

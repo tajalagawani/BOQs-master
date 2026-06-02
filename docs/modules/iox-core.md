@@ -8,7 +8,7 @@ Core is split across two physical roots in the repository because IOX is mid-mig
 
 | Concern | Path | Role |
 |---|---|---|
-| Mock session (IOX-native modules) | `web/lib/session.ts` | Returns the seeded Arjun Mehta user. Used by CostX, BOQs, summary screens — anything ported from roshn. |
+| Mock session (IOX-native modules) | `web/lib/session.ts` | Returns the seeded Arjun Mehta user. Used by CostX, BOQs, summary screens — anything ported from the source app. |
 | Permission helpers | `web/lib/permissions.ts` | Role + membership checks (`canAccessMasterplan`, `canAccessProject`, `getUserPermissions`). Reads from Prisma `users`. |
 | Prisma client singleton | `web/lib/prisma.ts` | Prisma 7 client with the `@prisma/adapter-pg` driver adapter. |
 | NextAuth wiring | `web/modules/core/auth.ts` | Real Auth.js v5 (NextAuth) with Drizzle adapter + Credentials provider. Used by ProcureX. |
@@ -105,7 +105,7 @@ enum TeamRole {
 
 ## The mock session shim
 
-`web/lib/session.ts` is the seam that lets ported roshn code run inside IOX without being rewritten to talk to NextAuth. Every place the original called `await auth()` and read `session.user.id` now calls `await getSession()` and reads the same shape from this file.
+`web/lib/session.ts` is the seam that lets ported source-app code run inside IOX without being rewritten to talk to NextAuth. Every place the original called `await auth()` and read `session.user.id` now calls `await getSession()` and reads the same shape from this file.
 
 ```typescript
 export interface IoxSession {
@@ -127,7 +127,7 @@ export async function getSession(): Promise<IoxSession> {
 
 ### Why it exists
 
-IOX absorbed two codebases on different timelines: roshn (CostX, BOQs, summary) was already feature-complete; ProcureX joined later and needed real authentication for its multi-tenant flows. Rather than re-plumb ported code to NextAuth on day one, the shim lets it keep working while ProcureX gets real `auth()`. Both sides resolve to the same person (Arjun Mehta) by email convention.
+IOX absorbed two codebases on different timelines: the source app (CostX, BOQs, summary) was already feature-complete; ProcureX joined later and needed real authentication for its multi-tenant flows. Rather than re-plumb ported code to NextAuth on day one, the shim lets it keep working while ProcureX gets real `auth()`. Both sides resolve to the same person (Arjun Mehta) by email convention.
 
 ### Properties
 
@@ -418,7 +418,7 @@ await logActivity(user.id, "UPDATE", "Masterplan", masterplanId, before, after, 
 > **Mock vs real.** `getSession()` from `@/lib/session` is the mock; `auth()` from `@/modules/core/auth` is real NextAuth. They return different shapes (the mock has a guaranteed `role`; NextAuth's `session.user` does not include `role` unless you extend it). Do not import both into the same file without naming them apart.
 
 > [!WARNING]
-> **Cookie name.** Auth.js v5 cookie defaults to `authjs.session-token` (dev) and `__Secure-authjs.session-token` (production over HTTPS). Older docs and roshn references to `next-auth.session-token` are stale.
+> **Cookie name.** Auth.js v5 cookie defaults to `authjs.session-token` (dev) and `__Secure-authjs.session-token` (production over HTTPS). Older docs and source-app references to `next-auth.session-token` are stale.
 
 > [!IMPORTANT]
 > **Missing seed = hard failure.** `getSession()` throws if the seeded `arjun.mehta@iox.local` row is missing. That is a feature, not a bug — silently returning `null` would let every permission helper return "deny" and surface as 403s with no diagnostic. Run `npm run db:seed` in `web/` if you see the error.

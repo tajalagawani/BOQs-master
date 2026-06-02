@@ -48,10 +48,10 @@
 
 | KPI | Effort | Owner | Closes when |
 |---|---|---|---|
-| C1-SC4 | _deferred_ | Product Owner | Domain assignment is out of scope for now; revisit at production launch |
-| C1-SC5 | _deferred_ | Product Owner | Pen test commission decision out of scope for current phase |
+| C1-SC4 | _deferred_ | Tech Lead | Domain assignment is out of scope for now; revisit at production launch |
+| C1-SC5 | _deferred_ | Tech Lead | Pen test commission decision out of scope for current phase |
 | C2-SC4 | _deferred_ | n/a | Documented rationale stands — re-evaluate per quarter |
-| C4-SC5 | 1 hr per tester | Product Owner | Tester walkthrough + signed record |
+| C4-SC5 | 1 hr per tester | Tech Lead | Tester walkthrough + signed record |
 | C5-SC2 | 30 min | Platform Engineer | `k6 run` + paste output |
 | C5-SC5 | 7 days wait + 1 hr | (time) | Azure Monitor uptime evidence + user validation |
 

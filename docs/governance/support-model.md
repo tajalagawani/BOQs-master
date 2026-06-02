@@ -12,8 +12,8 @@
 | **AI extraction pipeline (Anthropic)** | Tech Lead (Taj) | — | Business hours UAE |
 | **GitHub Actions / CI** | Platform Engineer (Taj) | — | Business hours UAE |
 | **HeroUI Pro license** | Tech Lead (Taj) | — | License-vendor dependent |
-| **Anthropic API account / billing** | Product Owner (Taj) | — | — |
-| **Azure subscription / billing** | Product Owner (Taj) | — | — |
+| **Anthropic API account / billing** | Tech Lead (Taj) | — | — |
+| **Azure subscription / billing** | Tech Lead (Taj) | — | — |
 
 > Today everything is owned by a single person. The structure will expand as
 > the team grows; this is the placeholder.

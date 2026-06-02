@@ -6,7 +6,7 @@
 
 ## Context
 
-IOX-native modules (CostX, BOQs) were ported from the roshn app, which uses Prisma. ProcureX is a wholesale port of OmniApp, which uses Drizzle ORM. Both target Postgres.
+IOX-native modules (CostX, BOQs) were ported from the source app, which uses Prisma. ProcureX is a wholesale port of OmniApp, which uses Drizzle ORM. Both target Postgres.
 
 When migrating ProcureX into IOX, three options:
 

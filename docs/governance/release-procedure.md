@@ -35,7 +35,7 @@ GitHub Actions (.github/workflows/deploy.yml)
 |---|---|---|---|
 | **Hotfix** | Push to `main` with `fix:` or `hotfix:` prefix | Tech Lead PR approval | None — straight through |
 | **Standard** | Push to `main` with `feat:` / `chore:` / `refactor:` etc. | Tech Lead PR approval | Release-notes entry post-deploy |
-| **Schema-changing** | Push that adds files under `web/drizzle/migrations/` or `web/prisma/migrations/` | Tech Lead + Product Owner sign-off | Pre-announce; release-notes entry |
+| **Schema-changing** | Push that adds files under `web/drizzle/migrations/` or `web/prisma/migrations/` | Tech Lead sign-off | Pre-announce; release-notes entry |
 | **Infra-changing** | Push that touches `infra/`, `scripts/azure-bootstrap.sh`, or `.github/workflows/` | Tech Lead | Manual smoke-test post-deploy |
 
 ## Pre-deploy checks (developer)

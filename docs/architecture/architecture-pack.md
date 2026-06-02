@@ -82,7 +82,7 @@ IOX deliberately runs **two ORMs** against one Postgres instance:
 
 | ORM | Tables | Naming | Rationale |
 |---|---|---|---|
-| **Prisma 7** | 17 (no prefix) | `users`, `masterplans`, `cost_model_entries`, … | IOX-native modules (CostX, BOQs) ported from roshn |
+| **Prisma 7** | 17 (no prefix) | `users`, `masterplans`, `cost_model_entries`, … | IOX-native modules (CostX, BOQs) ported from the source app |
 | **Drizzle 0.45** | 48 (`px_*` prefix) | `px_user`, `px_project`, `px_extraction_job`, … | OmniApp (ProcureX) ported wholesale; the `px_` prefix prevents collision with Prisma tables |
 
 **Why coexist instead of unifying?** Per the faithful-port rule: ProcureX shipped on Drizzle in production; converting hundreds of queries to Prisma would be a large rewrite with no behavioural benefit. The prefix isolation lets each ORM own its tables cleanly. See [ADR-0001](decisions/0001-prisma-drizzle-coexistence.md).

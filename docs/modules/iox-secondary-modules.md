@@ -408,7 +408,7 @@ model CostFactor {
 }
 ```
 
-Time-indexed cost uplift factor. `baseDate` is the unique key (string, not Date — historical choice from the roshn port).
+Time-indexed cost uplift factor. `baseDate` is the unique key (string, not Date — historical choice from the source-app port).
 
 **`SystemSettings`** (lines 117–127) — a singleton row keyed `id = "settings"` for Azure AD wiring. Distinct from `Configuration`. Owned by the platform / auth layer, not by `/configuration`. The dashboard at `/platform` edits it; this page does not. Listed here only because the names collide with `system_defaults` and engineers regularly confuse the two.
 

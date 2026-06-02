@@ -1,5 +1,5 @@
 // CostX masterplan-estimates list page — faithful port of
-// roshn/src/app/masterplan-estimates/page.tsx, rendered inside the
+// Ported from the source app: masterplan-estimates page, rendered inside the
 // IOX shell.
 
 export const dynamic = "force-dynamic";

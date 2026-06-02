@@ -1,5 +1,5 @@
 // /costx/[id]/summary — read-only summary dashboard.
-// Mirrors roshn/src/app/masterplan-estimates/[id]/summary/page.tsx.
+// Mirrors the source app: masterplan-estimates/[id]/summary page.
 
 export const dynamic = "force-dynamic";
 

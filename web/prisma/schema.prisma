@@ -11,7 +11,7 @@
 //                            Benchmark Project, NRM data
 //    3. BOQ module         — BoqRun (file-backed JSON store ported into DB)
 //
-//  Schema fidelity: §2 is verbatim from the roshn app — same model names,
+//  Schema fidelity: §2 is verbatim from the source app — same model names,
 //  field names, snake_case @@map values, Postgres decimals/arrays/JSON —
 //  so existing calculations & queries from src/lib/calculations and
 //  src/lib/queries continue to work unchanged once their imports are rewritten.
@@ -152,7 +152,7 @@ model PlatformSetting {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 2. COSTX MODULE — Parametric Masterplan Modelling
-//    Verbatim from roshn/prisma/schema.prisma — calculations and queries
+//    Verbatim from the source app's prisma schema — calculations and queries
 //    from that app continue to work unchanged.
 // ═══════════════════════════════════════════════════════════════════════════
 

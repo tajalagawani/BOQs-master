@@ -67,9 +67,9 @@ pointers (drop into Excel for an assessor checklist).
 | KPI | Closes when | Owner | ETA |
 |---|---|---|---|
 | C1-SC4 HTTPS | Domain assigned + 10-min cert procedure run | Platform Engineer | When domain ready |
-| C1-SC5 Pen test | Vendor report + remediation log | Product Owner + vendor | +2–3 weeks |
+| C1-SC5 Pen test | Vendor report + remediation log | Tech Lead + vendor | +2–3 weeks |
 | C3-SC2 API gateway | Azure APIM in front of nginx (or accept nginx as adequate) | Tech Lead | M6+ |
-| C4-SC5 User acceptance | Omnium tester runs through CostX + ProcureX, signs `user-acceptance/<date>.md` | Product Owner | This week |
+| C4-SC5 User acceptance | Omnium tester runs through CostX + ProcureX, signs `user-acceptance/<date>.md` | Tech Lead | This week |
 | C5-SC1 Monitoring DSN | Sign up for Sentry free tier, paste DSN | Tech Lead | < 1 hr work |
 | C5-SC2 Load test run | Execute `k6 run` against live VM, paste results | Platform Engineer | < 1 hr work |
 | C5-SC5 7-day stability | Wait + show monitor history | (Time) | 2026-06-07 |
@@ -102,5 +102,5 @@ End state: **23/24 🟢**, with C2-SC4 deferred and documented.
 | Approver | Role | Approved at | Signature |
 |---|---|---|---|
 | Taj Noah | Tech Lead | 2026-05-31 | (digital — git commit) |
-| Taj Noah | Product Owner | 2026-05-31 | (digital — git commit) |
+| Taj Noah | Tech Lead | 2026-05-31 | (digital — git commit) |
 | _(Pending)_ | Assessor (Schedule 1) | — | — |

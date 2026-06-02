@@ -4,7 +4,7 @@ CostX is IOX's parametric masterplan modelling module — a quantity-surveying w
 
 ## Overview
 
-CostX is the IOX-shell port of the standalone `roshn` masterplan estimator. Every helper function (rate lookups, infrastructure auto-calc, S-curve generation, recalculation cascades, debounced auto-save) is preserved verbatim per the [faithful-port rule](../../web/AGENTS.md). What changed is the chrome: zinc tokens, the IOX `Header`, and the unified `/costx/*` route prefix.
+CostX is the IOX-shell port of the standalone masterplan estimator. Every helper function (rate lookups, infrastructure auto-calc, S-curve generation, recalculation cascades, debounced auto-save) is preserved verbatim per the [faithful-port rule](../../web/AGENTS.md). What changed is the chrome: zinc tokens, the IOX `Header`, and the unified `/costx/*` route prefix.
 
 A CostX project is anchored by a single `Masterplan` row in Postgres. Around it hang six editable sections — Building Assets, Car Parking, Additional Assets, Infrastructure, Public Realm, and Other Costs — plus a roll-up of one or more `MasterplanPhase` rows for time-phasing. The numeric brain lives in two places: `web/utils/calculations/*` (per-section synchronous math) and `web/lib/calculations/masterplanSummary.ts` (aggregate metrics + S-curve generation for the read-only summary page). The rate library is exposed through `web/lib/queries/configuration.ts` (`getCostModelEntries`, `getParametricMatrix`, `getCostFactors`) and is shared across every masterplan in the tenant.
 
@@ -63,7 +63,7 @@ Root of every CostX project. Created via `POST /api/costx/masterplans`; mutated 
 
 ### `MasterplanPhase`
 
-Each phase declares its start date (in roshn's `1Q27` quarter format) and total months. Editor cascades these into per-asset `baseDate` defaults.
+Each phase declares its start date (in the source app's `1Q27` quarter format) and total months. Editor cascades these into per-asset `baseDate` defaults.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -110,7 +110,7 @@ The single source of truth for SAR-per-m² rates. Joined to building/parking/add
 | `nrmLvl1` / `nrmLvl2` / `nrmLvl3` | `String / String? / String?` | NRM (New Rules of Measurement) cost-breakdown taxonomy |
 | `unitOfMeasurement` | `String?` | Usually `m2` |
 | `sarPerUoM` | `Decimal(12,2)?` | Raw unit rate |
-| `rcdcCostGfa` | `Decimal(12,2)` | **The primary rate column** — Roshn Cost Data Centre rate per m² GFA |
+| `rcdcCostGfa` | `Decimal(12,2)` | **The primary rate column** — RCDC rate per m² GFA |
 | `benchmarkedCostGfa` | `Decimal?` | Benchmarked alternative |
 | `costBua`, `costGia`, `costGfa` | `Decimal?` | Alternate area bases |
 | `extraPath` | `String` | Routing-table breadcrumb |

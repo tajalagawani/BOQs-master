@@ -45,11 +45,11 @@ For changes that **must not** ship without explicit approval:
 
 | Trigger | Required approvals |
 |---|---|
-| New module (top-level route group) | Product Owner |
+| New module (top-level route group) | Tech Lead |
 | Schema migration (Prisma or Drizzle) | Tech Lead |
 | Production-touching infra change (NSG, VM SKU, image, secrets) | Tech Lead |
-| New 3rd-party paid service | Product Owner |
-| Removal of feature already in production | Product Owner + Tech Lead |
+| New 3rd-party paid service | Tech Lead |
+| Removal of feature already in production | Tech Lead |
 | Change to RBAC / permission helpers | Tech Lead |
 | Change to release/deploy pipeline | Tech Lead |
 | Pen-test remediation that touches business logic | Tech Lead + Assessor |

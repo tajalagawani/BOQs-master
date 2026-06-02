@@ -6,7 +6,7 @@
 
 ## Context
 
-IOX-native modules (CostX, BOQs, summary screens) were ported from roshn, which has its own NextAuth wiring. To get IOX live quickly, we replaced roshn's `auth()` calls with a thin shim that always returns "Arjun Mehta" (the seeded admin).
+IOX-native modules (CostX, BOQs, summary screens) were ported from the source app, which has its own NextAuth wiring. To get IOX live quickly, we replaced the source app's `auth()` calls with a thin shim that always returns "Arjun Mehta" (the seeded admin).
 
 When ProcureX joined and required real NextAuth, the two systems had to coexist.
 
