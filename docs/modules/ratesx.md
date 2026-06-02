@@ -7,7 +7,7 @@ RatesX is IOX's construction-rates intelligence module — a quantity-surveying 
 RatesX carries **two storage generations** at once, and understanding the seam between them is the single most important thing about the module.
 
 - **v1 — the upload record.** `RatesUpload` is one Postgres row per uploaded workbook, plus a JSON payload of the parsed rows shaped exactly like the source tab (Buildings::Rates has 21 columns, Materials has its own, Piling its own, etc.). The schema-per-tab contract lives in `web/modules/rates/lib/schemas.ts`. This is what the **upload UI** (`/api/rates/uploads`) writes today, and it is deliberately loose — it tracks *what was uploaded* without forcing it into a fixed model.
-- **v2 — the normalized warehouse.** A 30-table star schema (24 dimensions + 1 lineage table + 5 facts, plus a junction side-table) defined in `web/prisma/schema.prisma` and materialised by the hand-authored SQL at `web/prisma/migrations/manual/rates_v2/migration.sql`. A family of `v_rates_*` views flattens the joins for read paths. This is what every **analytics surface** reads.
+- **v2 — the normalized warehouse.** A 30-table star schema (24 dimensions + 1 lineage table + 5 facts, plus a junction side-table) defined in `web/prisma/schema.prisma` and materialised by the hand-authored SQL at `web/prisma/migrations/manual/rates_v2/01_schema.sql`. A family of `v_rates_*` views flattens the joins for read paths. This is what every **analytics surface** reads.
 
 The end-to-end flow:
 
@@ -252,8 +252,8 @@ Every analytics surface reads through the typed functions in `modules/rates/lib/
 | `scripts/backfill-rates-v2.ts` | v1 → v2 explode (idempotent; interns dims, emits facts) |
 | `scripts/classify-rate-items-from-bridge.ts` | Bridge-driven POMI/NRM classification (`--dry`, `--reset`, `--threshold`) |
 | `scripts/derive-nrm-from-pomi.ts` | Derive NRM levels from POMI coding |
-| `prisma/migrations/manual/rates_v2/migration.sql` | Creates the v2 schema + `v_rates_*` views (manual migration, applied by the deploy pipeline) |
-| `prisma/migrations/manual/rates_v2/fix_nrm_l1_labels.sql` | Non-destructive repair of shredded NRM L1 element names on benchmarks |
+| `prisma/migrations/manual/rates_v2/01_schema.sql` | Creates the v2 schema + `v_rates_*` views (manual migration, applied by the deploy pipeline) |
+| `prisma/migrations/manual/rates_v2/02_fix_nrm_l1_labels.sql` | Non-destructive repair of shredded NRM L1 element names on benchmarks |
 
 ## Common edits
 
@@ -283,7 +283,7 @@ The seeded benchmark data is heavily concentrated and carries several known gaps
 
 | Issue | Detail | Handling |
 |---|---|---|
-| **NRM L1 taxonomy pollution** | The benchmark loader's `splitCodeLabel` treated bare whitespace as a code delimiter, shredding `"Internal Walls and Doors"` → code `"Internal"` / label `"Walls and Doors"`; three taxonomies (NRM2, CSI MasterFormat, free-text MEP/infra) were also merged into `rates_dim_nrm_l1`. | Fixed: regex hardened to split only on explicit delimiters (`— – - :`); `fix_nrm_l1_labels.sql` reconstructs the real labels non-destructively (rate items are untouched — they use only the clean numeric codes). |
+| **NRM L1 taxonomy pollution** | The benchmark loader's `splitCodeLabel` treated bare whitespace as a code delimiter, shredding `"Internal Walls and Doors"` → code `"Internal"` / label `"Walls and Doors"`; three taxonomies (NRM2, CSI MasterFormat, free-text MEP/infra) were also merged into `rates_dim_nrm_l1`. | Fixed: regex hardened to split only on explicit delimiters (`— – - :`); `02_fix_nrm_l1_labels.sql` reconstructs the real labels non-destructively (rate items are untouched — they use only the clean numeric codes). |
 | **Null currency** | ~18 benchmark projects (including all Residential) have no currency, so they cannot sit on a currency axis. | Surfaced as an explicit *"N in other/no currency"* excluded count; their filter options are hidden. |
 | **Country split** | `"UAE"` (160) and `"United Arab Emirates"` (12) exist as separate dimension rows. | Both shown with live facet counts; a merge is a pending data task. |
 | **Asset type unpopulated** | 167 of ~180 benchmark projects have a null `asset_type`; the few non-null values are place names (`"Jebel Ali"`, `"Yas Island"`), not types. | The Type filter shows counts and hides empty options until real types are populated. |
@@ -336,7 +336,7 @@ web/
 │   ├── classify-rate-items-from-bridge.ts   # POMI/NRM bridge classification
 │   └── derive-nrm-from-pomi.ts              # NRM-from-POMI derivation
 └── prisma/migrations/manual/rates_v2/
-    ├── migration.sql                        # v2 schema + v_rates_* views
-    └── fix_nrm_l1_labels.sql                # NRM L1 label repair
+    ├── 01_schema.sql                        # v2 schema + v_rates_* views
+    └── 02_fix_nrm_l1_labels.sql                # NRM L1 label repair
 pomi_to_nrm_corrected.json                   # 604-entry POMI→NRM bridge (repo ROOT)
 ```

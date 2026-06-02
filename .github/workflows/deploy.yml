@@ -194,7 +194,7 @@ jobs:
             DB="$DATABASE_URL_UNPOOLED"
             psql "$DB" -c "CREATE TABLE IF NOT EXISTS _iox_manual_applied (filename text PRIMARY KEY, applied_at timestamptz DEFAULT NOW());" >/dev/null
             if [ -d prisma/migrations/manual ]; then
-              for sql in prisma/migrations/manual/*.sql; do
+              for sql in $(find prisma/migrations/manual -name "*.sql" | sort); do
                 [ -f "$sql" ] || continue
                 base=$(basename "$sql")
                 done=$(psql "$DB" -t -A -c "SELECT 1 FROM _iox_manual_applied WHERE filename = '"'"'$base'"'"';")
