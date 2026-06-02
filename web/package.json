@@ -6,6 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "INTEGRATION=1 vitest run",
     "db:seed": "tsx prisma/seed.ts",
     "db:drizzle:generate": "drizzle-kit generate",
     "db:drizzle:push": "drizzle-kit push",
@@ -86,7 +89,8 @@
     "pdfkit": "^0.18.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

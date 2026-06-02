@@ -11,7 +11,7 @@
 BEGIN;
 
 WITH canon AS (
-  SELECT name, min(id) AS keep_id
+  SELECT name, (array_agg(id ORDER BY id::text))[1] AS keep_id
   FROM rates_dim_city
   GROUP BY name
   HAVING count(*) > 1

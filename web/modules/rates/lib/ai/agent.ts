@@ -27,7 +27,7 @@ TOOL GUIDE
   • "infrastructure works" → Roads, Earthworks, External Works (or assetClass 'Infrastructure')
   • "façade / external envelope" → Building External Envelope
   • "reinforced concrete / shell & core" → Substructure, Superstructure
-- market_rate: per-unit material/work rates (AAC blockwork, waterproofing, natural stone, concrete, asphalt, granular fill, cement, steel, aggregates). Rates only compare WITHIN a unit — read perUnit[].
+- market_rate: per-unit material/work rates (AAC blockwork, waterproofing, natural stone, concrete, asphalt, granular fill, cement, steel, aggregates). Rates only compare WITHIN a unit — read perUnit[]. When the user asks "per m²" or "per m³", report THAT unit's median from perUnit (look for unit "m2"/"m3"); never quote a lump-sum/count unit (item, nr, ls, lot, set) as a per-area rate. If only lump-sum units exist for the item, say the library has it priced per <unit>, not per m².
 - elemental_breakdown: the element composition of an asset class (for "break down the cost components").
 - escalation: inflation index factor between two years.
 - list_dimensions: call when unsure a filter value exists.
