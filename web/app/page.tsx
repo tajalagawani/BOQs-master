@@ -13,14 +13,7 @@ import {
 } from "lucide-react";
 
 const modules: HomeModule[] = [
-  // ── X-suffix products first ──
-  {
-    icon: <Box className="size-6" strokeWidth={1.25} />,
-    title: "PlanX",
-    description: "Generate intelligent cost models using live rates and parameters.",
-    href: undefined,
-    backgroundImage: "/card-parametric.png",
-  },
+  // ── Active modules first ──
   {
     icon: <Gavel className="size-6" strokeWidth={1.25} />,
     title: "ProcureX",
@@ -43,29 +36,6 @@ const modules: HomeModule[] = [
     href: "/costx",
     backgroundImage: "/card-cost-planning.png",
   },
-  // ── Cross-module utilities ──
-  {
-    icon: <FolderKanban className="size-6" strokeWidth={1.25} />,
-    title: "Projects",
-    description: "Cross-module view of every masterplan and benchmark project.",
-    href: "/projects",
-    backgroundImage: "/card-cost-planning.png",
-  },
-  {
-    icon: <TrendingUp className="size-6" strokeWidth={1.25} />,
-    title: "Benchmarking",
-    description: "Reference projects with NRM cost breakdowns to calibrate new estimates.",
-    href: "/benchmarking",
-    backgroundImage: "/card-reports.png",
-  },
-  {
-    icon: <Database className="size-6" strokeWidth={1.25} />,
-    title: "Rate Analysis",
-    description: "Browse the full cost-model library — every NRM line, every asset typology.",
-    href: "/cost-model-rate-analysis",
-    backgroundImage: "/card-estimates.png",
-  },
-  // ── Non-X products ──
   {
     icon: <Database className="size-6" strokeWidth={1.25} />,
     title: "RatesX",
@@ -73,6 +43,35 @@ const modules: HomeModule[] = [
       "Construction rates intelligence — projects, benchmarks, materials and commodities across every sector.",
     href: "/rates",
     backgroundImage: "/card-budget-control.png",
+  },
+  {
+    icon: <FolderKanban className="size-6" strokeWidth={1.25} />,
+    title: "Projects",
+    description: "Cross-module view of every masterplan and benchmark project.",
+    href: "/projects",
+    backgroundImage: "/card-cost-planning.png",
+  },
+  // ── Coming soon ──
+  {
+    icon: <Box className="size-6" strokeWidth={1.25} />,
+    title: "PlanX",
+    description: "Generate intelligent cost models using live rates and parameters.",
+    href: undefined,
+    backgroundImage: "/card-parametric.png",
+  },
+  {
+    icon: <TrendingUp className="size-6" strokeWidth={1.25} />,
+    title: "Benchmarking",
+    description: "Reference projects with NRM cost breakdowns to calibrate new estimates.",
+    href: undefined,
+    backgroundImage: "/card-reports.png",
+  },
+  {
+    icon: <Database className="size-6" strokeWidth={1.25} />,
+    title: "Rate Analysis",
+    description: "Browse the full cost-model library — every NRM line, every asset typology.",
+    href: undefined,
+    backgroundImage: "/card-estimates.png",
   },
   {
     icon: <ArrowLeftRight className="size-6" strokeWidth={1.25} />,
