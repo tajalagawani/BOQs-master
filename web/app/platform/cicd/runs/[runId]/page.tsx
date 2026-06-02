@@ -58,7 +58,7 @@ export default async function CiRunPage({ params }: PageProps) {
             : { bar: "bg-zinc-400", chip: "bg-zinc-100 text-zinc-700 ring-zinc-200", icon: <AlertCircle className="size-3.5" strokeWidth={2} />, label: run.conclusion ?? "—" };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-6 space-y-5">
+    <div className="mx-auto max-w-7xl px-6 py-6 space-y-5">
       <Link
         href="/platform/cicd"
         className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500 hover:text-zinc-900"
@@ -66,8 +66,10 @@ export default async function CiRunPage({ params }: PageProps) {
         <ArrowLeft className="size-3.5" strokeWidth={2} /> Back to CI/CD
       </Link>
 
-      {/* Hero */}
-      <section className="bg-white border border-zinc-200 rounded-2xl p-5 relative overflow-hidden">
+      {/* Run + Jobs side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-5 items-start">
+      {/* Hero (run) */}
+      <section className="bg-white border border-zinc-200 rounded-2xl p-5 relative overflow-hidden lg:sticky lg:top-6">
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${tone.bar}`} />
         <div className="flex flex-wrap items-center gap-2 pl-2">
           <span
@@ -186,6 +188,7 @@ export default async function CiRunPage({ params }: PageProps) {
         </header>
         <JobAccordion jobs={jobs} />
       </section>
+      </div>
 
       {/* Annotations */}
       {annotations.length > 0 && (
