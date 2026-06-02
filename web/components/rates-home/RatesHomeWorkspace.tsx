@@ -96,6 +96,7 @@ export function RatesHomeWorkspace({ metrics }: { metrics: RatesHomeMetrics }) {
         title: "AI Assistant",
         description: "Ask the rates database in plain English — typical façade rate, mid-rise residential, KSA, 2024.",
         icon: <Sparkles className="size-4" strokeWidth={1.75} />,
+        href: "/rates/assistant",
         backgroundImage: "/card-instructions.png",
         accent: "zinc",
       },
