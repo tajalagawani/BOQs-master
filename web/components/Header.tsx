@@ -36,8 +36,8 @@ export function Header({ variant = "default", brand }: HeaderProps = {}) {
           <Image
             src="/iox-logo.svg"
             alt="IOX"
-            width={1338}
-            height={461}
+            width={67}
+            height={40}
             priority
             className="h-5 w-auto"
           />

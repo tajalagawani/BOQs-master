@@ -194,7 +194,7 @@ export function WorkspaceFooter({
   return (
     <div className="shrink-0 w-full flex items-center justify-between text-[10.5px] text-zinc-500 px-1 pt-2">
       <div className="flex items-center gap-2.5">
-        <Image src="/iox-logo.svg" alt="IOX" width={1338} height={461} className="h-4 w-auto" />
+        <Image src="/iox-logo.svg" alt="IOX" width={67} height={40} className="h-4 w-auto" />
         <span className="text-zinc-300">|</span>
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="size-3 text-zinc-500" strokeWidth={1.75} />
