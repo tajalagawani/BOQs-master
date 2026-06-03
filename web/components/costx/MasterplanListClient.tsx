@@ -2,16 +2,22 @@
 
 import { useState, useMemo } from "react";
 import type { Key } from "react-aria-components/Breadcrumbs";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, X, LayoutGrid, Table as TableIcon, Search, ShieldCheck } from "lucide-react";
+import { Plus, X, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { Segment } from "@heroui-pro/react";
 
 import MasterplanTable from "@/components/costx/MasterplanTable";
 import CreateMasterplanModal from "@/components/costx/CreateMasterplanModal";
 import { ProjectPulse, type ProjectPulseAction } from "@/components/ProjectPulse";
+import type { ProjectPulseData } from "@/lib/pulse/types";
 import { CostxCard, type CostxCardStatus } from "@/components/costx/CostxCard";
+import {
+  WorkspaceShell,
+  ModuleHero,
+  WorkspaceSearch,
+  CardGrid,
+} from "@/components/workspace/WorkspaceShell";
 
 type FilterType = "all" | "created" | "shared";
 const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
@@ -143,6 +149,7 @@ interface Props {
   projects?: Project[];
   permissions: Permissions;
   currentUserEmail: string;
+  pulse?: ProjectPulseData;
 }
 
 /* ----------------------------------------------------------------------------
@@ -154,6 +161,7 @@ export default function MasterplanListClient({
   projects = [],
   permissions,
   currentUserEmail,
+  pulse,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -402,199 +410,142 @@ export default function MasterplanListClient({
     "/card-boqs.png",
   ];
 
+  const controls = (
+    <div className="flex flex-wrap items-center gap-2.5">
+      {/* View toggle — Cards / Table */}
+      <Segment
+        selectedKey={view}
+        onSelectionChange={(key: Key) => setView(key as "cards" | "table")}
+      >
+        <Segment.Item id="cards">
+          <Segment.Separator />
+          <span className="inline-flex items-center gap-1">
+            <LayoutGrid className="size-3.5" strokeWidth={1.75} />
+            Cards
+          </span>
+        </Segment.Item>
+        <Segment.Item id="table">
+          <Segment.Separator />
+          <span className="inline-flex items-center gap-1">
+            <TableIcon className="size-3.5" strokeWidth={1.75} />
+            Table
+          </span>
+        </Segment.Item>
+      </Segment>
+
+      {/* All / Created / Shared chips */}
+      <Segment
+        selectedKey={filter}
+        onSelectionChange={(key: Key) => setFilter(key as FilterType)}
+      >
+        {FILTER_OPTIONS.map((opt) => (
+          <Segment.Item key={opt.key} id={opt.key}>
+            <Segment.Separator />
+            {opt.label}
+          </Segment.Item>
+        ))}
+      </Segment>
+
+      {filteredProject && (
+        <div className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-zinc-100 text-zinc-800 text-[11px] rounded-full">
+          <span>Project: {filteredProject.name}</span>
+          <button
+            type="button"
+            onClick={clearProjectFilter}
+            className="size-5 inline-flex items-center justify-center rounded-full hover:bg-zinc-200"
+            title="Clear filter"
+          >
+            <X className="size-3" strokeWidth={2} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const emptyState = (
+    <EmptyState
+      hasFilter={!!filteredProject}
+      projectName={filteredProject?.name}
+      canCreate={permissions.canCreateMasterplan}
+      onCreate={() => setIsModalOpen(true)}
+    />
+  );
+
   return (
-    <div className="h-full w-full px-6 lg:px-8 py-3 lg:py-4 grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
-      {/* Left column — strict no-scroll, matches the home shell. */}
-      <div className="min-w-0 min-h-0 flex flex-col items-center">
-        <div className={view === "cards" ? "w-fit" : "w-full max-w-[1200px]"}>
-          {/* Hero — same scale + rhythm as <Greeting /> on the home page. */}
-          <div className="mt-6 lg:mt-10 max-w-2xl shrink-0">
-            <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium mb-1">
-              Module
-            </div>
-            <h1 className="text-[clamp(28px,3.6vw,46px)] leading-[1.05] font-semibold tracking-tight text-zinc-900">
-              Cost<span style={{ color: "#60B78C" }}>X</span>
-              <span style={{ color: "#60B78C" }}>.</span>
-            </h1>
-            <p className="mt-2 text-[12.5px] text-zinc-500 leading-relaxed max-w-lg">
-              {filteredMasterplans.length} masterplan
-              {filteredMasterplans.length === 1 ? "" : "s"}
-              {filteredProject ? ` in ${filteredProject.name}` : ""} — open a
-              card to jump into the cost workspace.
-            </p>
-          </div>
-
-          {/* Search — sits under the hero, ahead of the controls. */}
-          <div className="mt-4 relative max-w-md">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400"
-              strokeWidth={1.75}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search masterplans"
-              className="w-full h-9 pl-9 pr-3 bg-white border border-zinc-200 rounded-2xl text-sm placeholder:text-zinc-400 shadow-[0_2px_8px_-4px_rgba(24,24,27,0.08)] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
-            />
-          </div>
-
-          {/* Controls row: view toggle · filter chips · project chip */}
-          <div className="mt-3 flex flex-wrap items-center gap-2.5">
-            {/* View toggle — Cards / Table */}
-            <Segment
-              selectedKey={view}
-              onSelectionChange={(key: Key) => setView(key as "cards" | "table")}
-            >
-              <Segment.Item id="cards">
-                <Segment.Separator />
-                <span className="inline-flex items-center gap-1">
-                  <LayoutGrid className="size-3.5" strokeWidth={1.75} />
-                  Cards
-                </span>
-              </Segment.Item>
-              <Segment.Item id="table">
-                <Segment.Separator />
-                <span className="inline-flex items-center gap-1">
-                  <TableIcon className="size-3.5" strokeWidth={1.75} />
-                  Table
-                </span>
-              </Segment.Item>
-            </Segment>
-
-            {/* All / Created / Shared chips */}
-            <Segment
-              selectedKey={filter}
-              onSelectionChange={(key: Key) => setFilter(key as FilterType)}
-            >
-              {FILTER_OPTIONS.map((opt) => (
-                <Segment.Item key={opt.key} id={opt.key}>
-                  <Segment.Separator />
-                  {opt.label}
-                </Segment.Item>
-              ))}
-            </Segment>
-
-            {filteredProject && (
-              <div className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-zinc-100 text-zinc-800 text-[11px] rounded-full">
-                <span>Project: {filteredProject.name}</span>
-                <button
-                  type="button"
-                  onClick={clearProjectFilter}
-                  className="size-5 inline-flex items-center justify-center rounded-full hover:bg-zinc-200"
-                  title="Clear filter"
-                >
-                  <X className="size-3" strokeWidth={2} />
-                </button>
-              </div>
+    <>
+      <WorkspaceShell
+        hero={
+          <ModuleHero
+            title="Cost"
+            accent="X"
+            subtitle={
+              <>
+                {filteredMasterplans.length} masterplan
+                {filteredMasterplans.length === 1 ? "" : "s"}
+                {filteredProject ? ` in ${filteredProject.name}` : ""} — open a
+                card to jump into the cost workspace.
+              </>
+            }
+          />
+        }
+        search={
+          <WorkspaceSearch
+            value={search}
+            onChange={setSearch}
+            placeholder="Search masterplans"
+          />
+        }
+        controls={controls}
+        note={
+          view === "cards" && filteredMasterplans.length > 10
+            ? `Showing the first 10 of ${filteredMasterplans.length} matching masterplans — switch to the table view to see them all.`
+            : undefined
+        }
+        sidebar={<ProjectPulse pulse={pulse} actions={sidebarActions} />}
+      >
+        {view === "cards" ? (
+          <CardGrid isEmpty={cardEntries.length === 0} emptyState={emptyState}>
+            {cardEntries.map((c, i) => (
+              <CostxCard
+                key={c.id}
+                name={c.name}
+                status={c.status}
+                assetClass={c.assetClass}
+                createdBy={c.createdBy}
+                totalCost={c.totalCost}
+                gla={c.gla}
+                href={c.href}
+                backgroundImage={cardBackgrounds[i % cardBackgrounds.length]}
+              />
+            ))}
+          </CardGrid>
+        ) : (
+          <div className="h-full bg-white rounded-2xl border border-zinc-200 overflow-hidden flex flex-col">
+            {estimates.length === 0 ? (
+              emptyState
+            ) : (
+              <>
+                <div className="flex-1 min-h-0 overflow-auto">
+                  <MasterplanTable
+                    estimates={pagedEstimates}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    canEdit={permissions.canCreateMasterplan}
+                    canDelete={permissions.isAdmin}
+                  />
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalRecords={estimates.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </>
             )}
           </div>
-
-          {/* Cards view — same 5×2 geometry as app/page.tsx */}
-          {view === "cards" && (
-            <>
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 grid-rows-2 auto-rows-[280px]">
-                {cardEntries.map((c, i) => (
-                  <div key={c.id} className="w-55 h-[280px]">
-                    <CostxCard
-                      name={c.name}
-                      status={c.status}
-                      assetClass={c.assetClass}
-                      createdBy={c.createdBy}
-                      totalCost={c.totalCost}
-                      gla={c.gla}
-                      href={c.href}
-                      backgroundImage={cardBackgrounds[i % cardBackgrounds.length]}
-                    />
-                  </div>
-                ))}
-
-                {cardEntries.length === 0 && (
-                  <div className="col-span-full">
-                    <div className="rounded-2xl border border-zinc-200 bg-white">
-                      <EmptyState
-                        hasFilter={!!filteredProject}
-                        projectName={filteredProject?.name}
-                        canCreate={permissions.canCreateMasterplan}
-                        onCreate={() => setIsModalOpen(true)}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {filteredMasterplans.length > 10 && (
-                <p className="mt-3 text-[11px] text-zinc-500">
-                  Showing the first 10 of {filteredMasterplans.length} matching
-                  masterplans — switch to the table view to see them all.
-                </p>
-              )}
-            </>
-          )}
-
-          {/* Table view — preserves the existing table + pagination. */}
-          {view === "table" && (
-            <div className="mt-4 bg-white rounded-2xl border border-zinc-200 overflow-hidden flex flex-col max-h-[calc(100vh-280px)]">
-              {estimates.length === 0 ? (
-                <EmptyState
-                  hasFilter={!!filteredProject}
-                  projectName={filteredProject?.name}
-                  canCreate={permissions.canCreateMasterplan}
-                  onCreate={() => setIsModalOpen(true)}
-                />
-              ) : (
-                <>
-                  <div className="flex-1 min-h-0 overflow-auto">
-                    <MasterplanTable
-                      estimates={pagedEstimates}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      canEdit={permissions.canCreateMasterplan}
-                      canDelete={permissions.isAdmin}
-                    />
-                  </div>
-                  <Pagination
-                    currentPage={currentPage}
-                    totalRecords={estimates.length}
-                    pageSize={pageSize}
-                    onPageChange={setCurrentPage}
-                    onPageSizeChange={setPageSize}
-                  />
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-h-0" />
-
-        {/* Footer — same as home. */}
-        <div className="shrink-0 self-stretch flex items-center justify-between text-[10.5px] text-zinc-500 px-1 pt-2">
-          <div className="flex items-center gap-2.5">
-            <Image
-              src="/iox-logo.svg"
-              alt="IOX"
-              width={1338}
-              height={461}
-              className="h-4 w-auto"
-            />
-            <span className="text-zinc-300">|</span>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="size-3 text-zinc-500" strokeWidth={1.75} />
-              <span>Project data secured and synced in real time</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            <span>All systems normal</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Right column — ProjectPulse with Create action. */}
-      <div className="hidden xl:flex min-h-0">
-        <ProjectPulse actions={sidebarActions} />
-      </div>
+        )}
+      </WorkspaceShell>
 
       {/* Create / Edit modal */}
       <CreateMasterplanModal
@@ -631,7 +582,7 @@ export default function MasterplanListClient({
         onConfirm={confirmDelete}
         loading={isDeleting !== null}
       />
-    </div>
+    </>
   );
 }
 

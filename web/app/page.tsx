@@ -1,5 +1,7 @@
 import { Header } from "@/components/Header";
 import { HomeWorkspace, type HomeModule } from "@/components/HomeWorkspace";
+import { getSession } from "@/lib/session";
+import { getHomePulse } from "@/lib/pulse/home";
 import {
   Box,
   Gavel,
@@ -89,7 +91,10 @@ const modules: HomeModule[] = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const { user } = await getSession();
+  const pulse = await getHomePulse(user.id);
+
   return (
     <>
       {/* Fixed bg, full-bleed cover — slightly faded so it doesn't compete
@@ -107,7 +112,7 @@ export default function Home() {
       <Header />
 
       <main className="flex-1 min-h-0 overflow-hidden">
-        <HomeWorkspace name="Arjun" modules={modules} />
+        <HomeWorkspace name={user.name} modules={modules} pulse={pulse} />
       </main>
     </>
   );

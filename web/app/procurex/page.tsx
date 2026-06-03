@@ -8,6 +8,7 @@ import {
   getBidderCountsByProjectId,
   getProjectsForUser,
 } from "@/modules/procurex/projects";
+import { getProcurexPulse } from "@/lib/pulse/procurex";
 
 function formatDate(d: Date | string | null | undefined): string | null {
   if (!d) return null;
@@ -22,9 +23,10 @@ function formatDate(d: Date | string | null | undefined): string | null {
 export default async function ProcurexHome() {
   const userId = await requireUserId();
   const projects = await getProjectsForUser(userId);
-  const bidderCounts = await getBidderCountsByProjectId(
-    projects.map((p) => p.id),
-  );
+  const [bidderCounts, pulse] = await Promise.all([
+    getBidderCountsByProjectId(projects.map((p) => p.id)),
+    getProcurexPulse(userId),
+  ]);
 
   const entries: ProcurexGridEntry[] = projects.map((p) => {
     const location = [p.city, p.country].filter(Boolean).join(", ") || null;
@@ -61,7 +63,7 @@ export default async function ProcurexHome() {
       <Header />
 
       <main className="flex-1 min-h-0 overflow-hidden">
-        <ProcurexWorkspace projects={entries} />
+        <ProcurexWorkspace projects={entries} pulse={pulse} />
       </main>
     </>
   );

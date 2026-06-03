@@ -10,6 +10,7 @@ import { getUserPermissions } from "@/lib/permissions";
 import { getMasterplans } from "@/lib/queries/masterplans";
 import { getBenchmarkProjects } from "@/lib/queries/benchmarking";
 import { getUsers } from "@/lib/queries/users";
+import { getCostxPulse } from "@/lib/pulse/costx";
 import MasterplanListClient, {
   type MasterplanListEntry,
 } from "@/components/costx/MasterplanListClient";
@@ -17,11 +18,12 @@ import MasterplanListClient, {
 export default async function CostxListPage() {
   const { user: currentUser } = await getSession();
 
-  const [masterplans, users, projectsRaw, permissions] = await Promise.all([
+  const [masterplans, users, projectsRaw, permissions, pulse] = await Promise.all([
     getMasterplans(currentUser.id),
     getUsers(),
     getBenchmarkProjects(currentUser.id),
     getUserPermissions(currentUser.id),
+    getCostxPulse(currentUser.id),
   ]);
 
   // Map benchmark projects with team members + polygon + coordinates
@@ -97,6 +99,7 @@ export default async function CostxListPage() {
           projects={projects}
           permissions={permissions}
           currentUserEmail={currentUser.email}
+          pulse={pulse}
         />
       </main>
     </>

@@ -1,10 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  Search,
-  ShieldCheck,
   Library,
   Thermometer,
   PieChart,
@@ -18,6 +15,13 @@ import {
 } from "lucide-react";
 import { RateModuleCard } from "./RateModuleCard";
 import type { RatesHomeMetrics } from "@/modules/rates/lib/db/queries";
+import {
+  WorkspaceShell,
+  ModuleHero,
+  WorkspaceSearch,
+  CardGrid,
+  WorkspaceFooter,
+} from "@/components/workspace/WorkspaceShell";
 
 interface CardDef {
   id: string;
@@ -138,24 +142,18 @@ export function RatesHomeWorkspace({ metrics }: { metrics: RatesHomeMetrics }) {
     );
   }, [cards, search]);
 
+  const grid = filtered.slice(0, 10);
+
   return (
-    <div className="h-full w-full px-6 lg:px-8 py-3 lg:py-4 grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
-      {/* Left column — same shape as the other module home pages. */}
-      <div className="min-w-0 min-h-0 flex flex-col items-center">
-        <div className="w-fit">
-          {/* Hero */}
-          <div className="mt-6 lg:mt-10 max-w-2xl shrink-0">
-            <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium mb-1">
-              Module
-            </div>
-            <h1 className="text-[clamp(28px,3.6vw,46px)] leading-[1.05] font-semibold tracking-tight text-zinc-900">
-              Rates<span style={{ color: "#60B78C" }}>X</span>
-              <span style={{ color: "#60B78C" }}>.</span>
-            </h1>
-            <p className="mt-2 text-[12.5px] text-zinc-500 leading-relaxed max-w-lg">
+    <WorkspaceShell
+      hero={
+        <ModuleHero
+          title="Rates"
+          accent="X"
+          subtitle={
+            <>
               {metrics.sections} sections · {metrics.tabs} tabs ·{" "}
-              {fmt(metrics.rateItems)} priced items ·{" "}
-              {metrics.projects} projects
+              {fmt(metrics.rateItems)} priced items · {metrics.projects} projects
               {metrics.latestUploadAt && (
                 <>
                   {" "}· last upload{" "}
@@ -166,85 +164,50 @@ export function RatesHomeWorkspace({ metrics }: { metrics: RatesHomeMetrics }) {
                   })}
                 </>
               )}
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="mt-4 relative max-w-md">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400"
-              strokeWidth={1.75}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search rates, projects, materials…"
-              className="w-full h-10 pl-9 pr-3 bg-white border border-zinc-200 rounded-2xl text-sm placeholder:text-zinc-400 shadow-[0_2px_8px_-4px_rgba(24,24,27,0.08)] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
-            />
-          </div>
-
-          {/* 5×2 wall */}
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 grid-rows-2 auto-rows-[280px]">
-            {filtered.slice(0, 10).map((c) => (
-              <div key={c.id} className="w-55 h-[280px]">
-                <RateModuleCard
-                  title={c.title}
-                  description={c.description}
-                  href={c.href}
-                  metric={c.metric}
-                  icon={c.icon}
-                  backgroundImage={c.backgroundImage}
-                  accent={c.accent}
-                />
-              </div>
-            ))}
-
-            {filtered.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <p className="text-sm text-zinc-500">
-                  No cards match &ldquo;{search}&rdquo;.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0" />
-
-        {/* Footer */}
-        <div className="shrink-0 self-stretch flex items-center justify-between text-[10.5px] text-zinc-500 px-1 pt-2">
-          <div className="flex items-center gap-2.5">
-            <Image
-              src="/iox-logo.svg"
-              alt="IOX"
-              width={1338}
-              height={461}
-              className="h-4 w-auto"
-            />
-            <span className="text-zinc-300">|</span>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="size-3 text-zinc-500" strokeWidth={1.75} />
-              <span>Rates data secured and synced in real time</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            <span>{metrics.uploads} uploads on record</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Right column — reserved for the ProjectPulse sidebar. */}
-      <div className="hidden xl:flex min-h-0">
-        <div className="flex-1 bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col">
+            </>
+          }
+        />
+      }
+      search={
+        <WorkspaceSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Search rates, projects, materials…"
+        />
+      }
+      sidebar={
+        <div className="w-full h-full bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col">
           <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">
             Data freshness
           </div>
           <DataFreshnessPanel metrics={metrics} />
         </div>
-      </div>
-    </div>
+      }
+      footer={
+        <WorkspaceFooter
+          securedLabel="Rates data secured and synced in real time"
+          status={`${metrics.uploads} uploads on record`}
+        />
+      }
+    >
+      <CardGrid
+        isEmpty={grid.length === 0}
+        emptyState={<>No cards match &ldquo;{search}&rdquo;.</>}
+      >
+        {grid.map((c) => (
+          <RateModuleCard
+            key={c.id}
+            title={c.title}
+            description={c.description}
+            href={c.href}
+            metric={c.metric}
+            icon={c.icon}
+            backgroundImage={c.backgroundImage}
+            accent={c.accent}
+          />
+        ))}
+      </CardGrid>
+    </WorkspaceShell>
   );
 }
 

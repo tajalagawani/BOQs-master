@@ -10,6 +10,8 @@ import type { BoqCardStatus } from "@/components/boqs/BoqCard";
 import { demoProjects } from "@/lib/demoProjects";
 import { fmtINR } from "@/lib/demoBoq";
 import { listProjects } from "@/lib/projectStore";
+import { requireUserId } from "@/modules/core/auth";
+import { getBoqsPulse } from "@/lib/pulse/boqs";
 
 function timeAgo(iso?: string): string {
   if (!iso) return "";
@@ -23,7 +25,20 @@ function timeAgo(iso?: string): string {
 }
 
 export default async function BoqsHome() {
-  const imported = await listProjects();
+  // BOQ data is scoped by ProcureX workspace membership. Resolve the user id
+  // when authenticated; fall back to the empty-state pulse otherwise so the
+  // page still renders for anonymous/demo viewing.
+  let userId: string | undefined;
+  try {
+    userId = await requireUserId();
+  } catch {
+    userId = undefined;
+  }
+
+  const [imported, pulse] = await Promise.all([
+    listProjects(),
+    getBoqsPulse(userId),
+  ]);
 
   const importedCards: BoqsGridEntry[] = imported.map((p) => ({
     id: p.id,
@@ -69,7 +84,7 @@ export default async function BoqsHome() {
       <Header />
 
       <main className="flex-1 min-h-0 overflow-hidden">
-        <BoqsWorkspace projects={projects} />
+        <BoqsWorkspace projects={projects} pulse={pulse} />
       </main>
     </>
   );
