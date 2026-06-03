@@ -92,6 +92,31 @@ jobs:
             -e "ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
             web/.next/ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/home/iox/app/web/.next/
 
+      - name: Rebuild /tmp bootstrap env on VM (survives reboots)
+        env:
+          HEROUI_AUTH_TOKEN: ${{ secrets.HEROUI_AUTH_TOKEN }}
+        run: |
+          # /tmp is wiped on every VM reboot, so the bootstrap env that the
+          # npm-ci + migration steps `source` disappears (this broke the deploy
+          # right after the VM was resized/rebooted). Rebuild it each deploy:
+          # DATABASE_URL_UNPOOLED from the VM's persistent .env, HEROUI_AUTH_TOKEN
+          # from the GH secret (shipped via a temp file so it never hits shell
+          # history — same pattern as the platform-env step).
+          tok=$(mktemp)
+          printf 'HEROUI_AUTH_TOKEN=%s\n' "$HEROUI_AUTH_TOKEN" > "$tok"
+          scp -o ServerAliveInterval=15 "$tok" \
+            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/tmp/iox-heroui-token
+          rm -f "$tok"
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            : > /tmp/iox-bootstrap.env
+            grep -E "^DATABASE_URL_UNPOOLED=" .env >> /tmp/iox-bootstrap.env \
+              || { echo "[deploy] ERROR: DATABASE_URL_UNPOOLED missing from .env"; exit 1; }
+            cat /tmp/iox-heroui-token >> /tmp/iox-bootstrap.env
+            rm -f /tmp/iox-heroui-token
+            chmod 600 /tmp/iox-bootstrap.env
+            echo "[deploy] /tmp/iox-bootstrap.env rebuilt ($(wc -l < /tmp/iox-bootstrap.env) vars)"'
+
       - name: Sync node_modules if package-lock changed
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
