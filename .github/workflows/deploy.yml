@@ -139,6 +139,13 @@ jobs:
             # Re-install only when requirements.txt changed since last deploy.
             if ! cmp -s engine/requirements.txt .last-deployed-pyreqs 2>/dev/null; then
               echo "[deploy] engine/requirements.txt changed — installing python deps"
+              # Ubuntu ships python3 without pip — ensure it (admin user has
+              # passwordless sudo on Azure VMs).
+              if ! python3 -m pip --version >/dev/null 2>&1; then
+                echo "[deploy] pip missing — installing python3-pip"
+                sudo apt-get update -qq
+                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip
+              fi
               python3 -m pip install --user --upgrade -r engine/requirements.txt \
                 || python3 -m pip install --user --upgrade --break-system-packages -r engine/requirements.txt
               cp engine/requirements.txt .last-deployed-pyreqs
