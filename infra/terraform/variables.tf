@@ -25,8 +25,8 @@ variable "vm_name" {
 
 variable "vm_size" {
   type        = string
-  default     = "Standard_D8s_v3"
-  description = "8 vCPU / 32 GB. Upsized from D2s_v3 (2 vCPU / 8 GB) for heavier BOQ parsing + concurrent POMI mappings. Resized live via `az vm resize`; kept here so Terraform state matches."
+  default     = "Standard_D8s_v4"
+  description = "8 vCPU / 32 GB. Upsized from D2s_v3 (2 vCPU / 8 GB). Used the DSv4 family (D8s_v4 == D8s_v3 spec) because the DSv3-family quota increase was still pending while DSv4 had headroom in UAE North. Resized live via `az vm resize`; kept here so Terraform state matches."
 }
 
 variable "admin_username" {

@@ -106,6 +106,21 @@ jobs:
               echo "[deploy] package-lock.json unchanged — skipping npm ci"
             fi'
 
+      - name: Install POMI engine Python deps on VM
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            # The POMI engine (engine/run.py) needs openpyxl + anthropic.
+            # Re-install only when requirements.txt changed since last deploy.
+            if ! cmp -s engine/requirements.txt .last-deployed-pyreqs 2>/dev/null; then
+              echo "[deploy] engine/requirements.txt changed — installing python deps"
+              python3 -m pip install --user --upgrade -r engine/requirements.txt \
+                || python3 -m pip install --user --upgrade --break-system-packages -r engine/requirements.txt
+              cp engine/requirements.txt .last-deployed-pyreqs
+            else
+              echo "[deploy] python reqs unchanged — skipping"
+            fi'
+
       - name: Sync platform-integration env vars to VM
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

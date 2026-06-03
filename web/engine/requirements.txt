@@ -1,0 +1,4 @@
+# Python deps for the POMI BOQ engine (engine/run.py).
+# Installed on the VM by the deploy workflow.
+openpyxl>=3.1      # boq_parser.py — reads .xlsx
+anthropic>=0.40    # pomi_mapper.py — imported at module load (online mapping path)
