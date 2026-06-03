@@ -14,6 +14,12 @@ import {
   Database,
 } from "lucide-react";
 
+// Renders per-request: the home page reads the session (prisma.user) + home
+// pulse from the DB, which isn't reachable during `next build` (CI uses a
+// placeholder DATABASE_URL and never connects). Without this, Next tries to
+// statically prerender "/" at build time and fails with ECONNREFUSED.
+export const dynamic = "force-dynamic";
+
 const modules: HomeModule[] = [
   // ── Active modules first ──
   {
