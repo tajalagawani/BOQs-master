@@ -17,4 +17,9 @@ export {
   cancelExtractionJob,
 } from "./actions"
 
-export { getCategoryStatuses, type CategoryStatusEntry } from "./project-status"
+export {
+  getCategoryStatuses,
+  getLiveStatuses,
+  type CategoryStatusEntry,
+  type LiveStatusEntry,
+} from "./project-status"

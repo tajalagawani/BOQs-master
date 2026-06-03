@@ -22,7 +22,9 @@ import {
 } from "@/modules/ai-extraction/queue/actions"
 import {
   type CategoryStatusEntry,
+  type LiveStatusEntry,
   getCategoryStatuses,
+  getLiveStatuses,
 } from "@/modules/ai-extraction/queue"
 
 import { useProjectExtractionStream } from "./use-extraction-stream"
@@ -45,11 +47,37 @@ const LIVE_STATUSES = new Set(["queued", "claimed", "running"])
 export function AgentQueueWidget({ projectId }: AgentQueueWidgetProps) {
   const [open, setOpen] = useState(false)
   const [statuses, setStatuses] = useState<CategoryStatusEntry[]>([])
+  const [live, setLive] = useState<LiveStatusEntry[]>([])
   const [selected, setSelected] = useState<Selection>(new Set())
   const sse = useProjectExtractionStream(projectId)
 
+  // Cheap, always-on poll — drives the closed-pill badge + status counts
+  // without the heavy getCategoryStatuses hit. Fast (3s) while work is live.
   useEffect(() => {
     if (!projectId) return
+    let stopped = false
+    let timer: number | undefined
+    const poll = async () => {
+      try {
+        const l = await getLiveStatuses(projectId)
+        if (stopped) return
+        setLive(l)
+        const active = l.some((e) => LIVE_STATUSES.has(e.jobStatus))
+        timer = window.setTimeout(poll, active ? 3000 : 15000)
+      } catch {
+        if (!stopped) timer = window.setTimeout(poll, 15000)
+      }
+    }
+    void poll()
+    return () => {
+      stopped = true
+      if (timer) window.clearTimeout(timer)
+    }
+  }, [projectId])
+
+  // Heavy fetch (filenames + cost totals) only while the panel is open.
+  useEffect(() => {
+    if (!projectId || !open) return
     let stopped = false
     const fetchOnce = async () => {
       try {
@@ -60,23 +88,57 @@ export function AgentQueueWidget({ projectId }: AgentQueueWidgetProps) {
       }
     }
     void fetchOnce()
-    const interval = window.setInterval(fetchOnce, 5000)
+    const interval = window.setInterval(fetchOnce, 6000)
     return () => {
       stopped = true
       window.clearInterval(interval)
     }
-  }, [projectId])
+  }, [projectId, open])
+
+  // Merge: cheap live status is the source of truth for state/progress; the
+  // heavy snapshot enriches with filename + cost when the panel is open.
+  const byCat = useMemo(() => {
+    const m = new Map<string, CategoryStatusEntry>()
+    for (const s of statuses) m.set(s.categoryId, s)
+    return m
+  }, [statuses])
 
   const rows = useMemo(() => {
-    return statuses
-      .map((s) => {
-        const live = s.documentId ? sse.liveByDoc.get(s.documentId) : undefined
-        return { entry: s, live }
+    return live
+      .filter((e) => e.jobStatus !== "none")
+      .map((e) => {
+        const full = byCat.get(e.categoryId)
+        const entry: CategoryStatusEntry = {
+          categoryId: e.categoryId,
+          documentId: e.documentId,
+          filename: full?.filename ?? null,
+          jobStatus: e.jobStatus,
+          lastError: e.lastError,
+          workflowRunId: e.workflowRunId,
+          verdict: full?.verdict ?? null,
+          isSaved: full?.isSaved ?? false,
+          runTotals: full?.runTotals ?? null,
+          progress: e.progress ?? full?.progress ?? null,
+          boqImport: full?.boqImport ?? null,
+          addendaSummary: full?.addendaSummary ?? null,
+        }
+        const sseLive = e.documentId ? sse.liveByDoc.get(e.documentId) : undefined
+        return { entry, live: sseLive }
       })
-      .filter((r) => r.entry.jobStatus !== "none")
-  }, [statuses, sse.tick, sse.liveByDoc])
+  }, [live, byCat, sse.tick, sse.liveByDoc])
 
-  const inFlight = rows.filter((r) => LIVE_STATUSES.has(r.entry.jobStatus))
+  const inFlight = live.filter((e) => LIVE_STATUSES.has(e.jobStatus))
+  // Queue summary counts for the footer.
+  const counts = useMemo(() => {
+    const c = { queued: 0, running: 0, succeeded: 0, failed: 0 }
+    for (const e of live) {
+      if (e.jobStatus === "queued") c.queued++
+      else if (e.jobStatus === "claimed" || e.jobStatus === "running") c.running++
+      else if (e.jobStatus === "succeeded") c.succeeded++
+      else if (e.jobStatus === "failed") c.failed++
+    }
+    return c
+  }, [live])
 
   // Selection-aware action handlers
   const selectedRows = useMemo(() => {
@@ -265,6 +327,14 @@ export function AgentQueueWidget({ projectId }: AgentQueueWidgetProps) {
                           {e.jobStatus}
                         </span>
                         {lastAction ? <> · {lastAction}</> : null}
+                        {e.jobStatus === "failed" && e.lastError ? (
+                          <span
+                            className="mt-0.5 block truncate text-[10px] text-[#c32a4f]"
+                            title={e.lastError}
+                          >
+                            ⚠ {e.lastError}
+                          </span>
+                        ) : null}
                         {isLive ? (
                           <span className="mt-1 flex items-center gap-2">
                             <span className="flex-1 h-1 bg-[#e9e9e9] rounded-full overflow-hidden">
@@ -348,7 +418,17 @@ export function AgentQueueWidget({ projectId }: AgentQueueWidgetProps) {
       </div>
 
       <div className="px-4 py-2 border-t border-[#f0f0f0] flex items-center justify-between text-[10px] text-[#888]">
-        <span>SSE · auto-updates</span>
+        <div className="flex items-center gap-2 tabular-nums">
+          {counts.running > 0 && (
+            <span className="text-[#142845] font-medium">{counts.running} running</span>
+          )}
+          {counts.queued > 0 && <span>{counts.queued} queued</span>}
+          {counts.succeeded > 0 && <span className="text-emerald-600">{counts.succeeded} done</span>}
+          {counts.failed > 0 && <span className="text-[#c32a4f]">{counts.failed} failed</span>}
+          {counts.running + counts.queued + counts.succeeded + counts.failed === 0 && (
+            <span>idle</span>
+          )}
+        </div>
         <span>{rows.length} job(s)</span>
       </div>
     </div>

@@ -9,7 +9,7 @@ import {
   LayoutGrid,
   LayoutList,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { AgentQueueWidget } from "@/components/procurex/docs/agent-queue-widget"
 import { BulkUploadZone } from "@/components/procurex/docs/bulk-upload-zone"
@@ -24,6 +24,7 @@ import {
 import { saveDocForm } from "@/modules/ai-extraction/actions"
 import {
   getCategoryStatuses,
+  getLiveStatuses,
   type CategoryStatusEntry,
 } from "@/modules/ai-extraction/queue"
 
@@ -185,12 +186,11 @@ export function Step2TenderDocuments({
   const [layout, setLayout] = useState<"dropzone" | "grid">("dropzone")
   const sse = useProjectExtractionStream(projectId || null)
 
-  // Initial fetch + 30 s heartbeat refresh.
+  // Initial full fetch — verdicts, totals, BoQ/PTE/addenda summaries. Once.
   useEffect(() => {
     if (!projectId) return
     let stopped = false
-
-    const refresh = async () => {
+    void (async () => {
       try {
         const entries = await getCategoryStatuses(projectId)
         if (stopped) return
@@ -198,15 +198,105 @@ export function Step2TenderDocuments({
         for (const e of entries) map[e.categoryId] = e
         setStatusMap(map)
       } catch (err) {
-        if (!stopped) console.error("[step2.statuses] refresh failed", err)
+        if (!stopped) console.error("[step2.statuses] initial load failed", err)
+      }
+    })()
+    return () => {
+      stopped = true
+    }
+  }, [projectId])
+
+  // Adaptive live poll — cheap status+progress, fast (2.5s) while any job is
+  // active, idle (20s) otherwise. Robust fallback to SSE: works even if the
+  // event bus can't reach this process. On a terminal transition it pulls the
+  // full record once so the verdict/totals land without relying on the SSE
+  // `done` event.
+  const prevStatusRef = useRef<Record<string, string>>({})
+  useEffect(() => {
+    if (!projectId) return
+    let stopped = false
+    let timer: number | undefined
+    const ACTIVE = new Set(["queued", "claimed", "running"])
+
+    const fullRefetch = async () => {
+      try {
+        const entries = await getCategoryStatuses(projectId)
+        if (stopped) return
+        const map: Record<string, CategoryStatusEntry> = {}
+        for (const e of entries) map[e.categoryId] = e
+        setStatusMap(map)
+      } catch {
+        /* non-fatal */
       }
     }
 
-    void refresh()
-    const id = window.setInterval(refresh, 30_000)
+    const schedule = (ms: number) => {
+      if (!stopped) timer = window.setTimeout(poll, ms)
+    }
+
+    const poll = async () => {
+      try {
+        const live = await getLiveStatuses(projectId)
+        if (stopped) return
+
+        let terminalTransition = false
+        for (const e of live) {
+          const was = prevStatusRef.current[e.categoryId]
+          if (
+            (e.jobStatus === "succeeded" || e.jobStatus === "failed") &&
+            was &&
+            ACTIVE.has(was)
+          ) {
+            terminalTransition = true
+          }
+          prevStatusRef.current[e.categoryId] = e.jobStatus
+        }
+
+        setStatusMap((prev) => {
+          const next = { ...prev }
+          for (const e of live) {
+            const existing = next[e.categoryId]
+            next[e.categoryId] = existing
+              ? {
+                  ...existing,
+                  documentId: e.documentId,
+                  jobStatus: e.jobStatus,
+                  lastError: e.lastError,
+                  workflowRunId: e.workflowRunId ?? existing.workflowRunId,
+                  progress: e.progress ?? existing.progress,
+                }
+              : {
+                  categoryId: e.categoryId,
+                  documentId: e.documentId,
+                  filename: null,
+                  jobStatus: e.jobStatus,
+                  lastError: e.lastError,
+                  workflowRunId: e.workflowRunId,
+                  verdict: null,
+                  isSaved: false,
+                  runTotals: null,
+                  progress: e.progress,
+                  boqImport: null,
+                  addendaSummary: null,
+                }
+          }
+          return next
+        })
+
+        if (terminalTransition) void fullRefetch()
+        schedule(live.some((e) => ACTIVE.has(e.jobStatus)) ? 2_500 : 20_000)
+      } catch (err) {
+        if (!stopped) {
+          console.error("[step2.statuses] live poll failed", err)
+          schedule(20_000)
+        }
+      }
+    }
+
+    void poll()
     return () => {
       stopped = true
-      window.clearInterval(id)
+      if (timer) window.clearTimeout(timer)
     }
   }, [projectId])
 

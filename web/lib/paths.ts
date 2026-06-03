@@ -8,12 +8,6 @@ import fs from "node:fs/promises";
  */
 export const REPO_ROOT = path.resolve(process.cwd(), "..");
 
-/** Absolute path to the Python entrypoint we already use from the CLI. */
-export const POMI_APP = path.join(REPO_ROOT, "pomi_coder_app.py");
-
-/** Absolute path to the master POMI coding workbook. */
-export const POMI_MASTER = path.join(REPO_ROOT, "POMI_CODING_FINAL 1 (1).xlsx");
-
 /**
  * Per-run storage lives under /tmp/iox-runs/{runId}/
  *   - input.xlsx   – the uploaded BoQ
@@ -31,10 +25,11 @@ export async function ensureRunDir(runId: string) {
   return dir;
 }
 
-export const inputPath  = (runId: string) => path.join(runDir(runId), "input.xlsx");
-export const resultPath = (runId: string) => path.join(runDir(runId), "result.xlsx");
-export const logPath    = (runId: string) => path.join(runDir(runId), "run.log");
-export const metaPath   = (runId: string) => path.join(runDir(runId), "meta.json");
+export const inputPath      = (runId: string) => path.join(runDir(runId), "input.xlsx");
+export const resultPath     = (runId: string) => path.join(runDir(runId), "result.xlsx");
+export const resultJsonPath = (runId: string) => path.join(runDir(runId), "result.json");
+export const logPath        = (runId: string) => path.join(runDir(runId), "run.log");
+export const metaPath       = (runId: string) => path.join(runDir(runId), "meta.json");
 
 /** Best-effort lookup: list runs that have a meta.json on disk. */
 export async function listRunIds(): Promise<string[]> {

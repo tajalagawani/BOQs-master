@@ -97,7 +97,7 @@ export function ResultViewer({ runId }: Props) {
           </div>
         )}
         <a
-          href={`/api/download/${runId}`}
+          href={`/api/run/${runId}/export`}
           className="h-8 px-3 bg-white border border-zinc-200 hover:border-zinc-400 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 text-zinc-900 shrink-0"
         >
           <Download className="size-3.5" strokeWidth={1.75} />

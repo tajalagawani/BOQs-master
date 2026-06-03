@@ -20,12 +20,25 @@ export const dynamic = "force-dynamic"
  * auth if it ever serves cross-project data.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ projectId: string }> },
 ): Promise<Response> {
   const { projectId } = await context.params
 
   const encoder = new TextEncoder()
+
+  // Hoisted so cancel()/abort can tear down the subscription + keepalive.
+  // (ReadableStream ignores any function returned from start(), so cleanup
+  // MUST live here — otherwise every disconnect leaks a bus listener.)
+  let unsubscribe: (() => void) | undefined
+  let keepalive: ReturnType<typeof setInterval> | undefined
+  const cleanup = () => {
+    if (keepalive) clearInterval(keepalive)
+    unsubscribe?.()
+    keepalive = undefined
+    unsubscribe = undefined
+  }
+  request.signal?.addEventListener("abort", cleanup)
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -72,7 +85,7 @@ export async function GET(
         /* DB error during replay is non-fatal */
       }
 
-      const unsubscribe = subscribeProjectProgress(projectId, (event) => {
+      unsubscribe = subscribeProjectProgress(projectId, (event) => {
         if (event.type === "done") {
           send("done", event)
         } else if (event.type === "error") {
@@ -82,18 +95,16 @@ export async function GET(
         }
       })
 
-      const keepalive = setInterval(() => {
+      keepalive = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(`: keepalive\n\n`))
         } catch {
-          clearInterval(keepalive)
+          cleanup()
         }
       }, 15_000)
-
-      return () => {
-        clearInterval(keepalive)
-        unsubscribe()
-      }
+    },
+    cancel() {
+      cleanup()
     },
   })
 

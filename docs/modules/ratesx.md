@@ -1,13 +1,13 @@
 # RatesX
 
-RatesX is IOX's construction-rates intelligence module — a quantity-surveying reference warehouse that ingests vendor and in-house rate workbooks (Buildings, Materials, Commodities, Piling, Ground Investigation, Marine, Infrastructure), normalises every priced line into a star schema, classifies it against the POMI → NRM → CESMM/CSI taxonomy, and surfaces the result as searchable rate tables, elemental cost benchmarks, design-ratio analytics, and material-price timelines. It is the pricing brain that [CostX](./costx.md) leans on when it needs a defensible per-m² rate, and the comparator a cost consultant reaches for when asked *"is this rate reasonable for this asset, this country, this year?"*. RatesX is the IOX-shell port of the standalone Omnium estimator: per the [faithful-port rule](../../web/AGENTS.md) the source spreadsheets and their per-tab column schemas are preserved verbatim, and the warehouse is built *around* them — never by discarding the original shape. What changed in the port is the chrome (zinc tokens, the IOX `Header`, the unified `/rates/*` prefix) and the addition of a normalized analytics layer on top of the raw uploads.
+RatesX is IOX's construction-rates intelligence module — a quantity-surveying reference warehouse that ingests vendor and in-house rate workbooks (Buildings, Materials, Commodities, Piling, Ground Investigation, Marine, Infrastructure), normalises every priced line into a star schema, classifies it against the POMI → NRM → CESMM/CSI taxonomy, and surfaces the result as searchable rate tables, elemental cost benchmarks, design-ratio analytics, and material-price timelines. It is the pricing brain that [CostX](./costx.md) leans on when it needs a defensible per-m² rate, and the comparator a cost consultant reaches for when asked *"is this rate reasonable for this asset, this country, this year?"*. RatesX is the IOX-shell port of the standalone `roshn` Omnium estimator: per the [faithful-port rule](../../web/AGENTS.md) the source spreadsheets and their per-tab column schemas are preserved verbatim, and the warehouse is built *around* them — never by discarding the original shape. What changed in the port is the chrome (zinc tokens, the IOX `Header`, the unified `/rates/*` prefix) and the addition of a normalized analytics layer on top of the raw uploads.
 
 ## Overview
 
 RatesX carries **two storage generations** at once, and understanding the seam between them is the single most important thing about the module.
 
 - **v1 — the upload record.** `RatesUpload` is one Postgres row per uploaded workbook, plus a JSON payload of the parsed rows shaped exactly like the source tab (Buildings::Rates has 21 columns, Materials has its own, Piling its own, etc.). The schema-per-tab contract lives in `web/modules/rates/lib/schemas.ts`. This is what the **upload UI** (`/api/rates/uploads`) writes today, and it is deliberately loose — it tracks *what was uploaded* without forcing it into a fixed model.
-- **v2 — the normalized warehouse.** A 30-table star schema (24 dimensions + 1 lineage table + 5 facts, plus a junction side-table) defined in `web/prisma/schema.prisma` and materialised by the hand-authored SQL at `web/prisma/migrations/manual/rates_v2/01_schema.sql`. A family of `v_rates_*` views flattens the joins for read paths. This is what every **analytics surface** reads.
+- **v2 — the normalized warehouse.** A 30-table star schema (24 dimensions + 1 lineage table + 5 facts, plus a junction side-table) defined in `web/prisma/schema.prisma` and materialised by the hand-authored SQL at `web/prisma/migrations/manual/rates_v2/migration.sql`. A family of `v_rates_*` views flattens the joins for read paths. This is what every **analytics surface** reads.
 
 The end-to-end flow:
 
@@ -227,23 +227,7 @@ Only **one currency is plotted at a time** (AED default). Projects in another or
 | `/rates/elemental-by-project` | `app/rates/elemental-by-project/page.tsx` | Composition + distribution elemental analytics |
 | `POST /api/rates/uploads` | `app/api/rates/uploads/route.ts` | Workbook upload + parse (writes v1) |
 
-## Query API reference
-
-Every analytics surface reads through the typed functions in `modules/rates/lib/db/queries.ts`. They select straight off the `rates_fact_*` tables (or a `v_rates_*` view) and return plain serializable shapes — no ORM entities cross the server/client boundary.
-
-| Function | Returns | Powers |
-|---|---|---|
-| `fetchHomeMetrics()` | `RatesHomeMetrics` (`sections, tabs, projects, rateItems, benchmarks, materialPrices, designRatios, uploads, latestUploadAt`) | The `/rates` home KPI tiles |
-| `fetchPomiCountryHeatmap(opts?)` | `PomiCountryCell[]` | POMI / CESMM / NRM × country heatmap (`ClassificationMode = "pomi" \| "cesmm" \| "nrm"`) |
-| `fetchNrmCostShareOverall(opts?)` | `NrmSliceRow[]` | Overall NRM cost-share donut/treemap |
-| `fetchNrmStackByProject(opts?)` | `ProjectNrmBar[]` | NRM stack per project |
-| `fetchMaterialPriceTimeline(opts?)` | `MaterialTimelineRow[]` | Material price-over-time line (no data until `RatesFactMaterialPrice` is backfilled) |
-| `fetchElementalByProject(opts?)` | `ElementalProject[]` (each with a `stack: ElementalSlice[]`) | The Elemental-by-Project workspace |
-| `fetchElementalFilters()` | `{ assetClasses, assetTypes, countries }` | Legacy filter option lists (the elemental workspace now derives facets client-side) |
-| `fetchRateDistribution(opts?)` | `RateDistributionRow[]` | Rate distribution per POMI / CESMM / NRM code |
-| `fetchMaterialCatalogue()` | material catalogue rows | Material library browse |
-
-`ElementalProject` carries `projectId`, `project`, `country`, `assetClass`, `assetType`, `baseDate`, `baseYear`, `currency`, `bua/gia/gfa`, and a `stack` of `ElementalSlice` (`nrmCode`, `nrmLabel`, `costPerBua/Gia/Gfa`, `totalCost`). `fetchElementalByProject` joins `RatesFactProjectBenchmark → project → {country, assetClass, assetType, currency}` and `→ nrmL1`, then groups rows into one `ElementalProject` per project with its element stack sorted by NRM code.
+The home workspace and analytics pages read through `modules/rates/lib/db/queries.ts`, whose exported read API includes `fetchHomeMetrics`, `fetchPomiCountryHeatmap`, `fetchNrmCostShareOverall`, `fetchNrmStackByProject`, `fetchMaterialPriceTimeline`, `fetchElementalByProject`, `fetchElementalFilters`, `fetchRateDistribution`, `fetchMaterialCatalogue`, and the design-ratio loaders.
 
 ## Scripts
 
@@ -252,8 +236,8 @@ Every analytics surface reads through the typed functions in `modules/rates/lib/
 | `scripts/backfill-rates-v2.ts` | v1 → v2 explode (idempotent; interns dims, emits facts) |
 | `scripts/classify-rate-items-from-bridge.ts` | Bridge-driven POMI/NRM classification (`--dry`, `--reset`, `--threshold`) |
 | `scripts/derive-nrm-from-pomi.ts` | Derive NRM levels from POMI coding |
-| `prisma/migrations/manual/rates_v2/01_schema.sql` | Creates the v2 schema + `v_rates_*` views (manual migration, applied by the deploy pipeline) |
-| `prisma/migrations/manual/rates_v2/02_fix_nrm_l1_labels.sql` | Non-destructive repair of shredded NRM L1 element names on benchmarks |
+| `prisma/migrations/manual/rates_v2/migration.sql` | Creates the v2 schema + `v_rates_*` views (manual migration, applied by the deploy pipeline) |
+| `prisma/migrations/manual/rates_v2/fix_nrm_l1_labels.sql` | Non-destructive repair of shredded NRM L1 element names on benchmarks |
 
 ## Common edits
 
@@ -283,7 +267,7 @@ The seeded benchmark data is heavily concentrated and carries several known gaps
 
 | Issue | Detail | Handling |
 |---|---|---|
-| **NRM L1 taxonomy pollution** | The benchmark loader's `splitCodeLabel` treated bare whitespace as a code delimiter, shredding `"Internal Walls and Doors"` → code `"Internal"` / label `"Walls and Doors"`; three taxonomies (NRM2, CSI MasterFormat, free-text MEP/infra) were also merged into `rates_dim_nrm_l1`. | Fixed: regex hardened to split only on explicit delimiters (`— – - :`); `02_fix_nrm_l1_labels.sql` reconstructs the real labels non-destructively (rate items are untouched — they use only the clean numeric codes). |
+| **NRM L1 taxonomy pollution** | The benchmark loader's `splitCodeLabel` treated bare whitespace as a code delimiter, shredding `"Internal Walls and Doors"` → code `"Internal"` / label `"Walls and Doors"`; three taxonomies (NRM2, CSI MasterFormat, free-text MEP/infra) were also merged into `rates_dim_nrm_l1`. | Fixed: regex hardened to split only on explicit delimiters (`— – - :`); `fix_nrm_l1_labels.sql` reconstructs the real labels non-destructively (rate items are untouched — they use only the clean numeric codes). |
 | **Null currency** | ~18 benchmark projects (including all Residential) have no currency, so they cannot sit on a currency axis. | Surfaced as an explicit *"N in other/no currency"* excluded count; their filter options are hidden. |
 | **Country split** | `"UAE"` (160) and `"United Arab Emirates"` (12) exist as separate dimension rows. | Both shown with live facet counts; a merge is a pending data task. |
 | **Asset type unpopulated** | 167 of ~180 benchmark projects have a null `asset_type`; the few non-null values are place names (`"Jebel Ali"`, `"Yas Island"`), not types. | The Type filter shows counts and hides empty options until real types are populated. |
@@ -336,7 +320,7 @@ web/
 │   ├── classify-rate-items-from-bridge.ts   # POMI/NRM bridge classification
 │   └── derive-nrm-from-pomi.ts              # NRM-from-POMI derivation
 └── prisma/migrations/manual/rates_v2/
-    ├── 01_schema.sql                        # v2 schema + v_rates_* views
-    └── 02_fix_nrm_l1_labels.sql                # NRM L1 label repair
+    ├── migration.sql                        # v2 schema + v_rates_* views
+    └── fix_nrm_l1_labels.sql                # NRM L1 label repair
 pomi_to_nrm_corrected.json                   # 604-entry POMI→NRM bridge (repo ROOT)
 ```

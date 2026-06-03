@@ -77,6 +77,82 @@ export interface CategoryStatusEntry {
   } | null
 }
 
+/** Lean per-category live status — job state + agent progress only.
+ *  No workflow-output hydration, no BoQ/PTE/addenda summaries, so it's
+ *  cheap enough to poll every few seconds. The Step 2 page uses this for
+ *  the fast adaptive poll and falls back to getCategoryStatuses for the
+ *  heavy verdict/totals details on load and on `done`. */
+export interface LiveStatusEntry {
+  categoryId: string
+  documentId: string
+  jobStatus: CategoryStatusEntry["jobStatus"]
+  lastError: string | null
+  workflowRunId: string | null
+  progress: CategoryProgress | null
+}
+
+export async function getLiveStatuses(
+  projectId: string,
+): Promise<LiveStatusEntry[]> {
+  const userId = await requireUserId()
+
+  const [project] = await db
+    .select({ workspaceId: projects.workspaceId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1)
+  if (!project) return []
+  const [member] = await db
+    .select({ id: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.workspaceId, project.workspaceId),
+      ),
+    )
+    .limit(1)
+  if (!member) return []
+
+  const docs = await db
+    .select({
+      id: documents.id,
+      category: documents.category,
+      createdAt: documents.createdAt,
+    })
+    .from(documents)
+    .where(
+      and(
+        eq(documents.projectId, projectId),
+        eq(documents.targetKind, "project"),
+        isNull(documents.deletedAt),
+      ),
+    )
+    .orderBy(desc(documents.createdAt))
+
+  const byCategory = new Map<string, (typeof docs)[number]>()
+  for (const d of docs) if (!byCategory.has(d.category)) byCategory.set(d.category, d)
+
+  const jobs = await getLatestJobsForDocuments(
+    Array.from(byCategory.values()).map((d) => d.id),
+  )
+
+  const out: LiveStatusEntry[] = []
+  for (const [rawCategory, doc] of byCategory) {
+    const spec = getDocSpec(rawCategory)
+    const job = jobs[doc.id]
+    out.push({
+      categoryId: spec ? spec.id : rawCategory,
+      documentId: doc.id,
+      jobStatus: (job?.status as CategoryStatusEntry["jobStatus"]) ?? "none",
+      lastError: job?.lastError ?? null,
+      workflowRunId: job?.workflowRunId ?? null,
+      progress: (job?.progress as CategoryProgress | null) ?? null,
+    })
+  }
+  return out
+}
+
 /**
  * One row per category for a project — what doc lives in that slot
  * (if any) and what state its extraction is in. The Step 2 page polls

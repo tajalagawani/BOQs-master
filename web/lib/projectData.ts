@@ -29,8 +29,10 @@ export interface ProjectItem {
   quantity: number;
   rate: number;
   amount: number;
-  pomiSection: string;
-  pomiSubSection: string;
+  pomiCode: string;     // the 7-char POMI code, e.g. "A020000"
+  pomiSection: string;  // "A — General Requirements"
+  pomiSubSection: string; // the L1 sub-section name, e.g. "Specification"
+  measurement: string;  // POMI measurement, e.g. "Volume (m³), Weight (t)"
   nrm: string;
   nrmDescription: string;
   stage: string;        // Rule | Fuzzy | AI | ""
@@ -97,7 +99,11 @@ function s(v: string | number | null): string {
 function splitSection(label: string): { code: string; name: string } {
   const t = label.trim();
   if (!t) return { code: "", name: "" };
-  const m = t.match(/^([A-Z]{1,3}\d{1,3}|[0-9]{1,3})\b\s*[—–-]?\s*(.*)$/i);
+  // Accept a leading POMI section code that is a single letter (A–R), a
+  // letter+number (Q4), or a number (01) — followed by an optional dash and
+  // the section name. \d{0,3} (not {1,3}) is what lets bare letters like "A"
+  // split into code "A" + name, instead of falling through to "(whole thing)".
+  const m = t.match(/^([A-Z]{1,3}\d{0,3}|[0-9]{1,3})\b\s*[—–-]?\s*(.*)$/i);
   if (m) return { code: m[1].toUpperCase(), name: (m[2] || t).trim() };
   return { code: "", name: t };
 }
@@ -134,8 +140,10 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
     unit:      want("Unit"),
     rate:      want("Rate"),
     amount:    want("Amount"),
+    pomiCode:  want("POMI Code"),
     section:   want("POMI Section"),
     sub:       want("POMI Sub Section"),
+    measure:   want("Measurement"),
     nrm:       want("NRM"),
     nrmDesc:   want("NRM Description"),
     stage:     want("Stage"),
@@ -161,9 +169,11 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
     if (!desc) continue;
 
     const ref = s(at(row, C.ref));
-    const subRaw = s(at(row, C.sub));
+    const subRaw = s(at(row, C.sub)); // POMI Sub Section (L1 name)
     const secRaw = s(at(row, C.section));
-    const grouping = subRaw || secRaw || "Uncategorised";
+    // Group by POMI Section (A–R) — the sub-section is now a real named
+    // sub-section (e.g. "Conditions of contract"), not the nav level.
+    const grouping = secRaw || subRaw || "Uncategorised";
     const { code: secCode, name: secName } = splitSection(grouping);
     const key = secCode || secName;
 
@@ -181,8 +191,10 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
       quantity: n(at(row, C.qty)),
       rate: n(at(row, C.rate)),
       amount: n(at(row, C.amount)),
+      pomiCode: s(at(row, C.pomiCode)),
       pomiSection: secRaw,
       pomiSubSection: subRaw,
+      measurement: s(at(row, C.measure)),
       nrm: s(at(row, C.nrm)),
       nrmDescription: s(at(row, C.nrmDesc)),
       stage: s(at(row, C.stage)),
@@ -192,11 +204,11 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
     });
   }
 
-  // Group items by section
+  // Group items by POMI Section (A–R).
   const itemsBySection: Record<string, ProjectItem[]> = {};
   for (const it of items) {
-    const key = splitSection(it.pomiSubSection || it.pomiSection || "Uncategorised")
-      .code || splitSection(it.pomiSubSection || it.pomiSection || "Uncategorised").name;
+    const g = splitSection(it.pomiSection || it.pomiSubSection || "Uncategorised");
+    const key = g.code || g.name;
     if (!itemsBySection[key]) itemsBySection[key] = [];
     itemsBySection[key].push(it);
   }
@@ -205,7 +217,7 @@ export async function loadProjectData(sourceRel: string): Promise<ProjectData> {
   const sections: ProjectSection[] = Object.entries(itemsBySection)
     .map(([key, list]) => {
       const sample = list[0];
-      const { code, name } = splitSection(sample.pomiSubSection || sample.pomiSection || "Uncategorised");
+      const { code, name } = splitSection(sample.pomiSection || sample.pomiSubSection || "Uncategorised");
       return {
         code: code || key,
         name: name || key,

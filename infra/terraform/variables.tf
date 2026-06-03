@@ -25,8 +25,8 @@ variable "vm_name" {
 
 variable "vm_size" {
   type        = string
-  default     = "Standard_D2s_v3"
-  description = "B2ms had no UAE North capacity at creation; D2s_v3 is the cheapest 2 vCPU / 8 GB SKU that was available"
+  default     = "Standard_D8s_v3"
+  description = "8 vCPU / 32 GB. Upsized from D2s_v3 (2 vCPU / 8 GB) for heavier BOQ parsing + concurrent POMI mappings. Resized live via `az vm resize`; kept here so Terraform state matches."
 }
 
 variable "admin_username" {

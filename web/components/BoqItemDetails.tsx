@@ -14,6 +14,10 @@ export interface BoqDetailItem {
   amount: number;
   version?: string;
   trade?: string;
+  sheetName?: string;
+  pomiCode?: string;
+  ref?: string;
+  measurement?: string;
   pomiSection?: string;
   pomiSubSection?: string;
   nrm?: string;

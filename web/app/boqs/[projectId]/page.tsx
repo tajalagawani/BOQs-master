@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
-import { BoqWorkspace, type WorkspaceData } from "@/components/BoqWorkspace";
+import { type WorkspaceData } from "@/components/BoqWorkspace";
+import { BoqResultsTable } from "@/components/boqs/BoqResultsTable";
 import { demoProjects } from "@/lib/demoProjects";
 import { notFound } from "next/navigation";
 import { loadProjectData } from "@/lib/projectData";
@@ -43,19 +44,23 @@ async function buildFromSource(sourceFile: string, projectVersion: string): Prom
   for (const [key, list] of Object.entries(pd.itemsBySection)) {
     itemsBySection[key] = list.map((it) => ({
       code: it.code,
+      ref: it.ref,
       description: it.description,
       unit: it.unit,
       quantity: it.quantity,
       rate: it.rate,
       amount: it.amount,
       version: projectVersion,
+      pomiCode: it.pomiCode,
       pomiSection: it.pomiSection,
       pomiSubSection: it.pomiSubSection,
+      measurement: it.measurement,
       nrm: it.nrm,
       nrmDescription: it.nrmDescription,
       stage: it.stage,
       confidence: it.confidence,
       flag: it.flag,
+      sheetName: it.sheetName,
     }));
   }
   return {
@@ -102,7 +107,7 @@ export default async function ProjectDashboard({
       <>
         <Header />
         <main className="flex-1 min-h-0 overflow-hidden">
-          <BoqWorkspace projectName={stored.name} data={data} />
+          <BoqResultsTable projectId={projectId} projectName={stored.name} data={data} />
         </main>
       </>
     );
@@ -128,7 +133,7 @@ export default async function ProjectDashboard({
     <>
       <Header />
       <main className="flex-1 min-h-0 overflow-hidden">
-        <BoqWorkspace projectName={project.name} data={data} />
+        <BoqResultsTable projectId={project.id} projectName={project.name} data={data} />
       </main>
     </>
   );

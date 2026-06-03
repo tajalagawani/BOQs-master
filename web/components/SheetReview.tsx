@@ -43,6 +43,27 @@ const KIND_COLOR: Record<ColumnKind, string> = {
   ignore: "bg-zinc-50 text-zinc-400 border-zinc-200",
 };
 
+// Stronger header tint + a lighter body tint, per column kind — so the sample
+// rows are colour-coded to match the column pills above.
+const KIND_HEAD: Record<ColumnKind, string> = {
+  item_ref: "bg-blue-100 text-blue-900",
+  description: "bg-zinc-100 text-zinc-800",
+  qty: "bg-emerald-100 text-emerald-900",
+  unit: "bg-amber-100 text-amber-900",
+  rate: "bg-violet-100 text-violet-900",
+  amount: "bg-rose-100 text-rose-900",
+  ignore: "bg-zinc-50 text-zinc-400",
+};
+const KIND_CELL: Record<ColumnKind, string> = {
+  item_ref: "bg-blue-50/60",
+  description: "bg-zinc-50",
+  qty: "bg-emerald-50/60",
+  unit: "bg-amber-50/50",
+  rate: "bg-violet-50/50",
+  amount: "bg-rose-50/50",
+  ignore: "",
+};
+
 interface Props {
   runId: string;
   initialSheets: SheetInspection[];
@@ -59,6 +80,7 @@ export function SheetReview({ runId, initialSheets, originalName }: Props) {
   );
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [model, setModel] = useState("claude-sonnet-4-6");
 
   const totalRows = useMemo(
     () => sheets.reduce((sum, s) => sum + s.rowCount, 0),
@@ -89,31 +111,13 @@ export function SheetReview({ runId, initialSheets, originalName }: Props) {
     );
   };
 
-  const startRun = async () => {
+  const startRun = () => {
     if (starting) return;
     setStarting(true);
     setError(null);
-    try {
-      const r = await fetch(`/api/run/${runId}/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mapping: sheets.map((s) => ({
-            sheet: s.name,
-            headerRow: s.headerRow,
-            columns: s.columns,
-          })),
-        }),
-      });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || `start failed (${r.status})`);
-      }
-      router.push(`/boqs/import/${runId}`);
-    } catch (e) {
-      setStarting(false);
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    // The live mapping page kicks off the POMI pipeline (parse → classify) and
+    // streams the result table as each batch lands.
+    router.push(`/boqs/import/${runId}?model=${encodeURIComponent(model)}`);
   };
 
   return (
@@ -140,29 +144,41 @@ export function SheetReview({ runId, initialSheets, originalName }: Props) {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={startRun}
-          disabled={starting}
-          className={cn(
-            "h-10 px-5 rounded-xl text-sm font-medium inline-flex items-center gap-2 transition-colors",
-            starting
-              ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-              : "bg-zinc-900 text-white hover:bg-zinc-800",
-          )}
-        >
-          {starting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Starting…
-            </>
-          ) : (
-            <>
-              <Play className="size-4" strokeWidth={2} />
-              Confirm mapping & process
-            </>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            disabled={starting}
+            className="h-10 px-3 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-700 outline-none focus:border-zinc-400"
+          >
+            <option value="claude-haiku-4-5-20251001">Haiku — fastest</option>
+            <option value="claude-sonnet-4-6">Sonnet — balanced</option>
+            <option value="claude-opus-4-8">Opus — most accurate</option>
+          </select>
+          <button
+            type="button"
+            onClick={startRun}
+            disabled={starting}
+            className={cn(
+              "h-10 px-5 rounded-xl text-sm font-medium inline-flex items-center gap-2 transition-colors",
+              starting
+                ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                : "bg-zinc-900 text-white hover:bg-zinc-800",
+            )}
+          >
+            {starting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Starting…
+              </>
+            ) : (
+              <>
+                <Play className="size-4" strokeWidth={2} />
+                Confirm mapping & process
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -279,16 +295,17 @@ export function SheetReview({ runId, initialSheets, originalName }: Props) {
                       </div>
                       <div className="overflow-x-auto border border-zinc-200 rounded-lg">
                         <table className="w-full text-xs">
-                          <thead className="bg-zinc-50 border-b border-zinc-200">
+                          <thead className="border-b border-zinc-200">
                             <tr>
                               {sheet.columns.slice(0, 12).map((c) => (
                                 <th
                                   key={c.index}
-                                  className="px-2 py-1.5 text-left text-zinc-600 font-medium whitespace-nowrap"
+                                  className={cn(
+                                    "px-2 py-1.5 text-left font-medium whitespace-nowrap border-r border-white/60 last:border-r-0",
+                                    KIND_HEAD[c.kind],
+                                  )}
                                 >
-                                  <span className="text-zinc-400 mr-1">
-                                    {c.index}
-                                  </span>
+                                  <span className="opacity-50 mr-1">{c.index}</span>
                                   {c.header || "—"}
                                 </th>
                               ))}
@@ -297,18 +314,24 @@ export function SheetReview({ runId, initialSheets, originalName }: Props) {
                           <tbody>
                             {sheet.sampleRows.map((row, i) => (
                               <tr key={i} className="border-t border-zinc-100">
-                                {row.map((v, j) => (
-                                  <td
-                                    key={j}
-                                    className="px-2 py-1.5 text-zinc-700 whitespace-nowrap max-w-[280px] truncate"
-                                  >
-                                    {v === null
-                                      ? ""
-                                      : typeof v === "number"
-                                      ? v.toLocaleString()
-                                      : String(v)}
-                                  </td>
-                                ))}
+                                {row.map((v, j) => {
+                                  const kind = sheet.columns[j]?.kind ?? "ignore";
+                                  return (
+                                    <td
+                                      key={j}
+                                      className={cn(
+                                        "px-2 py-1.5 text-zinc-700 whitespace-nowrap max-w-[280px] truncate border-r border-zinc-100 last:border-r-0",
+                                        KIND_CELL[kind],
+                                      )}
+                                    >
+                                      {v === null
+                                        ? ""
+                                        : typeof v === "number"
+                                        ? v.toLocaleString()
+                                        : String(v)}
+                                    </td>
+                                  );
+                                })}
                               </tr>
                             ))}
                           </tbody>

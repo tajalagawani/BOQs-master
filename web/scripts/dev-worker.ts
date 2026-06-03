@@ -6,14 +6,19 @@
  * UI polls and the spinner reads "Waiting for the agent's first
  * iteration…" indefinitely.
  *
- * Run this in a separate terminal while developing:
- *   npm run dev:worker
+ * Run this in a separate terminal while developing, matching your dev
+ * server's port (defaults to 3000):
+ *   npm run dev:worker                 # → localhost:3000
+ *   DEV_WORKER_PORT=3002 npm run dev:worker
+ *   WORKER_URL=http://localhost:3002/procurex/api/worker/extraction npm run dev:worker
  *
  * It pings the worker every 5 seconds. Cheap — when the queue is
  * empty the drain returns immediately.
  */
-const WORKER_URL = "http://localhost:3000/procurex/api/worker/extraction";
-const INTERVAL_MS = 5_000;
+const PORT = process.env.DEV_WORKER_PORT ?? process.env.PORT ?? "3000";
+const WORKER_URL =
+  process.env.WORKER_URL ?? `http://localhost:${PORT}/procurex/api/worker/extraction`;
+const INTERVAL_MS = Number(process.env.DEV_WORKER_INTERVAL_MS ?? 5_000);
 
 let inflight = false;
 let lastNonEmpty = 0;
