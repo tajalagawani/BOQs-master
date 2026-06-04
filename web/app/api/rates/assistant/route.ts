@@ -1,11 +1,23 @@
 import { streamRatesAssistant, type AssistantTurn } from "@/modules/rates/lib/ai/agent";
 import { isAiConfigured } from "@/modules/ai-extraction/client";
+import { canUseRatesAssistant, getCurrentUser } from "@/modules/core/authz";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  // Restricted to super admins and the testers a super admin has enabled.
+  const me = await getCurrentUser();
+  if (!me) {
+    return Response.json({ error: "Not signed in." }, { status: 401 });
+  }
+  if (!canUseRatesAssistant(me)) {
+    return Response.json(
+      { error: "The RatesX AI assistant is in limited testing. Ask a super admin for access." },
+      { status: 403 },
+    );
+  }
   if (!isAiConfigured()) {
     return Response.json({ error: "AI is not configured (ANTHROPIC_API_KEY missing)." }, { status: 503 });
   }

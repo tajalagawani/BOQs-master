@@ -12,6 +12,23 @@ const schema = z.object({
   // Auth.js
   AUTH_SECRET: z.string().min(16),
 
+  /**
+   * Microsoft Entra ID (Azure AD) SSO. All optional so the app still boots in
+   * dev without SSO configured — the provider is only registered when the
+   * client id is present. Issuer is `https://login.microsoftonline.com/<tenant>/v2.0`
+   * (or `.../common/v2.0` for multi-tenant).
+   */
+  AUTH_MICROSOFT_ENTRA_ID_ID: z.string().optional(),
+  AUTH_MICROSOFT_ENTRA_ID_SECRET: z.string().optional(),
+  AUTH_MICROSOFT_ENTRA_ID_ISSUER: z.string().url().optional(),
+
+  /**
+   * Comma-separated email allowlist. Any user signing in with one of these
+   * emails is promoted to `superadmin` (full access to every module). The
+   * first superadmin is bootstrapped this way.
+   */
+  SUPERADMIN_EMAILS: z.string().default(""),
+
   // Anthropic — direct provider for the document-extraction agent.
   // The agent uses adaptive thinking + prompt caching + 128k output beta,
   // which require direct SDK access (see docs/AI_AGENT_MIGRATION_PLAN.md).

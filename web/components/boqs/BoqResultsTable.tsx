@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   LayoutGrid,
   Check,
+  GripVertical,
   AlertTriangle,
   ArrowLeft,
   Search,
@@ -108,6 +109,21 @@ const COLUMNS: Col[] = [
   { key: "pomiCode", label: "POMI Code", width: 96, align: "left", type: "mono", hidden: true },
   { key: "sheet", label: "BATCH", width: 140, align: "left", type: "text", hidden: true },
 ];
+
+// Canonical key order + lookup. `columnOrder` (user-reorderable) holds keys; the
+// table renders columns in that order, ignoring any key COLUMNS no longer has.
+const DEFAULT_ORDER = COLUMNS.map((c) => c.key);
+const COL_BY_KEY: Record<string, Col> = Object.fromEntries(COLUMNS.map((c) => [c.key, c]));
+const COLS_STORAGE_KEY = "boq-results-columns:v1";
+
+// Drop a saved order that references unknown keys, and append any column added
+// to COLUMNS since the order was saved — so new columns never silently vanish.
+function reconcileOrder(saved: unknown): string[] {
+  if (!Array.isArray(saved)) return DEFAULT_ORDER;
+  const known = saved.filter((k): k is string => typeof k === "string" && k in COL_BY_KEY);
+  const seen = new Set(known);
+  return [...known, ...DEFAULT_ORDER.filter((k) => !seen.has(k))];
+}
 
 const HEADER_H = 34;
 const FILTER_H = 32;
@@ -213,14 +229,62 @@ export function BoqResultsTable({
   const [hiddenCols, setHiddenCols] = React.useState<Set<string>>(
     () => new Set(COLUMNS.filter((c) => c.hidden).map((c) => c.key)),
   );
+  // The committed column order the table renders by. The Columns menu edits a
+  // draft and commits it to this on close ("adopt the table on close").
+  const [columnOrder, setColumnOrder] = React.useState<string[]>(DEFAULT_ORDER);
+  const [colsMenuOpen, setColsMenuOpen] = React.useState(false);
+  const [draftOrder, setDraftOrder] = React.useState<string[]>(DEFAULT_ORDER);
+  const [dragKey, setDragKey] = React.useState<string | null>(null);
+  const [dropTarget, setDropTarget] = React.useState<{ key: string; after: boolean } | null>(null);
   const [sort, setSort] = React.useState<SortState>(null);
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(50);
 
   React.useEffect(() => setPage(1), [search, activeSection, activeSheet, reviewOnly, colFilters, pageSize]);
 
-  const visibleColumns = React.useMemo(() => COLUMNS.filter((c) => !hiddenCols.has(c.key)), [hiddenCols]);
+  // Restore the saved column order + visibility (client-only; defaults render on
+  // the server so there's no hydration mismatch).
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLS_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { order?: unknown; hidden?: unknown };
+      const order = reconcileOrder(saved.order);
+      setColumnOrder(order);
+      setDraftOrder(order);
+      if (Array.isArray(saved.hidden)) {
+        setHiddenCols(new Set(saved.hidden.filter((k): k is string => typeof k === "string" && k in COL_BY_KEY)));
+      }
+    } catch {
+      /* ignore malformed storage */
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify({ order: columnOrder, hidden: [...hiddenCols] }));
+    } catch {
+      /* storage unavailable (private mode / quota) — order just won't persist */
+    }
+  }, [columnOrder, hiddenCols]);
+
+  const orderedColumns = React.useMemo(
+    () => columnOrder.map((k) => COL_BY_KEY[k]).filter(Boolean) as Col[],
+    [columnOrder],
+  );
+  const visibleColumns = React.useMemo(
+    () => orderedColumns.filter((c) => !hiddenCols.has(c.key)),
+    [orderedColumns, hiddenCols],
+  );
   const totalWidth = React.useMemo(() => visibleColumns.reduce((s, c) => s + c.width, 0), [visibleColumns]);
+
+  // Export mirrors the table: the same visible columns, in the same order
+  // (committed when the Columns menu closes). The server reorders/filters the
+  // workbook to match these keys.
+  const exportHref = React.useMemo(() => {
+    const params = new URLSearchParams({ cols: visibleColumns.map((c) => c.key).join(",") });
+    return `/api/run/${projectId}/export?${params.toString()}`;
+  }, [visibleColumns, projectId]);
 
   const filtered = React.useMemo(() => {
     const g = search.trim().toLowerCase();
@@ -269,6 +333,36 @@ export function BoqResultsTable({
       else next.add(k);
       return next;
     });
+
+  // Columns menu: seed the draft on open, commit it to the live order on close.
+  const onColsMenuOpenChange = (open: boolean) => {
+    if (open) setDraftOrder(columnOrder);
+    else {
+      setColumnOrder(draftOrder);
+      setDragKey(null);
+      setDropTarget(null);
+    }
+    setColsMenuOpen(open);
+  };
+
+  const onColDrop = () => {
+    setDraftOrder((prev) => {
+      if (!dragKey || !dropTarget) return prev;
+      const next = prev.filter((k) => k !== dragKey);
+      let idx = next.indexOf(dropTarget.key);
+      if (idx < 0) return prev;
+      if (dropTarget.after) idx += 1;
+      next.splice(idx, 0, dragKey);
+      return next;
+    });
+    setDragKey(null);
+    setDropTarget(null);
+  };
+
+  const resetCols = () => {
+    setHiddenCols(new Set());
+    setDraftOrder(DEFAULT_ORDER);
+  };
 
   const activeFilterCount =
     Object.values(colFilters).filter((v) => v && v.trim()).length +
@@ -336,7 +430,7 @@ export function BoqResultsTable({
                 {formatNumber(total, { maximumFractionDigits: 0 })} rows · {formatNumber(shownAmount, { maximumFractionDigits: 0 })}
               </span>
 
-              <DropdownMenu>
+              <DropdownMenu open={colsMenuOpen} onOpenChange={onColsMenuOpenChange}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -348,37 +442,88 @@ export function BoqResultsTable({
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 p-1">
+                <DropdownMenuContent align="end" className="w-56 p-1">
                   <DropdownMenuLabel className="flex items-center justify-between">
                     <span>Columns</span>
                     <button
-                      onClick={() => setHiddenCols(new Set())}
+                      onClick={resetCols}
                       className="text-[10px] font-normal text-muted-foreground hover:text-foreground"
                     >
                       Reset
                     </button>
                   </DropdownMenuLabel>
+                  <p className="px-2 pb-1 text-[10px] leading-tight text-muted-foreground/80">
+                    Drag to reorder · click to show/hide. New order applies when you close this menu.
+                  </p>
                   <DropdownMenuSeparator />
-                  {COLUMNS.map((c) => {
-                    const vis = !hiddenCols.has(c.key);
-                    return (
-                      <button
-                        key={c.key}
-                        onClick={() => toggleCol(c.key)}
-                        className="w-full flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-left"
-                      >
-                        <span
+                  <div className="max-h-[60vh] overflow-y-auto scrollbar-thin">
+                    {draftOrder.map((key) => {
+                      const c = COL_BY_KEY[key];
+                      if (!c) return null;
+                      const vis = !hiddenCols.has(key);
+                      const isDragging = dragKey === key;
+                      const isOver = dropTarget?.key === key && dragKey !== key;
+                      return (
+                        <div
+                          key={key}
+                          draggable
+                          onDragStart={(e) => {
+                            setDragKey(key);
+                            e.dataTransfer.effectAllowed = "move";
+                            // Firefox needs data set for a drag to actually start.
+                            e.dataTransfer.setData("text/plain", key);
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setDropTarget({ key, after: e.clientY - r.top > r.height / 2 });
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            onColDrop();
+                          }}
+                          onDragEnd={() => {
+                            setDragKey(null);
+                            setDropTarget(null);
+                          }}
                           className={cn(
-                            "h-4 w-4 rounded-sm border grid place-items-center transition-colors",
-                            vis ? "bg-primary border-primary text-primary-foreground" : "border-input",
+                            "relative flex items-center rounded-sm transition-colors",
+                            isDragging && "opacity-40",
                           )}
                         >
-                          {vis && <Check className="h-3 w-3" />}
-                        </span>
-                        <span className="flex-1 truncate">{c.label}</span>
-                      </button>
-                    );
-                  })}
+                          {isOver && (
+                            <span
+                              className={cn(
+                                "pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded-full bg-primary",
+                                dropTarget?.after ? "-bottom-px" : "-top-px",
+                              )}
+                            />
+                          )}
+                          <span
+                            className="shrink-0 grid place-items-center px-1 py-1.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground"
+                            aria-hidden
+                          >
+                            <GripVertical className="h-3.5 w-3.5" />
+                          </span>
+                          <button
+                            onClick={() => toggleCol(key)}
+                            className="min-w-0 flex-1 flex items-center gap-2 rounded-sm pr-2 py-1.5 text-sm hover:bg-accent text-left"
+                          >
+                            <span
+                              className={cn(
+                                "h-4 w-4 rounded-sm border grid place-items-center transition-colors shrink-0",
+                                vis ? "bg-primary border-primary text-primary-foreground" : "border-input",
+                              )}
+                            >
+                              {vis && <Check className="h-3 w-3" />}
+                            </span>
+                            <span className="flex-1 truncate">{c.label}</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -388,7 +533,7 @@ export function BoqResultsTable({
                   Master
                 </Button>
               </Link>
-              <a href={`/api/run/${projectId}/export`}>
+              <a href={exportHref}>
                 <Button size="sm" className="gap-1.5">
                   <Download className="h-3.5 w-3.5" />
                   Export

@@ -26,10 +26,14 @@ const numOf = (v: unknown): number | null => {
  * the rows from the MASTER BOQs result sheet. Never streams the flat sheet.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ runId: string }> },
 ) {
   const { runId } = await params;
+  // Column order + visibility mirror the on-screen table (sent by the Columns
+  // menu as UI column keys). Absent → the classic full-fidelity layout.
+  const colsParam = new URL(req.url).searchParams.get("cols");
+  const cols = colsParam ? colsParam.split(",").map((s) => s.trim()).filter(Boolean) : null;
   const meta = await readMeta(runId);
   const base = (meta?.originalName || "BOQ").replace(/\.[^.]+$/, "");
   const outName = `${base}_POMI_Coded.xlsx`;
@@ -103,7 +107,7 @@ export async function GET(
     return NextResponse.json({ error: "result not ready" }, { status: 404 });
   }
 
-  const buf = await buildWorkbook(base, rows);
+  const buf = await buildWorkbook(base, rows, cols);
   return new Response(buf, {
     headers: {
       "Content-Type": XLSX_MIME,

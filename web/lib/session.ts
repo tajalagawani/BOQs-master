@@ -1,12 +1,17 @@
 /**
- * Mock IOX session.
+ * IOX session bridge.
  *
- * Returns the seeded Arjun Mehta user. Anywhere the original roshn
- * code called `await auth()` and read `session.user.id` we use this
- * instead. When real auth ships, swap implementations here and the
- * call sites stay unchanged.
+ * Historically this returned a hard-coded mock user. It now resolves the real
+ * authenticated user (Auth.js `px_user`) and maps it onto the legacy Prisma
+ * `users` row (matched by email) that roshn-ported features FK against — so
+ * call sites that read `{ user }` keep working unchanged, including those that
+ * use `user.id` as a Prisma foreign key.
  */
 import "server-only";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/modules/core/auth";
+import { mirrorUserToLegacy } from "@/modules/core/identity-mirror";
 import { prisma } from "./prisma";
 
 export interface IoxSession {
@@ -18,26 +23,32 @@ export interface IoxSession {
   };
 }
 
-let cached: IoxSession | null = null;
-
 export async function getSession(): Promise<IoxSession> {
-  if (cached) return cached;
-  const u = await prisma.user.findUnique({
-    where: { email: "arjun.mehta@iox.local" },
+  const session = await auth();
+  const pxId = session?.user?.id;
+  const email = session?.user?.email?.toLowerCase();
+  if (!pxId || !email) redirect("/sign-in");
+
+  // The legacy row is created on sign-in; self-heal if it's somehow missing.
+  let legacy = await prisma.user.findUnique({
+    where: { email },
     select: { id: true, email: true, name: true, role: true },
   });
-  if (!u) {
-    throw new Error(
-      "Mock IOX user not found — run `npm run db:seed` in web/",
-    );
+  if (!legacy) {
+    await mirrorUserToLegacy(pxId);
+    legacy = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true, role: true },
+    });
   }
-  cached = {
+  if (!legacy) redirect("/sign-in");
+
+  return {
     user: {
-      id: u.id,
-      email: u.email,
-      name: u.name ?? "Arjun Mehta",
-      role: u.role,
+      id: legacy.id,
+      email: legacy.email,
+      name: legacy.name ?? legacy.email,
+      role: legacy.role,
     },
   };
-  return cached;
 }

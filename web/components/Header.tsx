@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, ChevronDown, HelpCircle, LayoutDashboard, Search } from "lucide-react";
+import { Bell, HelpCircle, LayoutDashboard, Search } from "lucide-react";
 import { HeaderNavInline } from "@/components/HeaderNav";
+import { AccountMenu } from "@/components/AccountMenu";
 
 // Header is rendered from both server pages and client pages (e.g.
 // app/boqs/create/page.tsx is "use client"). That means everything
@@ -97,18 +98,9 @@ export function Header({ variant = "default", brand }: HeaderProps = {}) {
           <HelpCircle className="size-4.5 text-zinc-700" strokeWidth={1.75} />
         </button>
 
-        {/* User */}
-        <div className="flex items-center gap-2 pl-2 shrink-0">
-          <div className="size-9 rounded-full bg-zinc-200 inline-flex items-center justify-center text-zinc-700 font-medium text-xs">
-            AM
-          </div>
-          <div className="hidden md:block leading-tight">
-            <div className="text-xs font-semibold text-zinc-900">
-              Arjun Mehta
-            </div>
-            <div className="text-[10.5px] text-zinc-500">Project Manager</div>
-          </div>
-          <ChevronDown className="size-3.5 text-zinc-500" strokeWidth={1.75} />
+        {/* User — real session-backed account menu (sign out, admin) */}
+        <div className="pl-2 shrink-0">
+          <AccountMenu />
         </div>
       </div>
     </header>

@@ -1,12 +1,27 @@
 import {
   boolean,
   integer,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core"
 import type { AdapterAccountType } from "next-auth/adapters"
+
+/**
+ * The single IOX-wide role. `superadmin` has access to everything in every
+ * module (no per-module silos); `director` and `user` are normal members who
+ * can use every module. Capability flags (e.g. `aiAssistantTester`) gate
+ * specific features on top of the role.
+ */
+export const userRoleEnum = pgEnum("px_user_role", [
+  "superadmin",
+  "director",
+  "user",
+])
+
+export type UserRole = (typeof userRoleEnum.enumValues)[number]
 
 // Auth.js standard tables (https://authjs.dev/reference/adapter/drizzle).
 // Extended with our app-specific fields (password_hash for credentials,
@@ -23,6 +38,11 @@ export const users = pgTable("px_user", {
 
   // Credentials provider (dev quick-fills + future email/password)
   passwordHash: text("password_hash"),
+
+  // IOX-wide authorisation
+  role: userRoleEnum("role").notNull().default("user"),
+  /** Capability flag: may use the RatesX AI assistant (managed by superadmin). */
+  aiAssistantTester: boolean("ai_assistant_tester").notNull().default(false),
 
   // Dev / seed marker — gates the quick-fill panel
   isDevSeed: boolean("is_dev_seed").default(false).notNull(),

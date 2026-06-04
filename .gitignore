@@ -3,6 +3,10 @@ node_modules/
 .vite/
 .DS_Store
 
+# Env files must never be committed (they carry real secrets / API keys).
+.env
+.env.*
+
 # Local test outputs (the platform /tests page reads these — commit the
 # latest XML/JSON if you want it visible on prod; ignore the .junit-history
 # unless you want to surface the trend chart there too)
