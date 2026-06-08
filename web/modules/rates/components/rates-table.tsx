@@ -115,6 +115,14 @@ export function RatesTable({
    *  to /api/rates/uploads so other browsers see the change after refresh. */
   const [data, setData] = React.useState<DataStore>(() => persisted ?? {});
   const [storageWarn, setStorageWarn] = React.useState(false);
+  // Result of the last push into the RatesX warehouse (the "lib" the AI reads).
+  // null = idle, "saving" = in flight; otherwise inserted/skipped or an error.
+  const [libStatus, setLibStatus] = React.useState<
+    | null
+    | { kind: "saving" }
+    | { kind: "ok"; inserted: number; skipped: number }
+    | { kind: "error"; reason: string }
+  >(null);
   const hydrated = React.useRef(false);
 
   // Hydrate from localStorage once on mount — only used when the DB returned
@@ -345,6 +353,7 @@ export function RatesTable({
     tab: string,
     entry: DataEntry,
   ) => {
+    setLibStatus({ kind: "saving" });
     try {
       const res = await fetch("/api/rates/uploads", {
         method: "POST",
@@ -352,14 +361,34 @@ export function RatesTable({
         body: JSON.stringify({ section, tab, ...entry }),
       });
       if (!res.ok) {
-        console.warn(
-          "[rates] failed to sync upload to DB:",
-          res.status,
-          await res.text(),
-        );
+        const text = await res.text();
+        console.warn("[rates] failed to sync upload to DB:", res.status, text);
+        setLibStatus({ kind: "error", reason: `HTTP ${res.status}` });
+        return;
+      }
+      // The route normalizes the rows into the v2 warehouse via dispatchUpload
+      // and reports the outcome under `v2`. Surface it so the user knows the
+      // mapping actually landed in the lib the AI queries — a silent 0-row push
+      // (e.g. a schema mismatch) is the failure mode we want to make visible.
+      const body = (await res.json().catch(() => null)) as
+        | { v2?: { kind?: string; result?: { inserted?: number; skipped?: number; reason?: string } } }
+        | null;
+      const v2 = body?.v2;
+      const inserted = Number(v2?.result?.inserted ?? 0);
+      const skipped = Number(v2?.result?.skipped ?? 0);
+      if (v2?.kind === "error") {
+        setLibStatus({ kind: "error", reason: v2.result?.reason ?? "warehouse write failed" });
+      } else if (inserted === 0) {
+        setLibStatus({
+          kind: "error",
+          reason: v2?.result?.reason ?? "no rows matched this section's schema",
+        });
+      } else {
+        setLibStatus({ kind: "ok", inserted, skipped });
       }
     } catch (err) {
       console.warn("[rates] sync error:", err);
+      setLibStatus({ kind: "error", reason: (err as Error).message });
     }
   };
 
@@ -443,6 +472,28 @@ export function RatesTable({
                 className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md border bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px]"
               >
                 Storage full
+              </span>
+            )}
+            {libStatus?.kind === "saving" && (
+              <span className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md border bg-zinc-500/10 text-zinc-600 dark:text-zinc-300 text-[11px]">
+                Saving to lib…
+              </span>
+            )}
+            {libStatus?.kind === "ok" && (
+              <span
+                title={`${libStatus.inserted} rows written to the RatesX warehouse${libStatus.skipped ? `, ${libStatus.skipped} skipped` : ""}`}
+                className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md border bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px]"
+              >
+                <Check className="h-3 w-3" />
+                {formatNumber(libStatus.inserted, { maximumFractionDigits: 0 })} in lib
+              </span>
+            )}
+            {libStatus?.kind === "error" && (
+              <span
+                title={`Mapping saved locally but did NOT reach the lib: ${libStatus.reason}`}
+                className="inline-flex items-center gap-1.5 h-7 px-2 rounded-md border bg-red-500/10 text-red-700 dark:text-red-300 text-[11px]"
+              >
+                Not saved to lib
               </span>
             )}
             {uploadedMeta && (
