@@ -12,6 +12,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Square, Loader2, ChevronDown, Brain, Copy, Check, ThumbsUp, ThumbsDown, RotateCcw, Download } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ChartBlock, extractCharts, extractSources, extractSampleSize, extractCsv } from "./AssistantCharts";
 
 type ChatStatus = "ready" | "submitted" | "streaming";
 
@@ -502,103 +503,6 @@ function AssistantMarkdown({ text }: { text: string }) {
   );
 }
 
-/* ---------- derive charts / sources / export from tool results ---------- */
-
-type ChartSpec = { title: string; data: { label: string; value: number }[] };
-const toNum = (v: unknown): number | null => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
-
-function extractCharts(calls?: ToolCall[]): ChartSpec[] {
-  const charts: ChartSpec[] = [];
-  for (const c of calls ?? []) {
-    const r = c.result as Record<string, unknown> | undefined;
-    if (!r || typeof r !== "object") continue;
-    const bars = (arr: unknown, label: (x: any) => string, val: (x: any) => unknown) =>
-      Array.isArray(arr)
-        ? arr.map((x) => ({ label: label(x), value: toNum(val(x)) })).filter((d) => d.value != null) as { label: string; value: number }[]
-        : [];
-    if (Array.isArray(r.series))
-      charts.push({ title: `${r.query ?? "Rate"} — yearly median ${r.currency ?? ""}`, data: bars(r.series, (s) => String(s.year), (s) => s.median) });
-    if (Array.isArray(r.histogram))
-      charts.push({ title: `${r.query ?? "Rate"} distribution (${r.unit ?? ""})`, data: bars(r.histogram, (h) => `${h.from}–${h.to}`, (h) => h.count) });
-    if (Array.isArray(r.elements))
-      charts.push({ title: `Elemental breakdown ${r.currency ?? ""}/m²`, data: bars(r.elements, (e) => String(e.element), (e) => e.median) });
-    else if (Array.isArray(r.byElement))
-      charts.push({ title: `By element ${r.currency ?? ""}/m²`, data: bars(r.byElement, (e) => String(e.element), (e) => e.median) });
-    if (Array.isArray(r.parties))
-      charts.push({ title: `${r.query ?? ""} by ${r.by ?? "party"} ${r.currency ?? ""}`, data: bars(r.parties, (p) => `${p.party}${p.unit ? " /" + p.unit : ""}`, (p) => p.median) });
-    if (Array.isArray(r.perUnit) && r.perUnit.length > 1)
-      charts.push({ title: `${r.query ?? ""} median by unit`, data: bars(r.perUnit, (u) => String(u.unit), (u) => u.median) });
-  }
-  return charts.filter((c) => c.data.length > 0).slice(0, 2);
-}
-
-function extractSources(calls?: ToolCall[]): string[] {
-  const names = new Set<string>();
-  for (const c of calls ?? []) {
-    const r = c.result as Record<string, unknown> | undefined;
-    if (!r) continue;
-    for (const arr of [r.samples, r.projects, r.compare]) {
-      if (Array.isArray(arr)) arr.forEach((x: any) => x?.project && names.add(x.project));
-      if (Array.isArray(arr)) arr.forEach((x: any) => x?.name && names.add(x.name));
-    }
-  }
-  return [...names].slice(0, 8);
-}
-
-function extractSampleSize(calls?: ToolCall[]): number {
-  let n = 0;
-  for (const c of calls ?? []) {
-    const r = c.result as Record<string, unknown> | undefined;
-    if (!r) continue;
-    for (const k of ["rows", "projects", "totalRows", "count", "matches", "samples"]) {
-      const v = Array.isArray(r[k]) ? (r[k] as unknown[]).length : Number(r[k]);
-      if (Number.isFinite(v)) n = Math.max(n, v as number);
-    }
-  }
-  return n;
-}
-
-function extractCsv(calls?: ToolCall[]): { filename: string; csv: string } | null {
-  for (const c of calls ?? []) {
-    const r = c.result as Record<string, unknown> | undefined;
-    if (!r) continue;
-    const arr = (r.series || r.histogram || r.elements || r.byElement || r.parties || r.perUnit || r.samples || r.ratios || r.projects) as unknown;
-    if (Array.isArray(arr) && arr.length && typeof arr[0] === "object") {
-      const cols = Object.keys(arr[0] as object);
-      const esc = (v: unknown) => {
-        const s = v == null ? "" : String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-      const csv = [cols.join(","), ...arr.map((row) => cols.map((k) => esc((row as Record<string, unknown>)[k])).join(","))].join("\n");
-      return { filename: `${c.name}.csv`, csv };
-    }
-  }
-  return null;
-}
-
-function ChartBlock({ spec }: { spec: ChartSpec }) {
-  const max = Math.max(1, ...spec.data.map((d) => Math.abs(d.value)));
-  const fmt = (n: number) => n.toLocaleString("en-GB", { maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0 });
-  return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-3">
-      <div className="mb-2 text-[11px] font-medium text-zinc-500">{spec.title}</div>
-      <div className="flex flex-col gap-1">
-        {spec.data.slice(0, 12).map((d, i) => (
-          <div key={i} className="flex items-center gap-2 text-[11px]">
-            <span className="w-28 shrink-0 truncate text-zinc-600" title={d.label}>{d.label}</span>
-            <div className="h-3.5 flex-1 overflow-hidden rounded bg-zinc-100">
-              <div className="h-full rounded bg-zinc-800/85" style={{ width: `${Math.max(2, (Math.abs(d.value) / max) * 100)}%` }} />
-            </div>
-            <span className="w-16 shrink-0 text-right tabular-nums text-zinc-700">{fmt(d.value)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function Bubble({
   msg,
