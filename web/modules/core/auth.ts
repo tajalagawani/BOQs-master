@@ -22,11 +22,14 @@ import { ensureWorkspaceForUser } from "@/modules/workspace/actions"
 
 import { authConfig } from "./auth.config"
 import { mirrorUserToLegacy } from "./identity-mirror"
+import { HARDCODED_SUPERADMIN_EMAILS } from "./superadmins"
 
-// Parsed inline (not imported from ./authz) to avoid an auth ⇄ authz import cycle.
-const SUPERADMIN_EMAILS = env.SUPERADMIN_EMAILS.split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean)
+// Hardcoded super-admins + the SUPERADMIN_EMAILS env allowlist (parsed inline,
+// not imported from ./authz, to avoid an auth ⇄ authz import cycle).
+const SUPERADMIN_EMAILS = [
+  ...HARDCODED_SUPERADMIN_EMAILS,
+  ...env.SUPERADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
+]
 
 const providers: NextAuthConfig["providers"] = [
   Credentials({

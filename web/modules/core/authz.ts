@@ -6,6 +6,7 @@ import { auth } from "@/modules/core/auth"
 import { env } from "@/modules/core/env"
 import { getUserById } from "@/modules/identity/queries"
 import type { UserRole } from "@/modules/identity/schema"
+import { HARDCODED_SUPERADMIN_EMAILS } from "./superadmins"
 
 export interface CurrentUser {
   id: string
@@ -15,10 +16,11 @@ export interface CurrentUser {
   aiAssistantTester: boolean
 }
 
-/** Parsed, lower-cased superadmin email allowlist from the environment. */
-export const SUPERADMIN_EMAILS: string[] = env.SUPERADMIN_EMAILS.split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean)
+/** Hardcoded super-admins + the env allowlist, lower-cased. */
+export const SUPERADMIN_EMAILS: string[] = [
+  ...HARDCODED_SUPERADMIN_EMAILS,
+  ...env.SUPERADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
+]
 
 /**
  * The authenticated user, read fresh from the database (so role / capability
