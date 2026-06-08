@@ -29,13 +29,40 @@ interface Msg {
   messageId?: string;
 }
 
-const EXAMPLES = [
-  "Benchmarked rate per m² for infrastructure works in UAE?",
-  "Market rate per m² for AAC blockwork in the UAE?",
-  "Break down the cost components for a commercial building.",
-  "Benchmarked rate per m² for soft landscaping?",
-  "Market rate per m³ for granular fill in the UAE?",
-  "Rate per m² for reinforced concrete (substructure + superstructure)?",
+// One shortcut per capability, grouped so the home page shows what the
+// assistant can do across every tool.
+const EXAMPLE_GROUPS: { label: string; items: string[] }[] = [
+  {
+    label: "Benchmarks",
+    items: [
+      "Benchmarked rate per m² for infrastructure works in the UAE?",
+      "Break down the cost components of a residential building.",
+      "What's the cost per key for hotels in the UAE?",
+    ],
+  },
+  {
+    label: "Market rates",
+    items: [
+      "Market rate per m² for AAC blockwork in the UAE?",
+      "Market rate per m³ for granular fill in the UAE?",
+      "How has the reinforced concrete rate changed year on year?",
+    ],
+  },
+  {
+    label: "Design & projects",
+    items: [
+      "How much concrete formwork per m² for a high-rise residential?",
+      "Show me the profile for Dubai Hills Estate.",
+      "Compare Dubai Hills Estate vs Al Furjan.",
+    ],
+  },
+  {
+    label: "Reference",
+    items: [
+      "What asset classes and countries does the library cover?",
+      "Construction cost escalation from 2020 to 2024?",
+    ],
+  },
 ];
 
 export function RatesAssistant() {
@@ -175,15 +202,24 @@ export function RatesAssistant() {
         <div className="w-full max-w-3xl">
           <Composer value={input} onChange={setInput} onSubmit={() => send(input)} onStop={stop} status={status} autoFocus />
         </div>
-        <div className="flex flex-wrap justify-center gap-2 max-w-3xl">
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              onClick={() => send(ex)}
-              className="text-[12.5px] px-3 py-1.5 rounded-full border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 transition-colors"
-            >
-              {ex}
-            </button>
+        <div className="flex w-full max-w-3xl flex-col gap-3">
+          {EXAMPLE_GROUPS.map((group) => (
+            <div key={group.label} className="flex flex-col gap-1.5">
+              <span className="px-1 text-[10.5px] font-medium uppercase tracking-wide text-zinc-400">
+                {group.label}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => send(ex)}
+                    className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-[12.5px] text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-900"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
