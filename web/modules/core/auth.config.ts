@@ -1,6 +1,11 @@
+import { NextResponse } from "next/server"
 import type { NextAuthConfig } from "next-auth"
 
 import type { UserRole } from "@/modules/identity/schema"
+import {
+  ASSISTANT_ONLY_ALLOW_PREFIXES,
+  isAssistantOnly,
+} from "@/modules/core/assistant-only"
 
 /**
  * Edge-safe Auth.js config. Imported by `middleware.ts` — must NOT pull in the
@@ -29,15 +34,32 @@ export const authConfig = {
     authorized: ({ auth, request }) => {
       const { pathname } = request.nextUrl
       if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true
-      return Boolean(auth?.user)
+      if (!auth?.user) return false
+      // Assistant-only users are confined to the AI assistant + its API; any
+      // other path bounces them back to the chat.
+      if (isAssistantOnly(auth.user.email)) {
+        const allowed = ASSISTANT_ONLY_ALLOW_PREFIXES.some(
+          (p) => pathname === p || pathname.startsWith(p + "/"),
+        )
+        if (!allowed) {
+          return NextResponse.redirect(
+            new URL("/rates/assistant", request.nextUrl.origin),
+          )
+        }
+      }
+      return true
     },
     async jwt({ token, user }) {
       if (user?.id) token.sub = user.id
+      if (user?.email) token.email = user.email
       return token
     },
     async session({ session, token }) {
       if (token?.sub && session.user) {
         session.user.id = token.sub
+        // Email drives the assistant-only gate in `authorized` (runs in the
+        // edge proxy), so make sure it is always present on the session.
+        if (token.email) session.user.email = token.email
         if (token.role) session.user.role = token.role as UserRole
         if (typeof token.aiAssistantTester === "boolean") {
           session.user.aiAssistantTester = token.aiAssistantTester

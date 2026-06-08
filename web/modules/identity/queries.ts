@@ -77,3 +77,21 @@ export async function applySuperadminAllowlist(
     .set({ role: "superadmin", updatedAt: new Date() })
     .where(eq(users.id, userId))
 }
+
+/**
+ * Confine a user to the RatesX AI assistant: role=user + the assistant
+ * capability, nothing more. Idempotent; safe to call on every sign-in. The
+ * proxy redirects these users away from every non-assistant path.
+ */
+export async function applyAssistantOnlyAllowlist(
+  userId: string,
+  email: string | null | undefined,
+  allowlist: string[],
+) {
+  if (!email) return
+  if (!allowlist.includes(email.trim().toLowerCase())) return
+  await db
+    .update(users)
+    .set({ role: "user", aiAssistantTester: true, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+}

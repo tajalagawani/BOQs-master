@@ -14,6 +14,7 @@ import {
   type UserRole,
 } from "@/modules/identity/schema"
 import {
+  applyAssistantOnlyAllowlist,
   applySuperadminAllowlist,
   getUserByEmail,
   getUserById,
@@ -22,6 +23,7 @@ import { ensureWorkspaceForUser } from "@/modules/workspace/actions"
 
 import { authConfig } from "./auth.config"
 import { mirrorUserToLegacy } from "./identity-mirror"
+import { ASSISTANT_ONLY_EMAILS } from "./assistant-only"
 import { HARDCODED_SUPERADMIN_EMAILS } from "./superadmins"
 
 // Hardcoded super-admins + the SUPERADMIN_EMAILS env allowlist (parsed inline,
@@ -92,12 +94,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // whenever the session is explicitly refreshed (`update`).
     async jwt({ token, user, trigger }) {
       if (user?.id) token.sub = user.id
+      if (user?.email) token.email = user.email
       const id = user?.id ?? token.sub
       if (id && (user || trigger === "update" || token.role === undefined)) {
         const row = await getUserById(id)
         if (row) {
           token.role = row.role
           token.aiAssistantTester = row.aiAssistantTester
+          if (row.email) token.email = row.email
         }
       }
       return token
@@ -121,6 +125,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await applySuperadminAllowlist(user.id, user.email, SUPERADMIN_EMAILS)
       } catch (err) {
         console.error("[auth] superadmin allowlist failed", err)
+      }
+      try {
+        // Assistant-only testers: role=user + assistant capability, nothing more.
+        await applyAssistantOnlyAllowlist(user.id, user.email, ASSISTANT_ONLY_EMAILS)
+      } catch (err) {
+        console.error("[auth] assistant-only allowlist failed", err)
       }
       try {
         await ensureWorkspaceForUser(user.id)

@@ -1,9 +1,10 @@
-// Seed the hardcoded @omniumint.com super-admins as credentials (email +
-// password) accounts so they can sign in WITHOUT SSO. Idempotent:
-//   - creates the account with the shared password if it does not exist;
-//   - if it already exists, enforces role=superadmin and only sets the password
-//     when none is set yet (COALESCE) so a user-changed password is preserved.
-// Shared password: env SUPERADMIN_SEED_PASSWORD, else the default below.
+// Seed the credentials (email + password) accounts, no SSO needed:
+//   - taj@iox-1.dev          → superadmin (full access, reviews feedback)
+//   - the 12 @omniumint.com  → role=user + aiAssistantTester (assistant ONLY;
+//                              the proxy confines them to /rates/assistant)
+// Shared password from env SUPERADMIN_SEED_PASSWORD. Idempotent. Role,
+// capability and password are force-set so the accounts always match this
+// definition (these are managed test accounts, not self-service users).
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
@@ -15,7 +16,9 @@ if (!PASSWORD) {
   process.exit(1);
 }
 
-const EMAILS = [
+const SUPERADMINS = ["taj@iox-1.dev"];
+
+const ASSISTANT_ONLY = [
   "antonio.resurreccion@omniumint.com",
   "matthew.eastwood@omniumint.com",
   "jeffrey.zacarias@omniumint.com",
@@ -47,25 +50,34 @@ const pool = new pg.Pool({
 
 const hash = bcrypt.hashSync(PASSWORD, 10);
 
-for (const raw of EMAILS) {
-  const email = raw.trim().toLowerCase();
+async function upsert(rawEmail, role, aiTester) {
+  const email = rawEmail.trim().toLowerCase();
   const name = titleCase(email.split("@")[0]);
   await pool.query(
-    `INSERT INTO px_user (id, email, name, password_hash, role, email_verified)
-     VALUES ($1,$2,$3,$4,'superadmin', now())
+    `INSERT INTO px_user (id, email, name, password_hash, role, ai_assistant_tester, email_verified)
+     VALUES ($1,$2,$3,$4,$5,$6, now())
      ON CONFLICT (email) DO UPDATE
-       SET role = 'superadmin',
-           password_hash = COALESCE(px_user.password_hash, EXCLUDED.password_hash),
+       SET role = EXCLUDED.role,
+           ai_assistant_tester = EXCLUDED.ai_assistant_tester,
+           password_hash = EXCLUDED.password_hash,
            email_verified = COALESCE(px_user.email_verified, now()),
            updated_at = now()`,
-    [randomUUID(), email, name, hash],
+    [randomUUID(), email, name, hash, role, aiTester],
   );
 }
 
+for (const e of SUPERADMINS) await upsert(e, "superadmin", false);
+for (const e of ASSISTANT_ONLY) await upsert(e, "user", true);
+
 const { rows } = await pool.query(
-  `SELECT email, role FROM px_user WHERE email = ANY($1) ORDER BY email`,
-  [EMAILS.map((e) => e.trim().toLowerCase())],
+  `SELECT email, role, ai_assistant_tester
+   FROM px_user
+   WHERE email = ANY($1)
+   ORDER BY role DESC, email`,
+  [[...SUPERADMINS, ...ASSISTANT_ONLY].map((e) => e.trim().toLowerCase())],
 );
-console.log(`Seeded ${rows.length} super-admins (shared password: ${PASSWORD})`);
-for (const r of rows) console.log(`  ${r.role.padEnd(10)} ${r.email}`);
+console.log(`Seeded ${rows.length} accounts (shared password: ${PASSWORD})`);
+for (const r of rows) {
+  console.log(`  ${r.role.padEnd(10)} ai=${r.ai_assistant_tester ? "Y" : "N"}  ${r.email}`);
+}
 await pool.end();

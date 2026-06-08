@@ -20,6 +20,9 @@ interface HeaderProps {
    *  separated by a thin vertical divider. /platform uses this to
    *  brand the section without a duplicate strip in the sidebar. */
   brand?: React.ReactNode;
+  /** Hide the module nav + Platform link (e.g. assistant-only users who may
+   *  not reach anything but the AI chat). */
+  minimal?: boolean;
 }
 
 const VARIANT_CLS: Record<NonNullable<HeaderProps["variant"]>, string> = {
@@ -28,7 +31,7 @@ const VARIANT_CLS: Record<NonNullable<HeaderProps["variant"]>, string> = {
   white: "bg-white",
 };
 
-export function Header({ variant = "default", brand }: HeaderProps = {}) {
+export function Header({ variant = "default", brand, minimal = false }: HeaderProps = {}) {
   return (
     <header className={`sticky top-0 z-50 ${VARIANT_CLS[variant]}`}>
       <div className="w-full px-5 h-12 flex items-center gap-3">
@@ -54,19 +57,21 @@ export function Header({ variant = "default", brand }: HeaderProps = {}) {
         )}
 
         {/* Inline menu — replaces the old search input */}
-        <HeaderNavInline />
+        {minimal ? <div className="flex-1" /> : <HeaderNavInline />}
 
         {/* Platform dashboard — role check happens at /platform itself
             (non-admins land on the access-denied page). */}
-        <Link
-          href="/platform"
-          aria-label="Platform dashboard"
-          title="Platform dashboard"
-          className="h-9 px-2.5 inline-flex items-center gap-1.5 rounded-md hover:bg-zinc-100 transition-colors shrink-0 text-zinc-700"
-        >
-          <LayoutDashboard className="size-4.5" strokeWidth={1.75} />
-          <span className="hidden lg:inline text-[12.5px] font-medium">Platform</span>
-        </Link>
+        {!minimal && (
+          <Link
+            href="/platform"
+            aria-label="Platform dashboard"
+            title="Platform dashboard"
+            className="h-9 px-2.5 inline-flex items-center gap-1.5 rounded-md hover:bg-zinc-100 transition-colors shrink-0 text-zinc-700"
+          >
+            <LayoutDashboard className="size-4.5" strokeWidth={1.75} />
+            <span className="hidden lg:inline text-[12.5px] font-medium">Platform</span>
+          </Link>
+        )}
 
         {/* Search icon (opens command palette) */}
         <button

@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 
 import { Header } from "@/components/Header";
 import { RatesAssistant } from "@/components/rates-home/RatesAssistant";
+import { isAssistantOnly } from "@/modules/core/assistant-only";
 import { canUseRatesAssistant, getCurrentUser } from "@/modules/core/authz";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function RatesAssistantPage() {
   const me = await getCurrentUser();
   const allowed = canUseRatesAssistant(me);
+  const assistantOnly = isAssistantOnly(me?.email);
 
   return (
     <>
@@ -20,7 +22,7 @@ export default async function RatesAssistantPage() {
         className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
         style={{ backgroundImage: "url(/iox-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }}
       />
-      <Header />
+      <Header minimal={assistantOnly} />
       <main className="flex-1 min-h-0 overflow-hidden">
         {allowed ? (
           <RatesAssistant />
