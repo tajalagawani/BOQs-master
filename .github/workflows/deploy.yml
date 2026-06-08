@@ -164,6 +164,9 @@ jobs:
           AZURE_LOG_ANALYTICS_WORKSPACE_ID: ${{ secrets.AZURE_LOG_ANALYTICS_WORKSPACE_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          # Repo Variable (Settings → Secrets and variables → Actions → Variables).
+          # Set to "true" to show the dev quick-fill login + seed dev accounts on prod.
+          ALLOW_DEV_LOGIN: ${{ vars.ALLOW_DEV_LOGIN }}
         run: |
           # Build the env block locally so the secrets never appear in
           # remote shell history. Then atomically swap the marked region
@@ -180,6 +183,7 @@ jobs:
             [ -n "$AZURE_LOG_ANALYTICS_WORKSPACE_ID" ]  && echo "AZURE_LOG_ANALYTICS_WORKSPACE_ID=$AZURE_LOG_ANALYTICS_WORKSPACE_ID"
             [ -n "$AZURE_CLIENT_ID" ]                   && echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID"
             [ -n "$AZURE_CLIENT_SECRET" ]               && echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET"
+            [ -n "$ALLOW_DEV_LOGIN" ]                   && echo "ALLOW_DEV_LOGIN=$ALLOW_DEV_LOGIN"
             echo "# ━━━ END MANAGED BLOCK ━━━"
           } > "$tmp"
           scp -o ServerAliveInterval=15 "$tmp" \
@@ -253,6 +257,18 @@ jobs:
                   psql "$DB" -c "INSERT INTO _iox_manual_applied (filename) VALUES ('"'"'$base'"'"') ON CONFLICT DO NOTHING;" >/dev/null
                 fi
               done
+            fi'
+
+      - name: Seed dev login accounts (only when ALLOW_DEV_LOGIN=true)
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            if grep -qiE "^ALLOW_DEV_LOGIN=(true|1)" .env; then
+              echo "[deploy] ALLOW_DEV_LOGIN set — seeding dev login accounts (password: dev)"
+              source /tmp/iox-bootstrap.env
+              DATABASE_URL_UNPOOLED="$DATABASE_URL_UNPOOLED" node scripts/seed-dev-users.mjs
+            else
+              echo "[deploy] ALLOW_DEV_LOGIN not set — skipping dev login seed"
             fi'
 
       - name: Reload pm2

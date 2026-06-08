@@ -4,6 +4,7 @@ import { BoqResultsTable } from "@/components/boqs/BoqResultsTable";
 import { demoProjects } from "@/lib/demoProjects";
 import { notFound } from "next/navigation";
 import { loadProjectData } from "@/lib/projectData";
+import { byCode, levelNames } from "@/lib/pomi/codes";
 import { demoItems, demoSections, demoTotals } from "@/lib/demoBoq";
 import { getProject } from "@/lib/projectStore";
 import type { BoqDetailItem } from "@/components/BoqItemDetails";
@@ -40,28 +41,36 @@ function buildFromDemo(): WorkspaceData {
 
 async function buildFromSource(sourceFile: string, projectVersion: string): Promise<WorkspaceData> {
   const pd = await loadProjectData(sourceFile);
+  const codeMap = await byCode();
   const itemsBySection: Record<string, BoqDetailItem[]> = {};
   for (const [key, list] of Object.entries(pd.itemsBySection)) {
-    itemsBySection[key] = list.map((it) => ({
-      code: it.code,
-      ref: it.ref,
-      description: it.description,
-      unit: it.unit,
-      quantity: it.quantity,
-      rate: it.rate,
-      amount: it.amount,
-      version: projectVersion,
-      pomiCode: it.pomiCode,
-      pomiSection: it.pomiSection,
-      pomiSubSection: it.pomiSubSection,
-      measurement: it.measurement,
-      nrm: it.nrm,
-      nrmDescription: it.nrmDescription,
-      stage: it.stage,
-      confidence: it.confidence,
-      flag: it.flag,
-      sheetName: it.sheetName,
-    }));
+    itemsBySection[key] = list.map((it) => {
+      const ln = levelNames(codeMap.get(it.pomiCode));
+      return {
+        code: it.code,
+        ref: it.ref,
+        description: it.description,
+        unit: it.unit,
+        quantity: it.quantity,
+        rate: it.rate,
+        amount: it.amount,
+        version: projectVersion,
+        pomiCode: it.pomiCode,
+        pomiSection: it.pomiSection,
+        pomiSubSection: it.pomiSubSection,
+        p1name: ln.p1,
+        p2name: ln.p2,
+        p3name: ln.p3,
+        p4name: ln.p4,
+        measurement: it.measurement,
+        nrm: it.nrm,
+        nrmDescription: it.nrmDescription,
+        stage: it.stage,
+        confidence: it.confidence,
+        flag: it.flag,
+        sheetName: it.sheetName,
+      };
+    });
   }
   return {
     sections: pd.sections.map((s) => ({

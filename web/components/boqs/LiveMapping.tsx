@@ -238,6 +238,7 @@ export function LiveMapping({ runId, model }: { runId: string; model?: string })
               <Th>Code 1</Th>
               <Th>Code 2</Th>
               <Th>Code 3</Th>
+              <Th>Code 4</Th>
               <Th>POMI Sub Section</Th>
               <Th>NRM</Th>
               <Th>NRM Description</Th>
@@ -273,8 +274,9 @@ export function LiveMapping({ runId, model }: { runId: string; model?: string })
                   <Td className="text-right tabular-nums">{fmt(it.amount)}</Td>
                   <Td className="text-zinc-600">{secLabel || (code ? "" : <PendingDot />)}</Td>
                   <Td className="font-mono text-[11px] text-zinc-700">{code.slice(0, 1)}</Td>
-                  <Td className="font-mono text-[11px] text-zinc-700">{code.slice(0, 3)}</Td>
-                  <Td className="font-mono text-[11px] text-zinc-700">{code.slice(0, 5)}</Td>
+                  <Td className="font-mono text-[11px] text-zinc-700">{code.slice(1, 3)}</Td>
+                  <Td className="font-mono text-[11px] text-zinc-700">{code.slice(3, 5)}</Td>
+                  <Td className="font-mono text-[11px] text-zinc-700">{code.slice(5, 7)}</Td>
                   <Td className="max-w-[200px] truncate text-zinc-600">{it.pomi?.sub_section}</Td>
                   <Td className="text-zinc-500">{it.pomi?.nrm_code}</Td>
                   <Td className="max-w-[220px] truncate text-zinc-500">{it.pomi?.nrm_desc}</Td>

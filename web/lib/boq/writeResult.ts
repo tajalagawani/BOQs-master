@@ -21,13 +21,13 @@ const SECTION_TITLES: Record<string, string> = {
 
 const MASTER_COLS = [
   "REF", "Description", "Unit", "Qty", "Rate", "Amount",
-  "POMI Code", "POMI Section", "Code 1", "Code 2", "Code 3", "POMI Sub Section",
+  "POMI Code", "POMI Section", "Code 1", "Code 2", "Code 3", "Code 4", "POMI Sub Section",
   "NRM", "NRM Description", "Measurement", "Stage", "Conf%", "Flag", "BATCH",
 ];
 
 const SHEET_COLS = [
   "REF", "Description", "Unit", "Qty", "Rate", "Amount",
-  "POMI Code", "POMI Section", "Code 1", "Code 2", "Code 3", "POMI Sub Section",
+  "POMI Code", "POMI Section", "Code 1", "Code 2", "Code 3", "Code 4", "POMI Sub Section",
   "NRM", "NRM Description", "Measurement", "Stage", "Conf%", "Flag",
 ];
 
@@ -63,8 +63,9 @@ function rowValues(it: BOQItemRow, cols: string[]): Array<string | number | null
     "POMI Section": sectionLabel(sec),
     // Hierarchical code prefixes: A → A02 → A0200
     "Code 1": code.slice(0, 1),
-    "Code 2": code.slice(0, 3),
-    "Code 3": code.slice(0, 5),
+    "Code 2": code.slice(1, 3),
+    "Code 3": code.slice(3, 5),
+    "Code 4": code.slice(5, 7),
     "POMI Sub Section": it.pomi?.l1_name || it.pomi?.sub_section || "",
     NRM: it.pomi?.nrm_code || "",
     "NRM Description": it.pomi?.nrm_desc || "",
@@ -100,7 +101,7 @@ function buildSheet(ws: ExcelJS.Worksheet, cols: string[], items: BOQItemRow[]) 
       c === "NRM Description" || c === "Measurement" ? 34 :
       c === "POMI Sub Section" ? 26 :
       c === "POMI Section" ? 22 :
-      c === "Code 2" || c === "Code 3" ? 10 : 12;
+      c === "Code 2" || c === "Code 3" || c === "Code 4" ? 10 : 12;
   });
 }
 

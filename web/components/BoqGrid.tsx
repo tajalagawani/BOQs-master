@@ -116,7 +116,7 @@ function ConfRenderer(p: ICellRendererParams) {
 const PINNED_LEFT = new Set(["Row", "REF", "ACTION", "Item", "Item Ref"]);
 const NARROW = new Set([
   "Row", "REF", "Item", "Item Ref", "Qty", "Unit", "Currency", "Conf%",
-  "Stage", "Flag", "NRM", "Code 1", "Code 2", "Code 3",
+  "Stage", "Flag", "NRM", "Code 1", "Code 2", "Code 3", "Code 4",
   "NRM L1", "NRM L2",
 ]);
 const WIDE = new Set([

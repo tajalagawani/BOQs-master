@@ -45,6 +45,7 @@ import {
 } from "@/modules/rates/components/ui/dropdown-menu";
 import { cn, formatNumber } from "@/modules/rates/lib/utils";
 import type { WorkspaceData } from "@/components/BoqWorkspace";
+import { nrmInfo } from "@/lib/nrm/nrm-map";
 
 const SECTION_TITLES: Record<string, string> = {
   A: "General Requirements", B: "Site Work", C: "Concrete", D: "Masonry",
@@ -98,10 +99,18 @@ const COLUMNS: Col[] = [
   { key: "code1", label: "Code 1", width: 56, align: "center", type: "mono" },
   { key: "code2", label: "Code 2", width: 64, align: "center", type: "mono" },
   { key: "code3", label: "Code 3", width: 72, align: "center", type: "mono" },
+  { key: "code4", label: "Code 4", width: 56, align: "center", type: "mono" },
+  { key: "p1name", label: "P1 Name", width: 170, align: "left", type: "text" },
+  { key: "p2name", label: "P2 Name", width: 180, align: "left", type: "text" },
+  { key: "p3name", label: "P3 Name", width: 200, align: "left", type: "text" },
+  { key: "p4name", label: "P4 Name", width: 240, align: "left", type: "text" },
   { key: "subName", label: "POMI Sub Section", width: 200, align: "left", type: "text" },
+  { key: "nrmGroup", label: "NRM Group", width: 170, align: "left", type: "text" },
   { key: "nrm", label: "NRM", width: 60, align: "left", type: "mono" },
   { key: "nrmDescription", label: "NRM Description", width: 220, align: "left", type: "text" },
+  { key: "nrmClauses", label: "POMI Clauses", width: 320, align: "left", type: "text" },
   { key: "measurement", label: "Measurement", width: 200, align: "left", type: "text" },
+  { key: "nrmMethod", label: "Measurement Method", width: 220, align: "left", type: "text" },
   { key: "confidence", label: "Conf%", width: 72, align: "right", type: "conf" },
   { key: "stage", label: "Stage", width: 80, align: "left", type: "stage" },
   { key: "flag", label: "Flag", width: 56, align: "center", type: "flag" },
@@ -145,10 +154,18 @@ type Row = Record<string, unknown> & {
   code1: string;
   code2: string;
   code3: string;
+  code4: string;
+  p1name: string;
+  p2name: string;
+  p3name: string;
+  p4name: string;
   subName: string;
   nrm: string;
+  nrmGroup: string;
   nrmDescription: string;
+  nrmClauses: string;
   measurement: string;
+  nrmMethod: string;
   stage: string;
   confidence: number;
   flag: string;
@@ -170,6 +187,7 @@ export function BoqResultsTable({
     for (const sec of data.sections) {
       for (const it of data.itemsBySection[sec.code] || []) {
         const pc = it.pomiCode || "";
+        const ni = nrmInfo(it.nrm);
         out.push({
           rowNum: ++n,
           code: it.code,
@@ -185,12 +203,20 @@ export function BoqResultsTable({
           pomiSection: it.pomiSection || "",
           // Hierarchical code prefixes: A → A02 → A0200
           code1: pc.slice(0, 1),
-          code2: pc.slice(0, 3),
-          code3: pc.slice(0, 5),
+          code2: pc.slice(1, 3),
+          code3: pc.slice(3, 5),
+          code4: pc.slice(5, 7),
+          p1name: it.p1name || "",
+          p2name: it.p2name || "",
+          p3name: it.p3name || "",
+          p4name: it.p4name || "",
           subName: it.pomiSubSection || "",
           nrm: it.nrm || "",
+          nrmGroup: ni?.group || "",
           nrmDescription: it.nrmDescription || "",
+          nrmClauses: ni?.clauses || "",
           measurement: it.measurement || "",
+          nrmMethod: ni?.method || "",
           stage: it.stage || "",
           confidence: it.confidence || 0,
           flag: it.flag || "",
@@ -294,7 +320,7 @@ export function BoqResultsTable({
       if (activeSection !== "__all__" && r.sectionCode !== activeSection) return false;
       if (reviewOnly && r.flag !== "⚠") return false;
       if (g) {
-        const hay = `${r.ref} ${r.pomiCode} ${r.code1} ${r.code2} ${r.code3} ${r.description} ${r.subName} ${r.nrm} ${r.measurement}`.toLowerCase();
+        const hay = `${r.ref} ${r.pomiCode} ${r.code1} ${r.code2} ${r.code3} ${r.code4} ${r.description} ${r.subName} ${r.nrm} ${r.measurement}`.toLowerCase();
         if (!hay.includes(g)) return false;
       }
       for (const [key, val] of fEntries) {

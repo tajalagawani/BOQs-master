@@ -4,6 +4,8 @@
 
 import ExcelJS from "exceljs";
 
+import { nrmInfo } from "@/lib/nrm/nrm-map";
+
 export type ExportRow = {
   index: number;
   sheet: string;
@@ -18,6 +20,11 @@ export type ExportRow = {
   code1?: string;
   code2?: string;
   code3?: string;
+  code4?: string;
+  p1name?: string;
+  p2name?: string;
+  p3name?: string;
+  p4name?: string;
   sub_section?: string;
   pomi_desc?: string;
   nrm_code: string;
@@ -74,10 +81,18 @@ const COL_SPECS: ColSpec[] = [
   { ui: "code1", field: "code1", header: "Code 1", width: 8, get: (r) => r.code1 || "" },
   { ui: "code2", field: "code2", header: "Code 2", width: 9, get: (r) => r.code2 || "" },
   { ui: "code3", field: "code3", header: "Code 3", width: 10, get: (r) => r.code3 || "" },
+  { ui: "code4", field: "code4", header: "Code 4", width: 9, get: (r) => r.code4 || "" },
+  { ui: "p1name", field: "p1name", header: "P1 Name", width: 24, get: (r) => r.p1name || "" },
+  { ui: "p2name", field: "p2name", header: "P2 Name", width: 26, get: (r) => r.p2name || "" },
+  { ui: "p3name", field: "p3name", header: "P3 Name", width: 30, get: (r) => r.p3name || "" },
+  { ui: "p4name", field: "p4name", header: "P4 Name", width: 36, get: (r) => r.p4name || "" },
   { ui: "subName", field: "sub_section", header: "POMI Sub Section", width: 26, get: (r) => r.sub_section || "" },
+  { ui: "nrmGroup", field: "nrm_group", header: "NRM Group", width: 24, get: (r) => nrmInfo(r.nrm_code)?.group || "" },
   { ui: "nrm", field: "nrm_code", header: "NRM", width: 8, get: (r) => r.nrm_code || "" },
   { ui: "nrmDescription", field: "nrm_desc", header: "NRM Description", width: 34, get: (r) => r.nrm_desc || "" },
+  { ui: "nrmClauses", field: "nrm_clauses", header: "POMI Clauses", width: 70, get: (r) => nrmInfo(r.nrm_code)?.clauses || "" },
   { ui: "measurement", field: "method", header: "Measurement", width: 22, get: (r) => r.method || "" },
+  { ui: "nrmMethod", field: "nrm_method", header: "Measurement Method", width: 32, get: (r) => nrmInfo(r.nrm_code)?.method || "" },
   { ui: "confidence", field: "confidence", header: "Conf%", width: 8, numFmt: "0", get: (r) => r.confidence ?? null },
   { ui: "stage", field: "stage", header: "Stage", width: 10, get: (r) => (r.code ? "AI" : "") },
   { ui: "flag", field: "flag", header: "Flag", width: 7, get: (r) => (r.needs_review ? "⚠" : r.code ? "✓" : "") },
@@ -90,8 +105,9 @@ const SPEC_BY_UI: Record<string, ColSpec> = Object.fromEntries(COL_SPECS.map((c)
 // so older/direct export links keep producing the exact same workbook.
 const DEFAULT_UI_KEYS = [
   "ref", "description", "unit", "quantity", "rate", "amount",
-  "pomiCode", "pomiSection", "code1", "code2", "code3",
-  "subName", "nrm", "nrmDescription", "measurement",
+  "pomiCode", "pomiSection", "code1", "code2", "code3", "code4",
+  "p1name", "p2name", "p3name", "p4name",
+  "subName", "nrmGroup", "nrm", "nrmDescription", "nrmClauses", "measurement", "nrmMethod",
 ];
 
 function resolveCols(uiKeys: string[]): ColSpec[] {

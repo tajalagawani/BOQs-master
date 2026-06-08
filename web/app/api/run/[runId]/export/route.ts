@@ -4,6 +4,7 @@ import { resultJsonPath, resultPath } from "@/lib/paths";
 import { readMeta } from "@/lib/runMeta";
 import { readSheet } from "@/lib/readResult";
 import { buildWorkbook, type ExportRow } from "@/lib/export/xlsx";
+import { byCode, levelNames } from "@/lib/pomi/codes";
 import type { BOQResult } from "@/lib/pomi/schema";
 
 export const runtime = "nodejs";
@@ -37,6 +38,7 @@ export async function GET(
   const meta = await readMeta(runId);
   const base = (meta?.originalName || "BOQ").replace(/\.[^.]+$/, "");
   const outName = `${base}_POMI_Coded.xlsx`;
+  const codeMap = await byCode();
 
   let rows: ExportRow[] | null = null;
 
@@ -44,7 +46,9 @@ export async function GET(
   try {
     const raw = await readFile(resultJsonPath(runId), "utf-8");
     const result = JSON.parse(raw) as BOQResult;
-    rows = (result.items || []).map((it, i) => ({
+    rows = (result.items || []).map((it, i) => {
+      const ln = levelNames(codeMap.get(it.pomi?.code || ""));
+      return {
       index: i,
       sheet: it.sheet,
       ref: it.ref || "",
@@ -56,8 +60,13 @@ export async function GET(
       code: it.pomi?.code || "",
       section: it.pomi?.section || "",
       code1: (it.pomi?.code || "").slice(0, 1),
-      code2: (it.pomi?.code || "").slice(0, 3),
-      code3: (it.pomi?.code || "").slice(0, 5),
+      code2: (it.pomi?.code || "").slice(1, 3),
+      code3: (it.pomi?.code || "").slice(3, 5),
+      code4: (it.pomi?.code || "").slice(5, 7),
+      p1name: ln.p1,
+      p2name: ln.p2,
+      p3name: ln.p3,
+      p4name: ln.p4,
       sub_section: it.pomi?.l1_name || it.pomi?.sub_section || "",
       nrm_desc: it.pomi?.nrm_desc || "",
       pomi_desc: it.pomi?.pomi_desc || "",
@@ -66,7 +75,8 @@ export async function GET(
       confidence: it.pomi?.confidence ?? null,
       needs_review: !!it.pomi?.needs_review,
       section_context: it.section_context || "",
-    }));
+      };
+    });
   } catch {
     // 2) Fallback — reconstruct from the MASTER BOQs result sheet (older runs).
     try {
@@ -74,6 +84,7 @@ export async function GET(
       rows = sheet.rows.map((r, i) => {
         const secLabel = String(r["POMI Section"] ?? "");
         const section = secLabel.match(/^([A-Z])/)?.[1] || "";
+        const ln = levelNames(codeMap.get(String(r["POMI Code"] ?? "")));
         return {
           index: i,
           sheet: String(r["BATCH"] ?? "") || "BOQ",
@@ -86,8 +97,13 @@ export async function GET(
           code: String(r["POMI Code"] ?? ""),
           section,
           code1: String(r["Code 1"] ?? "") || String(r["POMI Code"] ?? "").slice(0, 1),
-          code2: String(r["Code 2"] ?? "") || String(r["POMI Code"] ?? "").slice(0, 3),
-          code3: String(r["Code 3"] ?? "") || String(r["POMI Code"] ?? "").slice(0, 5),
+          code2: String(r["Code 2"] ?? "") || String(r["POMI Code"] ?? "").slice(1, 3),
+          code3: String(r["Code 3"] ?? "") || String(r["POMI Code"] ?? "").slice(3, 5),
+          code4: String(r["Code 4"] ?? "") || String(r["POMI Code"] ?? "").slice(5, 7),
+          p1name: String(r["P1 Name"] ?? "") || ln.p1,
+          p2name: String(r["P2 Name"] ?? "") || ln.p2,
+          p3name: String(r["P3 Name"] ?? "") || ln.p3,
+          p4name: String(r["P4 Name"] ?? "") || ln.p4,
           sub_section: String(r["POMI Sub Section"] ?? ""),
           nrm_desc: String(r["NRM Description"] ?? ""),
           pomi_desc: String(r["POMI Sub Section"] ?? ""),

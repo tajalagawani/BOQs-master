@@ -20,6 +20,10 @@ export interface BoqDetailItem {
   measurement?: string;
   pomiSection?: string;
   pomiSubSection?: string;
+  p1name?: string;
+  p2name?: string;
+  p3name?: string;
+  p4name?: string;
   nrm?: string;
   nrmDescription?: string;
   stage?: string;

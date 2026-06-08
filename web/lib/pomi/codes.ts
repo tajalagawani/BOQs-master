@@ -32,6 +32,22 @@ export async function byCode(): Promise<Map<string, PomiCode>> {
   return _byCode!;
 }
 
+export type PomiLevelNames = { p1: string; p2: string; p3: string; p4: string };
+
+/**
+ * The descriptive name at each POMI hierarchy level (P1–P4), derived from the
+ * code's `full_text` ancestor chain
+ * ("SECTION A - … › Conditions of contract › <L2> › <leaf>"):
+ *   P1 = section, P2 = level-1, P3 = level-2, P4 = level-3 / leaf.
+ * Levels the code doesn't reach come back as "". The "SECTION X - " prefix is
+ * stripped from P1 so it reads like the other names.
+ */
+export function levelNames(entry: PomiCode | undefined): PomiLevelNames {
+  const segs = (entry?.full_text || "").split("›").map((seg) => seg.trim());
+  const p1 = (segs[0] || "").replace(/^section\s+[a-z0-9]+\s*[-–—:]\s*/i, "").trim();
+  return { p1, p2: segs[1] || "", p3: segs[2] || "", p4: segs[3] || "" };
+}
+
 // Compact reference table for the model. One line per code; cached in the prompt
 // so the full table is only paid for once per cache window.
 export async function codeTableText(): Promise<string> {

@@ -29,6 +29,18 @@ const schema = z.object({
    */
   SUPERADMIN_EMAILS: z.string().default(""),
 
+  /**
+   * Show the dev quick-fill login (seeded `is_dev_seed` accounts, password
+   * "dev") even in production. Default false. Only enable for internal testing
+   * — these are weak credentials; turn it off once SSO / real accounts exist.
+   */
+  ALLOW_DEV_LOGIN: z
+    .preprocess(
+      (v) => (typeof v === "string" ? v.toLowerCase() === "true" || v === "1" : v),
+      z.boolean(),
+    )
+    .default(false),
+
   // Anthropic — direct provider for the document-extraction agent.
   // The agent uses adaptive thinking + prompt caching + 128k output beta,
   // which require direct SDK access (see docs/AI_AGENT_MIGRATION_PLAN.md).

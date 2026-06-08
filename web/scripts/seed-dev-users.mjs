@@ -12,7 +12,12 @@ if (!url) {
   url = env.match(/^DATABASE_URL_UNPOOLED\s*=\s*"?([^"\n]+)"?/m)?.[1]
     || env.match(/^DATABASE_URL\s*=\s*"?([^"\n]+)"?/m)?.[1];
 }
-const pool = new pg.Pool({ connectionString: url, ssl: false });
+// Local container = no TLS; managed Postgres (Azure / Neon) requires it.
+const needsTls = /sslmode=(require|verify)|\.postgres\.database\.azure\.com|\.neon\.tech/i.test(url);
+const pool = new pg.Pool({
+  connectionString: url,
+  ssl: needsTls ? { rejectUnauthorized: false } : false,
+});
 const hash = bcrypt.hashSync("dev", 10);
 
 const users = [

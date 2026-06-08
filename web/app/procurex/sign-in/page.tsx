@@ -17,7 +17,9 @@ export default async function SignInPage({
   const callbackUrl = sp.callbackUrl ?? "/procurex"
   const error = sp.error
   const devUsers =
-    env.NODE_ENV === "production" ? [] : await listDevSeedUsers()
+    env.NODE_ENV !== "production" || env.ALLOW_DEV_LOGIN
+      ? await listDevSeedUsers()
+      : []
 
   async function signInAction(formData: FormData) {
     "use server"
