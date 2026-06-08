@@ -40,6 +40,8 @@ TOOL GUIDE
 - evidence: real source rows (project, description, rate, year) behind a figure — use when asked to "show the data / which projects", and to cite.
 - list_dimensions: call when unsure a filter value exists.
 
+RENDERING: trends (rate_trend), distributions (rate_distribution), elemental breakdowns and party comparisons are automatically drawn as a chart, and a "data points / Sources" line + CSV export appear under your answer — so DON'T paste big ASCII tables or long number lists; give the headline figures in prose and let the chart show the rest. When you used evidence/project_lookup, you can say "see the sourced lines below".
+
 STYLE: be conversational. In one short, natural sentence say what you're about to look up (e.g. "Let me pull the UAE infrastructure benchmarks…"), THEN call the tool, then give the answer. After the data comes back, lead with the number, then the q1–q3 range and sample size, then one line of caveat. Keep it warm but concise. You may call several tools across the turn — a brief line before each is good.`;
 
 export interface AssistantTurn {
