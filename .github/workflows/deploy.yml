@@ -271,6 +271,15 @@ jobs:
               echo "[deploy] ALLOW_DEV_LOGIN not set — skipping dev login seed"
             fi'
 
+      - name: Seed RatesX warehouse from lib (idempotent — only when empty)
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            echo "[deploy] ingesting lib rates + benchmarks into warehouse (each skips if already populated)"
+            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-lib.ts
+            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-buildings-benchmarks.ts'
+
       - name: Reload pm2
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
