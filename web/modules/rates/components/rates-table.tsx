@@ -449,6 +449,32 @@ export function RatesTable({
     }
   };
 
+  // Plain CSV of the section currently in view (all columns, all rows) — for
+  // opening in Excel. Use the full-lib JSON Export above for migration.
+  const exportSectionCsv = () => {
+    if (!schema || activeRows.length === 0) {
+      setIoStatus("Nothing to export in this section");
+      return;
+    }
+    const cols = schema.columns;
+    const esc = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      cols.map((c) => esc(c.label)).join(","),
+      ...activeRows.map((r) => cols.map((c) => esc(r[c.key])).join(",")),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeSection}-${activeTab || "data"}.csv`.replace(/\s+/g, "_");
+    a.click();
+    URL.revokeObjectURL(url);
+    setIoStatus(`Exported ${activeRows.length} rows to CSV`);
+  };
+
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -700,6 +726,17 @@ export function RatesTable({
             >
               <Download className="h-3.5 w-3.5" />
               Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={exportSectionCsv}
+              disabled={!schema || activeRows.length === 0}
+              title="Download the section currently in view as a CSV (for Excel)"
+            >
+              <Download className="h-3.5 w-3.5" />
+              CSV
             </Button>
             <input
               ref={importInputRef}

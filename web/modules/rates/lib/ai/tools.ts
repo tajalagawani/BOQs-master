@@ -142,6 +142,23 @@ const BENCH_JOINS = `FROM rates_fact_project_benchmark b
     LEFT JOIN rates_dim_asset_class ac ON ac.id=p.asset_class_id
     LEFT JOIN rates_dim_currency cur ON cur.id=p.currency_id`;
 
+// "UAE" and "United Arab Emirates" (plus KSA variants) exist as SEPARATE
+// country labels in the warehouse, so an exact match on one spelling misses
+// data stored under another. Expand a country filter to all known aliases,
+// lower-cased for case-insensitive ANY() matching.
+function countryAliases(input: string): string[] {
+  const s = input.trim().toLowerCase();
+  const groups = [
+    ["uae", "united arab emirates", "u.a.e.", "emirates"],
+    ["ksa", "kingdom of saudi arabia", "saudi arabia", "saudi"],
+    ["qatar", "state of qatar"],
+  ];
+  for (const g of groups) {
+    if (g.some((a) => a === s || a.includes(s) || s.includes(a))) return g;
+  }
+  return [s];
+}
+
 async function benchmarkRate(input: Record<string, unknown>) {
   const basis = String(input.basis ?? "GIA").toUpperCase();
   const col = BASIS_COL[basis] ?? "cost_per_gia";
@@ -157,11 +174,11 @@ async function benchmarkRate(input: Record<string, unknown>) {
   }
   if (input.assetClass) {
     baseParams.push(String(input.assetClass));
-    baseWhere.push(`ac.label = $${baseParams.length}`);
+    baseWhere.push(`lower(ac.label) = lower($${baseParams.length})`);
   }
   if (input.country) {
-    baseParams.push(String(input.country));
-    baseWhere.push(`c.name = $${baseParams.length}`);
+    baseParams.push(countryAliases(String(input.country)));
+    baseWhere.push(`lower(c.name) = ANY($${baseParams.length}::text[])`);
   }
 
   const curParams = [...baseParams, currency];
@@ -277,8 +294,8 @@ async function elementalBreakdown(input: Record<string, unknown>) {
   const currency = String(input.currency ?? "AED");
   const where: string[] = [`b.${col} IS NOT NULL`, `b.${col} > 0`, `cur.iso4217 = $1`];
   const params: unknown[] = [currency];
-  if (input.assetClass) { params.push(String(input.assetClass)); where.push(`ac.label = $${params.length}`); }
-  if (input.country) { params.push(String(input.country)); where.push(`c.name = $${params.length}`); }
+  if (input.assetClass) { params.push(String(input.assetClass)); where.push(`lower(ac.label) = lower($${params.length})`); }
+  if (input.country) { params.push(countryAliases(String(input.country))); where.push(`lower(c.name) = ANY($${params.length}::text[])`); }
 
   const rows = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
     `SELECT n.label element, percentile_cont(0.5) WITHIN GROUP (ORDER BY b.${col})::float8 median,
@@ -293,6 +310,35 @@ async function elementalBreakdown(input: Record<string, unknown>) {
     ...params,
   );
   const elements = rows.map((e) => ({ element: e.element, median: num(e.median), projects: Number(e.projects) }));
+
+  // Nothing for that asset class / country / currency → don't dead-end. Report
+  // every (assetClass, country, currency) combo that DOES have breakdown data
+  // so the agent can pick the closest match instead of claiming the lib is empty.
+  if (elements.length === 0) {
+    const avail = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT ac.label "assetClass", c.name country, cur.iso4217 currency,
+              count(DISTINCT b.project_id)::int projects
+       FROM rates_fact_project_benchmark b
+       JOIN rates_dim_project p ON p.id=b.project_id
+       LEFT JOIN rates_dim_country c ON c.id=p.country_id
+       LEFT JOIN rates_dim_asset_class ac ON ac.id=p.asset_class_id
+       LEFT JOIN rates_dim_currency cur ON cur.id=p.currency_id
+       WHERE b.${col} > 0 AND ac.label IS NOT NULL
+       GROUP BY 1,2,3 ORDER BY projects DESC LIMIT 60`,
+    );
+    return {
+      basis, currency,
+      assetClass: input.assetClass ?? "all",
+      country: input.country ?? "all",
+      elements: [],
+      totalPerM2: 0,
+      note: "No benchmark breakdown for that asset class / country / currency. 'availableBreakdowns' lists every combination that DOES have data — pick the closest match, tell the user which one you used, and never claim the library is empty.",
+      availableBreakdowns: avail.map((a) => ({
+        assetClass: a.assetClass, country: a.country, currency: a.currency, projects: Number(a.projects),
+      })),
+    };
+  }
+
   const total = elements.reduce((s, e) => s + (e.median ?? 0), 0);
   return {
     basis, currency,
@@ -300,7 +346,6 @@ async function elementalBreakdown(input: Record<string, unknown>) {
     country: input.country ?? "all",
     elements,
     totalPerM2: Math.round(total),
-    ...(elements.length === 0 ? { note: "No matching projects — say so." } : {}),
   };
 }
 
