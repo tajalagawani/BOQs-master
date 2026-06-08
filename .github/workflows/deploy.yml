@@ -271,15 +271,22 @@ jobs:
               echo "[deploy] ALLOW_DEV_LOGIN not set — skipping dev login seed"
             fi'
 
-      - name: Seed RatesX warehouse from lib (idempotent — only when empty)
+      - name: Seed RatesX warehouse from lib (into the app DB the AI reads)
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
             cd /home/iox/app/web
             source /tmp/iox-bootstrap.env
-            echo "[deploy] ingesting lib rates + benchmarks into warehouse (each skips if already populated)"
-            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-lib.ts
-            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-buildings-benchmarks.ts
-            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-databases.ts'
+            # The AI tools read process.env.DATABASE_URL (the app .env), so seed
+            # THAT database — not the unpooled migration URL, which may resolve
+            # to a different host/db and leave the AI looking at an empty store.
+            APP_DB=$(grep -E "^DATABASE_URL=" .env | head -1 | sed -E "s/^DATABASE_URL=//; s/^\"//; s/\"$//")
+            [ -z "$APP_DB" ] && APP_DB="$DATABASE_URL_UNPOOLED"
+            echo "[deploy] app DATABASE_URL host : $(echo "$APP_DB"                | sed -E "s#.*@##; s#\?.*##")"
+            echo "[deploy] unpooled        host : $(echo "$DATABASE_URL_UNPOOLED" | sed -E "s#.*@##; s#\?.*##")"
+            echo "[deploy] ingesting lib rates + benchmarks into the app DB (each skips if already populated)"
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-lib.ts
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-buildings-benchmarks.ts
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-databases.ts'
 
       - name: Seed hardcoded super-admins (credentials login, no SSO)
         env:
