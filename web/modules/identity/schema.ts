@@ -1,6 +1,7 @@
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -92,10 +93,31 @@ export const verificationTokens = pgTable(
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
 )
 
+// One row per RatesX AI turn (every question/answer), logged regardless of
+// feedback — powers the experiment dashboard (volume, tokens, per-user, etc.).
+export const ratesMessage = pgTable("px_rates_message", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  userEmail: text("user_email"),
+  question: text("question"),
+  answer: text("answer"),
+  tokensIn: integer("tokens_in").notNull().default(0),
+  tokensOut: integer("tokens_out").notNull().default(0),
+  toolCalls: jsonb("tool_calls"), // [{ name, noData }]
+  toolCount: integer("tool_count").notNull().default(0),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  error: boolean("error").notNull().default(false),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+})
+
 // User feedback on RatesX AI answers. A thumbs-down captures a free-text
-// reason; superadmins review these in /platform/feedback.
+// reason; superadmins review these in /platform/feedback. Linked to the
+// message it rates so we can show "answered but no feedback".
 export const ratesFeedback = pgTable("px_rates_feedback", {
   id: text("id").primaryKey(),
+  messageId: text("message_id").references(() => ratesMessage.id, {
+    onDelete: "set null",
+  }),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
   userEmail: text("user_email"),
   vote: text("vote").notNull(), // "up" | "down"
@@ -108,3 +130,4 @@ export const ratesFeedback = pgTable("px_rates_feedback", {
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type RatesFeedback = typeof ratesFeedback.$inferSelect
+export type RatesMessage = typeof ratesMessage.$inferSelect

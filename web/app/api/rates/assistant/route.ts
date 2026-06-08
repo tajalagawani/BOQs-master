@@ -1,6 +1,7 @@
 import { streamRatesAssistant, type AssistantTurn } from "@/modules/rates/lib/ai/agent";
 import { isAiConfigured } from "@/modules/ai-extraction/client";
 import { canUseRatesAssistant, getCurrentUser } from "@/modules/core/authz";
+import { logRatesMessage } from "@/modules/rates/lib/ai-analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,12 +36,42 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (obj: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+      const startedAt = Date.now();
+      let stats: import("@/modules/rates/lib/ai/agent").AssistantTurnStats | null = null;
+      let errored = false;
       try {
-        for await (const ev of streamRatesAssistant(question, history)) send(ev);
+        for await (const ev of streamRatesAssistant(question, history)) {
+          if (ev.type === "done") {
+            stats = ev.stats; // capture, but don't forward yet — add the id first
+            continue;
+          }
+          if (ev.type === "error") errored = true;
+          send(ev);
+        }
       } catch (e) {
+        errored = true;
         send({ type: "error", message: e instanceof Error ? e.message : "Assistant failed." });
       }
-      send({ type: "done" });
+
+      // Log every turn (regardless of feedback) for the experiment dashboard.
+      let messageId: string | null = null;
+      try {
+        messageId = await logRatesMessage({
+          userId: me.id,
+          userEmail: me.email,
+          question,
+          answer: stats?.answer ?? "",
+          tokensIn: stats?.tokensIn ?? 0,
+          tokensOut: stats?.tokensOut ?? 0,
+          toolCalls: stats?.tools ?? [],
+          latencyMs: Date.now() - startedAt,
+          error: errored,
+        });
+      } catch (err) {
+        console.error("[assistant] message log failed", err);
+      }
+
+      send({ type: "done", messageId });
       controller.close();
     },
   });

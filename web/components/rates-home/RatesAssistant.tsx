@@ -26,6 +26,7 @@ interface Msg {
   toolCalls?: ToolCall[];
   error?: boolean;
   thinkingSecs?: number;
+  messageId?: string;
 }
 
 const EXAMPLES = [
@@ -117,13 +118,15 @@ export function RatesAssistant() {
         for (const part of parts) {
           const line = part.split("\n").find((l) => l.startsWith("data:"));
           if (!line) continue;
-          let ev: { type: string; text?: string; name?: string; input?: unknown; result?: unknown; message?: string };
+          let ev: { type: string; text?: string; name?: string; input?: unknown; result?: unknown; message?: string; messageId?: string | null };
           try {
             ev = JSON.parse(line.slice(5).trim());
           } catch {
             continue;
           }
-          if (ev.type === "text") {
+          if (ev.type === "done") {
+            if (ev.messageId) patchLast((m) => ({ ...m, messageId: ev.messageId! }));
+          } else if (ev.type === "text") {
             setStatus("streaming");
             patchLast((m) => ({ ...m, content: m.content + (ev.text ?? "") }));
           } else if (ev.type === "tool") {
@@ -470,7 +473,7 @@ function Bubble({
       )}
       {!streaming && !msg.error && msg.content && (
         <div className={"transition-opacity " + (isLast ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
-          <MessageActions text={msg.content} question={question} isLast={isLast} onRegenerate={onRegenerate} />
+          <MessageActions text={msg.content} question={question} messageId={msg.messageId} isLast={isLast} onRegenerate={onRegenerate} />
         </div>
       )}
     </div>
@@ -484,11 +487,13 @@ function Shimmer({ children }: { children: React.ReactNode }) {
 function MessageActions({
   text,
   question,
+  messageId,
   isLast,
   onRegenerate,
 }: {
   text: string;
   question: string;
+  messageId?: string;
   isLast: boolean;
   onRegenerate: () => void;
 }) {
@@ -509,7 +514,7 @@ function MessageActions({
       await fetch("/api/rates/assistant/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vote: v, reason: reasonText, question, answer: text }),
+        body: JSON.stringify({ vote: v, reason: reasonText, question, answer: text, messageId }),
       });
     } catch {
       /* feedback is best-effort — never block the chat */

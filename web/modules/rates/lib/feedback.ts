@@ -13,12 +13,14 @@ export interface SaveFeedbackInput {
   reason?: string | null
   question?: string | null
   answer?: string | null
+  messageId?: string | null
 }
 
 /** Persist one feedback row from the RatesX AI chat. */
 export async function saveRatesFeedback(input: SaveFeedbackInput): Promise<void> {
   await db.insert(ratesFeedback).values({
     id: randomUUID(),
+    messageId: input.messageId ?? null,
     userId: input.userId,
     userEmail: input.userEmail,
     vote: input.vote,

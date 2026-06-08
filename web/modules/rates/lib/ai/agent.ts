@@ -117,12 +117,32 @@ export async function runRatesAssistant(
 
 /* ─────────────────────── streaming (interactive) ─────────────────────── */
 
+export interface AssistantTurnStats {
+  tokensIn: number;
+  tokensOut: number;
+  answer: string;
+  tools: { name: string; noData: boolean }[];
+}
+
 export type AssistantEvent =
   | { type: "text"; text: string }
   | { type: "tool"; name: string; input: unknown }
   | { type: "tool_result"; name: string; result: unknown }
-  | { type: "done" }
+  | { type: "done"; stats: AssistantTurnStats }
   | { type: "error"; message: string };
+
+/** Heuristic: did a tool come back empty / with no usable data? */
+function toolHadNoData(result: unknown): boolean {
+  if (!result || typeof result !== "object") return false;
+  const r = result as Record<string, unknown>;
+  if (r.error) return true;
+  if (typeof r.rows === "number" && r.rows === 0) return true;
+  if (typeof r.totalRows === "number" && r.totalRows === 0) return true;
+  if (Array.isArray(r.elements) && r.elements.length === 0) return true;
+  if (Array.isArray(r.availableBreakdowns)) return true; // primary filter missed
+  if (typeof r.note === "string" && /\bno\b/i.test(r.note)) return true;
+  return false;
+}
 
 /** Streams the agent's work live: text deltas as they generate, tool-use and
  *  tool-result events as queries run, then a final `done`. */
@@ -137,6 +157,8 @@ export async function* streamRatesAssistant(
     { role: "user", content: question },
   ];
 
+  const stats: AssistantTurnStats = { tokensIn: 0, tokensOut: 0, answer: "", tools: [] };
+
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const stream = anthropic.messages.stream({
       model: DEFAULT_MODEL,
@@ -149,14 +171,20 @@ export async function* streamRatesAssistant(
 
     for await (const ev of stream) {
       if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") {
+        stats.answer += ev.delta.text;
         yield { type: "text", text: ev.delta.text };
       }
     }
 
     const msg = await stream.finalMessage();
+    stats.tokensIn += msg.usage?.input_tokens ?? 0;
+    stats.tokensOut += msg.usage?.output_tokens ?? 0;
     messages.push({ role: "assistant", content: msg.content });
 
-    if (msg.stop_reason !== "tool_use") return;
+    if (msg.stop_reason !== "tool_use") {
+      yield { type: "done", stats };
+      return;
+    }
 
     const toolResults: Anthropic.ToolResultBlockParam[] = [];
     for (const block of msg.content) {
@@ -168,9 +196,13 @@ export async function* streamRatesAssistant(
       } catch (e) {
         result = { error: e instanceof Error ? e.message : String(e) };
       }
+      stats.tools.push({ name: block.name, noData: toolHadNoData(result) });
       yield { type: "tool_result", name: block.name, result };
       toolResults.push({ type: "tool_result", tool_use_id: block.id, content: JSON.stringify(result) });
     }
     messages.push({ role: "user", content: toolResults });
   }
+
+  // Hit the iteration cap without a final answer.
+  yield { type: "done", stats };
 }

@@ -18,6 +18,7 @@ export async function POST(req: Request) {
     reason?: string
     question?: string
     answer?: string
+    messageId?: string
   }
   try {
     body = await req.json()
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
       reason: body.reason ?? null,
       question: body.question ?? null,
       answer: body.answer ?? null,
+      messageId: body.messageId ?? null,
     })
     return Response.json({ ok: true })
   } catch (e) {

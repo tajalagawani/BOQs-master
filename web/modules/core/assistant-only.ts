@@ -25,6 +25,7 @@ export const ASSISTANT_ONLY_ALLOW_PREFIXES: string[] = [
   "/rates/assistant",
   "/api/rates/assistant",
   "/api/me",
+  "/api/account", // change own password
 ];
 
 export function isAssistantOnly(email: string | null | undefined): boolean {
