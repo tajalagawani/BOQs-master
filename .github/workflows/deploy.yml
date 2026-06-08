@@ -184,6 +184,10 @@ jobs:
             [ -n "$AZURE_CLIENT_ID" ]                   && echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID"
             [ -n "$AZURE_CLIENT_SECRET" ]               && echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET"
             [ -n "$ALLOW_DEV_LOGIN" ]                   && echo "ALLOW_DEV_LOGIN=$ALLOW_DEV_LOGIN"
+            # Canonical public URL so Auth.js builds sign-in/sign-out redirects
+            # from the real domain (not localhost) regardless of header inference.
+            echo "AUTH_URL=https://iox-1.dev"
+            echo "AUTH_TRUST_HOST=true"
             echo "# ━━━ END MANAGED BLOCK ━━━"
           } > "$tmp"
           scp -o ServerAliveInterval=15 "$tmp" \
