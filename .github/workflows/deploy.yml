@@ -316,7 +316,10 @@ jobs:
             sleep 3
             pm2 status'
 
-      - name: Smoke test the public IP
+      - name: Smoke test the public site
         run: |
-          curl -sf -o /dev/null -w "  / → HTTP %{http_code}\n" http://${{ secrets.AZURE_VM_HOST }}/
-          curl -sf -o /dev/null -w "  /procurex/sign-in → HTTP %{http_code}\n" http://${{ secrets.AZURE_VM_HOST }}/procurex/sign-in
+          # Hit the canonical HTTPS domain (the bare IP now 404s — nginx only
+          # serves iox-1.dev / www after the TLS + redirect setup). -L follows
+          # the sign-in redirect; we just assert the app responds without error.
+          curl -sfL -o /dev/null -w "  https://iox-1.dev/sign-in → HTTP %{http_code}\n" https://iox-1.dev/sign-in
+          curl -sfL -o /dev/null -w "  https://iox-1.dev/procurex/sign-in → HTTP %{http_code}\n" https://iox-1.dev/procurex/sign-in
