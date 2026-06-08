@@ -195,6 +195,11 @@ export function RatesAssistant() {
             <Bubble
               key={i}
               msg={m}
+              question={
+                m.role === "assistant" && i > 0 && messages[i - 1].role === "user"
+                  ? messages[i - 1].content
+                  : ""
+              }
               streaming={status !== "ready" && i === messages.length - 1}
               isLast={i === messages.length - 1 && status === "ready"}
               onRegenerate={regenerate}
@@ -428,11 +433,13 @@ function AssistantMarkdown({ text }: { text: string }) {
 
 function Bubble({
   msg,
+  question,
   streaming,
   isLast,
   onRegenerate,
 }: {
   msg: Msg;
+  question: string;
   streaming: boolean;
   isLast: boolean;
   onRegenerate: () => void;
@@ -463,7 +470,7 @@ function Bubble({
       )}
       {!streaming && !msg.error && msg.content && (
         <div className={"transition-opacity " + (isLast ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
-          <MessageActions text={msg.content} isLast={isLast} onRegenerate={onRegenerate} />
+          <MessageActions text={msg.content} question={question} isLast={isLast} onRegenerate={onRegenerate} />
         </div>
       )}
     </div>
@@ -476,35 +483,125 @@ function Shimmer({ children }: { children: React.ReactNode }) {
 
 function MessageActions({
   text,
+  question,
   isLast,
   onRegenerate,
 }: {
   text: string;
+  question: string;
   isLast: boolean;
   onRegenerate: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [vote, setVote] = useState<"up" | "down" | null>(null);
+  const [showReason, setShowReason] = useState(false);
+  const [reason, setReason] = useState("");
+  const [sent, setSent] = useState(false);
+
   const copy = () => {
     navigator.clipboard?.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+
+  const sendFeedback = async (v: "up" | "down", reasonText?: string) => {
+    try {
+      await fetch("/api/rates/assistant/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vote: v, reason: reasonText, question, answer: text }),
+      });
+    } catch {
+      /* feedback is best-effort — never block the chat */
+    }
+  };
+
+  const onUp = () => {
+    const next = vote === "up" ? null : "up";
+    setVote(next);
+    setShowReason(false);
+    if (next === "up") {
+      void sendFeedback("up");
+      setSent(true);
+      setTimeout(() => setSent(false), 2000);
+    }
+  };
+
+  const onDown = () => {
+    if (vote === "down") {
+      setVote(null);
+      setShowReason(false);
+      return;
+    }
+    setVote("down");
+    setShowReason(true);
+    setSent(false);
+  };
+
+  const submitReason = async () => {
+    await sendFeedback("down", reason);
+    setShowReason(false);
+    setReason("");
+    setSent(true);
+    setTimeout(() => setSent(false), 2500);
+  };
+
   return (
-    <div className="flex items-center gap-0.5 px-1">
-      <ActionBtn label="Copy" onClick={copy}>
-        {copied ? <Check className="size-3.5 text-emerald-600" strokeWidth={2} /> : <Copy className="size-3.5" strokeWidth={1.75} />}
-      </ActionBtn>
-      <ActionBtn label="Good response" active={vote === "up"} onClick={() => setVote((v) => (v === "up" ? null : "up"))}>
-        <ThumbsUp className="size-3.5" strokeWidth={1.75} />
-      </ActionBtn>
-      <ActionBtn label="Bad response" active={vote === "down"} onClick={() => setVote((v) => (v === "down" ? null : "down"))}>
-        <ThumbsDown className="size-3.5" strokeWidth={1.75} />
-      </ActionBtn>
-      {isLast && (
-        <ActionBtn label="Regenerate" onClick={onRegenerate}>
-          <RotateCcw className="size-3.5" strokeWidth={1.75} />
+    <div className="flex flex-col gap-2 px-1">
+      <div className="flex items-center gap-0.5">
+        <ActionBtn label="Copy" onClick={copy}>
+          {copied ? <Check className="size-3.5 text-emerald-600" strokeWidth={2} /> : <Copy className="size-3.5" strokeWidth={1.75} />}
         </ActionBtn>
+        <ActionBtn label="Good response" active={vote === "up"} onClick={onUp}>
+          <ThumbsUp className="size-3.5" strokeWidth={1.75} />
+        </ActionBtn>
+        <ActionBtn label="Bad response" active={vote === "down"} onClick={onDown}>
+          <ThumbsDown className="size-3.5" strokeWidth={1.75} />
+        </ActionBtn>
+        {isLast && (
+          <ActionBtn label="Regenerate" onClick={onRegenerate}>
+            <RotateCcw className="size-3.5" strokeWidth={1.75} />
+          </ActionBtn>
+        )}
+        {sent && <span className="ml-1.5 text-[11px] text-emerald-600">Thanks — feedback saved</span>}
+      </div>
+
+      {showReason && (
+        <div className="max-w-md rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
+          <p className="mb-1.5 text-[12px] font-medium text-zinc-700">
+            What was wrong with this response?
+          </p>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            autoFocus
+            placeholder="e.g. wrong number, missing data, misread the question, hallucinated a rate…"
+            className="w-full resize-none rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-[13px] text-zinc-800 outline-none focus:border-zinc-400"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submitReason();
+            }}
+          />
+          <div className="mt-2 flex items-center justify-end gap-2">
+            <button
+              onClick={() => {
+                setShowReason(false);
+                setVote(null);
+                setReason("");
+              }}
+              className="px-2 py-1 text-[12px] text-zinc-500 hover:text-zinc-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => void submitReason()}
+              disabled={!reason.trim()}
+              className="rounded-md bg-zinc-900 px-3 py-1 text-[12px] font-medium text-white hover:bg-zinc-800 disabled:opacity-40"
+            >
+              Submit
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -17,6 +17,8 @@ import {
   Network,
   Settings,
   AlertOctagon,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -69,7 +71,9 @@ const SECTIONS: NavSection[] = [
   {
     title: "Admin",
     items: [
-      { href: "/platform/settings", label: "Settings", icon: Settings, match: (p) => p.startsWith("/platform/settings") },
+      { href: "/platform/users",    label: "Users & Roles", icon: Users,         match: (p) => p.startsWith("/platform/users") },
+      { href: "/platform/feedback", label: "AI Feedback",   icon: MessageSquare, match: (p) => p.startsWith("/platform/feedback") },
+      { href: "/platform/settings", label: "Settings",      icon: Settings,      match: (p) => p.startsWith("/platform/settings") },
     ],
   },
 ];

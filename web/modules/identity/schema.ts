@@ -92,5 +92,19 @@ export const verificationTokens = pgTable(
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
 )
 
+// User feedback on RatesX AI answers. A thumbs-down captures a free-text
+// reason; superadmins review these in /platform/feedback.
+export const ratesFeedback = pgTable("px_rates_feedback", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  userEmail: text("user_email"),
+  vote: text("vote").notNull(), // "up" | "down"
+  reason: text("reason"),
+  question: text("question"),
+  answer: text("answer"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type RatesFeedback = typeof ratesFeedback.$inferSelect
