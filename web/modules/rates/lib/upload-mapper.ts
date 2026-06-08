@@ -93,10 +93,21 @@ export function mapUploadToSchema(
    *  every column from their file. */
   const extraColumns: Column[] = [];
   const extraKeys: { key: string; colIdx: number }[] = [];
+  // Keys must be unique across schema + extras, else duplicate columns (e.g.
+  // two "Quarter 1" headers → both slug to `extra_quarter_1`) collide and React
+  // throws "two children with the same key", dropping cells.
+  const usedKeys = new Set<string>(schema.columns.map((c) => c.key));
+  usedKeys.add("ref");
   result.headers.forEach((h, i) => {
     const label = String(h ?? "").trim();
     if (!label || matched.has(i)) return;
-    const key = slug(label);
+    let key = slug(label);
+    if (usedKeys.has(key)) {
+      let n = 2;
+      while (usedKeys.has(`${key}_${n}`)) n++;
+      key = `${key}_${n}`;
+    }
+    usedKeys.add(key);
     const sample = result.rows.slice(0, 25).map((r) => r[i]);
     const t = inferType(sample);
     extraColumns.push({

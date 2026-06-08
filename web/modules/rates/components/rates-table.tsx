@@ -162,7 +162,16 @@ export function RatesTable({
     if (!baseSchema) return null;
     const extra = upload?.extraColumns ?? [];
     if (extra.length === 0) return baseSchema;
-    return { ...baseSchema, columns: [...baseSchema.columns, ...extra] };
+    // Drop any extra column whose key collides with the schema or an earlier
+    // extra — older snapshots can hold duplicate `extra_*` keys which would
+    // crash the render with React's "two children with the same key".
+    const seen = new Set(baseSchema.columns.map((c) => c.key));
+    const uniqueExtra = extra.filter((c) => {
+      if (seen.has(c.key)) return false;
+      seen.add(c.key);
+      return true;
+    });
+    return { ...baseSchema, columns: [...baseSchema.columns, ...uniqueExtra] };
   }, [baseSchema, upload]);
 
   /* ---------- filters / sort / pagination ---------- */
@@ -410,6 +419,77 @@ export function RatesTable({
     }
   };
 
+  /* ---- Full-lib export / import — migrate the whole library between envs.
+   *  Export downloads every persisted snapshot (all sections + tabs) as one
+   *  JSON file; Import POSTs each back through /api/rates/uploads, which also
+   *  normalizes into the warehouse the AI reads. Run Export on local, Import
+   *  on prod (or vice-versa) to move the lib across. */
+  const importInputRef = React.useRef<HTMLInputElement>(null);
+  const [ioStatus, setIoStatus] = React.useState<string | null>(null);
+
+  const exportLib = async () => {
+    setIoStatus("Exporting…");
+    try {
+      const res = await fetch("/api/rates/uploads");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rates-lib-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const n = Array.isArray(data?.uploads) ? data.uploads.length : 0;
+      setIoStatus(`Exported ${n} section${n === 1 ? "" : "s"}`);
+    } catch (e) {
+      setIoStatus(`Export failed: ${(e as Error).message}`);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setIoStatus("Importing…");
+    try {
+      const parsed = JSON.parse(await file.text());
+      const uploads: unknown[] = Array.isArray(parsed?.uploads)
+        ? parsed.uploads
+        : Array.isArray(parsed)
+          ? parsed
+          : [];
+      let ok = 0;
+      for (const u of uploads as Array<{
+        section?: string;
+        tab?: string;
+        meta?: UploadMeta;
+        rows?: Row[];
+        extraColumns?: Column[];
+      }>) {
+        if (!u?.section || !u?.tab || !Array.isArray(u?.rows)) continue;
+        const r = await fetch("/api/rates/uploads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section: u.section,
+            tab: u.tab,
+            meta: u.meta,
+            rows: u.rows,
+            extraColumns: u.extraColumns ?? [],
+          }),
+        });
+        if (r.ok) ok++;
+      }
+      setIoStatus(`Imported ${ok}/${uploads.length} sections — reloading…`);
+      setTimeout(() => window.location.reload(), 900);
+    } catch (e) {
+      setIoStatus(`Import failed: ${(e as Error).message}`);
+    }
+  };
+
   /* ---------- render ---------- */
   return (
     <TooltipProvider delayDuration={150}>
@@ -612,8 +692,46 @@ export function RatesTable({
               Upload
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={exportLib}
+              title="Download the entire library (all sections) as a JSON file"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => importInputRef.current?.click()}
+              title="Import a library JSON file into this environment (writes to the warehouse the AI reads)"
+            >
+              <Inbox className="h-3.5 w-3.5" />
+              Import
+            </Button>
+            {ioStatus && (
+              <span
+                className="text-[11px] text-zinc-500 self-center max-w-[220px] truncate"
+                title={ioStatus}
+              >
+                {ioStatus}
+              </span>
+            )}
+            <Button
               size="sm"
               className="gap-1.5 bg-gradient-to-tr from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0"
+              onClick={() => {
+                window.location.href = "/rates/assistant";
+              }}
             >
               <Sparkles className="h-3.5 w-3.5" />
               Ask AI
