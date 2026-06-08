@@ -271,19 +271,21 @@ jobs:
               echo "[deploy] ALLOW_DEV_LOGIN not set — skipping dev login seed"
             fi'
 
-      - name: Seed RatesX warehouse from lib (into the app DB the AI reads)
+      - name: Seed RatesX warehouse from lib (into the DB pm2 actually runs)
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
             cd /home/iox/app/web
             source /tmp/iox-bootstrap.env
-            # The AI tools read process.env.DATABASE_URL (the app .env), so seed
-            # THAT database — not the unpooled migration URL, which may resolve
-            # to a different host/db and leave the AI looking at an empty store.
-            APP_DB=$(grep -E "^DATABASE_URL=" .env | head -1 | sed -E "s/^DATABASE_URL=//; s/^\"//; s/\"$//")
+            # pm2 runs ecosystem.config.cjs --update-env, whose env.DATABASE_URL
+            # OVERRIDES .env. Seed THAT db (the one the running AI reads); fall
+            # back to .env, then the unpooled URL.
+            ECO_DB=$(node -e "try{const c=require(\"./ecosystem.config.cjs\");const a=Array.isArray(c.apps)?c.apps[0]:c;process.stdout.write((a.env&&a.env.DATABASE_URL)||\"\")}catch(e){}")
+            ENV_DB=$(grep -E "^DATABASE_URL=" .env | head -1 | sed -E "s/^DATABASE_URL=//; s/^\"//; s/\"$//")
+            APP_DB="${ECO_DB:-$ENV_DB}"
             [ -z "$APP_DB" ] && APP_DB="$DATABASE_URL_UNPOOLED"
-            echo "[deploy] app DATABASE_URL host : $(echo "$APP_DB"                | sed -E "s#.*@##; s#\?.*##")"
-            echo "[deploy] unpooled        host : $(echo "$DATABASE_URL_UNPOOLED" | sed -E "s#.*@##; s#\?.*##")"
-            echo "[deploy] ingesting lib rates + benchmarks into the app DB (each skips if already populated)"
+            echo "[deploy] ecosystem DB : $(echo "$ECO_DB" | sed -E "s#.*@##; s#\?.*##")"
+            echo "[deploy] .env DB      : $(echo "$ENV_DB" | sed -E "s#.*@##; s#\?.*##")"
+            echo "[deploy] seeding into : $(echo "$APP_DB" | sed -E "s#.*@##; s#\?.*##")"
             DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-lib.ts
             DATABASE_URL="$APP_DB" npx tsx scripts/ingest-buildings-benchmarks.ts
             DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-databases.ts'
@@ -296,7 +298,11 @@ jobs:
             cd /home/iox/app/web
             source /tmp/iox-bootstrap.env
             echo '[deploy] seeding @omniumint.com super-admins (email + password login)'
-            SUPERADMIN_SEED_PASSWORD='${SAP}' DATABASE_URL_UNPOOLED=\"\$DATABASE_URL_UNPOOLED\" node scripts/seed-superadmins.mjs"
+            ECO_DB=\$(node -e 'try{const c=require(\"./ecosystem.config.cjs\");const a=Array.isArray(c.apps)?c.apps[0]:c;process.stdout.write((a.env&&a.env.DATABASE_URL)||\"\")}catch(e){}')
+            ENV_DB=\$(grep -E '^DATABASE_URL=' .env | head -1 | sed -E 's/^DATABASE_URL=//; s/^\"//; s/\"\$//')
+            APP_DB=\"\${ECO_DB:-\$ENV_DB}\"
+            [ -z \"\$APP_DB\" ] && APP_DB=\"\$DATABASE_URL_UNPOOLED\"
+            SUPERADMIN_SEED_PASSWORD='${SAP}' DATABASE_URL_UNPOOLED=\"\$APP_DB\" node scripts/seed-superadmins.mjs"
 
       - name: Reload pm2
         run: |
