@@ -281,6 +281,16 @@ jobs:
             DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-buildings-benchmarks.ts
             DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-databases.ts'
 
+      - name: Seed hardcoded super-admins (credentials login, no SSO)
+        env:
+          SAP: ${{ secrets.SUPERADMIN_SEED_PASSWORD }}
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} "set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            echo '[deploy] seeding @omniumint.com super-admins (email + password login)'
+            SUPERADMIN_SEED_PASSWORD='${SAP}' DATABASE_URL_UNPOOLED=\"\$DATABASE_URL_UNPOOLED\" node scripts/seed-superadmins.mjs"
+
       - name: Reload pm2
         run: |
           ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
