@@ -278,7 +278,8 @@ jobs:
             source /tmp/iox-bootstrap.env
             echo "[deploy] ingesting lib rates + benchmarks into warehouse (each skips if already populated)"
             DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-lib.ts
-            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-buildings-benchmarks.ts'
+            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-buildings-benchmarks.ts
+            DATABASE_URL="$DATABASE_URL_UNPOOLED" npx tsx scripts/ingest-rates-databases.ts'
 
       - name: Reload pm2
         run: |
