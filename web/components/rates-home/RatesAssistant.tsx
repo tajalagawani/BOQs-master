@@ -338,36 +338,68 @@ const STEP_LABEL: Record<string, string> = {
   elemental_breakdown: "Elemental breakdown",
   escalation: "Escalation",
   list_dimensions: "Library dimensions",
+  design_ratios: "Design ratios",
+  cost_per_key: "Cost per key",
+  project_lookup: "Project lookup",
+  rate_trend: "Rate trend",
+  party_benchmark: "By contractor/employer",
+  area_efficiency: "Area efficiency",
+  rate_distribution: "Rate distribution",
+  evidence: "Source evidence",
 };
 
 function stepDetail(call: ToolCall): string {
   const i = (call.input ?? {}) as Record<string, unknown>;
   const filters = [
     Array.isArray(i.elements) ? (i.elements as string[]).join(", ") : undefined,
+    Array.isArray(i.names) ? (i.names as string[]).join(" vs ") : undefined,
+    i.element,
     i.assetClass,
+    i.assetType,
     i.query,
+    i.by,
     i.country,
+    i.unit,
     i.currency,
     i.fromYear && i.toYear ? `${i.fromYear}→${i.toYear}` : undefined,
   ]
     .filter(Boolean)
     .join(" · ");
+
   const r = call.result as Record<string, unknown> | undefined;
-  let outcome = "running…";
-  if (r) {
-    const rows = Number(r.rows ?? r.totalRows ?? (Array.isArray(r.elements) ? (r.elements as unknown[]).length : 0));
-    if (rows === 0) outcome = "no matching data";
-    else if (typeof r.median === "number")
-      outcome = `median ${Math.round(r.median).toLocaleString()} ${r.unit ?? ""} · ${r.projects ?? r.rows} samples`;
-    else if (Array.isArray(r.perUnit) && r.perUnit.length)
-      outcome = (r.perUnit as Record<string, unknown>[])
-        .slice(0, 3)
-        .map((u) => `${Math.round(Number(u.median)).toLocaleString()}/${u.unit}`)
-        .join(", ");
-    else if (typeof r.totalPerM2 === "number") outcome = `total ${r.totalPerM2.toLocaleString()} ${r.currency}/m²`;
-    else if (typeof r.pct === "number") outcome = `+${r.pct}%`;
-    else outcome = "done";
-  }
+  if (!r) return `${filters || "—"} → running…`;
+
+  // Count anything the tool returned, across every result shape.
+  const arrayKeys = ["elements", "byElement", "series", "parties", "ratios", "samples", "projects", "compare", "histogram", "perUnit"];
+  let items = 0;
+  for (const k of arrayKeys) if (Array.isArray(r[k])) items += (r[k] as unknown[]).length;
+  const scalar = Number(r.rows ?? r.totalRows ?? r.count ?? r.matches ?? (typeof r.projects === "number" ? r.projects : 0));
+  const hasData =
+    items > 0 ||
+    (Number.isFinite(scalar) && scalar > 0) ||
+    typeof r.median === "number" ||
+    typeof r.totalPerM2 === "number" ||
+    typeof r.pct === "number" ||
+    typeof r.giaToGfa === "number";
+
+  let outcome: string;
+  if (!hasData) outcome = "no matching data";
+  else if (typeof r.median === "number")
+    outcome = `median ${Math.round(r.median).toLocaleString()} ${r.unit ?? ""}`.trim();
+  else if (Array.isArray(r.perUnit) && r.perUnit.length)
+    outcome = (r.perUnit as Record<string, unknown>[]).slice(0, 3).map((u) => `${Math.round(Number(u.median)).toLocaleString()}/${u.unit}`).join(", ");
+  else if (typeof r.totalPerM2 === "number") outcome = `total ${Number(r.totalPerM2).toLocaleString()} ${r.currency}/m²`;
+  else if (typeof r.pct === "number") outcome = `+${r.pct}%`;
+  else if (typeof r.giaToGfa === "number") outcome = `GIA/GFA ${r.giaToGfa} · ${r.projects} projects`;
+  else if (Array.isArray(r.series)) outcome = `${r.series.length} years`;
+  else if (Array.isArray(r.parties)) outcome = `${r.parties.length} ${r.by ?? "parties"}`;
+  else if (Array.isArray(r.ratios)) outcome = `${r.ratios.length} ratios`;
+  else if (Array.isArray(r.compare)) outcome = `compared ${(r.compare as unknown[]).length}`;
+  else if (Array.isArray(r.projects)) outcome = `${(r.projects as unknown[]).length} project${(r.projects as unknown[]).length === 1 ? "" : "s"}`;
+  else if (Array.isArray(r.samples)) outcome = `${r.samples.length} source lines`;
+  else if (items > 0) outcome = `${items} result${items === 1 ? "" : "s"}`;
+  else outcome = `${scalar} result${scalar === 1 ? "" : "s"}`;
+
   return `${filters || "—"} → ${outcome}`;
 }
 
