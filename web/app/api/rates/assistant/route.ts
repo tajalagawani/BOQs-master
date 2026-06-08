@@ -1,11 +1,15 @@
 import { streamRatesAssistant, type AssistantTurn } from "@/modules/rates/lib/ai/agent";
 import { isAiConfigured } from "@/modules/ai-extraction/client";
 import { canUseRatesAssistant, getCurrentUser } from "@/modules/core/authz";
-import { logRatesMessage } from "@/modules/rates/lib/ai-analytics";
+import { isAssistantOnly } from "@/modules/core/assistant-only";
+import { countUserMessages, logRatesMessage } from "@/modules/rates/lib/ai-analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// Per-tester trial quota — assistant-only users get a fixed number of queries.
+const ASSISTANT_ONLY_QUERY_LIMIT = 50;
 
 export async function POST(req: Request) {
   // Restricted to super admins and the testers a super admin has enabled.
@@ -21,6 +25,18 @@ export async function POST(req: Request) {
   }
   if (!isAiConfigured()) {
     return Response.json({ error: "AI is not configured (ANTHROPIC_API_KEY missing)." }, { status: 503 });
+  }
+  // Trial quota: assistant-only testers are capped at a fixed number of queries.
+  if (isAssistantOnly(me.email)) {
+    const used = await countUserMessages(me.id);
+    if (used >= ASSISTANT_ONLY_QUERY_LIMIT) {
+      return Response.json(
+        {
+          error: `You've reached the ${ASSISTANT_ONLY_QUERY_LIMIT}-query limit for this trial. Thanks for testing — your feedback has been recorded.`,
+        },
+        { status: 429 },
+      );
+    }
   }
   let body: { question?: string; history?: AssistantTurn[] };
   try {

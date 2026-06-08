@@ -54,12 +54,14 @@ async function upsert(rawEmail, role, aiTester) {
   const email = rawEmail.trim().toLowerCase();
   const name = titleCase(email.split("@")[0]);
   await pool.query(
+    // Role + capability are always enforced, but the password is only set when
+    // none exists yet — so a deploy never clobbers a password a user changed.
     `INSERT INTO px_user (id, email, name, password_hash, role, ai_assistant_tester, email_verified)
      VALUES ($1,$2,$3,$4,$5,$6, now())
      ON CONFLICT (email) DO UPDATE
        SET role = EXCLUDED.role,
            ai_assistant_tester = EXCLUDED.ai_assistant_tester,
-           password_hash = EXCLUDED.password_hash,
+           password_hash = COALESCE(px_user.password_hash, EXCLUDED.password_hash),
            email_verified = COALESCE(px_user.email_verified, now()),
            updated_at = now()`,
     [randomUUID(), email, name, hash, role, aiTester],

@@ -39,6 +39,15 @@ export async function logRatesMessage(input: LogMessageInput): Promise<string> {
 
 const n = (v: unknown) => (v == null ? 0 : Number(v))
 
+/** How many assistant turns this user has logged (for per-user quotas). */
+export async function countUserMessages(userId: string): Promise<number> {
+  const [r] = await prisma.$queryRawUnsafe<{ n: number }[]>(
+    `SELECT count(*)::int n FROM px_rates_message WHERE user_id = $1`,
+    userId,
+  )
+  return n(r?.n)
+}
+
 export interface ExperimentDashboard {
   totals: {
     messages: number
