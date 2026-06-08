@@ -15,6 +15,10 @@ import type { UserRole } from "@/modules/identity/schema"
 const PUBLIC_PREFIXES = ["/sign-in", "/procurex/sign-in", "/api/auth"]
 
 export const authConfig = {
+  // Trust the reverse-proxy forwarded Host so the edge proxy + Auth.js build
+  // redirect URLs from the real prod origin (not localhost). Also set in
+  // auth.ts for the Node instance.
+  trustHost: true,
   pages: {
     // IOX-wide sign-in (any IOX user can reach every module once authenticated).
     signIn: "/sign-in",

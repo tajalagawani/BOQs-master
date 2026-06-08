@@ -75,6 +75,10 @@ if (ssoEnabled) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  // Self-hosted behind the VM's reverse proxy: trust the forwarded Host header
+  // so Auth.js builds redirect URLs (incl. post-sign-out callbackUrl) from the
+  // real prod origin instead of falling back to localhost.
+  trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
