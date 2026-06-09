@@ -31,6 +31,7 @@ const ASSISTANT_ONLY = [
   "sheena.rellorosa@omniumint.com",
   "nicky.dobreanu@omniumint.com",
   "robert.halley@omniumint.com",
+  "ross.kelly@omniumint.com",
 ];
 
 const titleCase = (s) =>
