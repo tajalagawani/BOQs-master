@@ -17,6 +17,7 @@ export const ASSISTANT_ONLY_EMAILS: string[] = [
   "nicky.dobreanu@omniumint.com",
   "robert.halley@omniumint.com",
   "ross.kelly@omniumint.com",
+  "solveig@iox-1.dev",
 ].map((e) => e.trim().toLowerCase());
 
 // Paths an assistant-only user may reach. Everything else is redirected to
