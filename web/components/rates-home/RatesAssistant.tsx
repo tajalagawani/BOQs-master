@@ -13,6 +13,7 @@ import { ArrowUp, Square, Loader2, ChevronDown, Brain, Copy, Check, ThumbsUp, Th
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChartBlock, extractCharts, extractSources, extractSampleSize, extractCsv } from "./AssistantCharts";
+import { RulesButton } from "./AssistantRules";
 
 type ChatStatus = "ready" | "submitted" | "streaming";
 
@@ -191,7 +192,10 @@ export function RatesAssistant() {
   // messages column with the composer pinned to the bottom.
   if (messages.length === 0) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center min-h-0 px-4 gap-7">
+      <div className="relative h-full w-full flex flex-col items-center justify-center min-h-0 px-4 gap-7">
+        <div className="absolute right-4 top-4 z-20">
+          <RulesButton />
+        </div>
         <div className="text-center">
           <h1 className="text-[26px] sm:text-[30px] font-semibold tracking-tight text-zinc-800">
             What rate can I find for you?
@@ -228,7 +232,10 @@ export function RatesAssistant() {
   }
 
   return (
-    <div className="h-full w-full flex flex-col min-h-0">
+    <div className="relative h-full w-full flex flex-col min-h-0">
+      <div className="absolute right-4 top-3 z-20">
+        <RulesButton />
+      </div>
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 py-6 flex flex-col gap-7">
           {messages.map((m, i) => (

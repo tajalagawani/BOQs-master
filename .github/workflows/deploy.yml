@@ -292,7 +292,9 @@ jobs:
             echo "[deploy] seeding into : $(echo "$APP_DB" | sed -E "s#.*@##; s#\?.*##")"
             DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-lib.ts
             DATABASE_URL="$APP_DB" npx tsx scripts/ingest-buildings-benchmarks.ts
-            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-databases.ts'
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-databases.ts
+            echo "[deploy] seeding starter AI rules (idempotent — skips if any exist)"
+            DATABASE_URL_UNPOOLED="$APP_DB" node scripts/seed-ai-rules.mjs'
 
       - name: Seed hardcoded super-admins (credentials login, no SSO)
         env:

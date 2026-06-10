@@ -7,6 +7,22 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { anthropic, DEFAULT_MODEL, assertAiAvailable } from "@/modules/ai-extraction/client";
 import { TOOL_DEFS, executeTool } from "./tools";
+import { getEnabledRulesText } from "@/modules/rates/lib/ai-rules";
+
+/** Base prompt + the team's enabled expert rules (curated from the chat). */
+async function buildSystem(): Promise<string> {
+  let rules = "";
+  try {
+    rules = await getEnabledRulesText();
+  } catch {
+    /* rules are best-effort — never block a chat turn */
+  }
+  if (!rules) return SYSTEM;
+  return `${SYSTEM}
+
+EXPERT RULES (curated by your team — follow these. When a rule supplies a figure the warehouse does NOT hold, present it as "per Omnium expert guidance," never as a measured library rate):
+${rules}`;
+}
 
 const SYSTEM = `You are the RatesX Assistant — a construction cost-data analyst for the IOX RatesX warehouse (a UAE/GCC rates library, mostly AED).
 
@@ -185,13 +201,14 @@ export async function* streamRatesAssistant(
     { role: "user", content: question },
   ];
 
+  const system = await buildSystem();
   const stats: AssistantTurnStats = { tokensIn: 0, tokensOut: 0, answer: "", tools: [] };
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const stream = anthropic.messages.stream({
       model: DEFAULT_MODEL,
       max_tokens: 2048,
-      system: SYSTEM,
+      system,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: TOOL_DEFS as any,
       messages,

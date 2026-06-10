@@ -127,7 +127,22 @@ export const ratesFeedback = pgTable("px_rates_feedback", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 })
 
+// Expert "rules" the team injects into the RatesX AI from the chat. Enabled
+// rules are appended to the assistant's system prompt as curated guidance.
+export const ratesAiRule = pgTable("px_rates_ai_rule", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: text("category"),
+  enabled: boolean("enabled").notNull().default(true),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdByEmail: text("created_by_email"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+})
+
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type RatesFeedback = typeof ratesFeedback.$inferSelect
 export type RatesMessage = typeof ratesMessage.$inferSelect
+export type RatesAiRule = typeof ratesAiRule.$inferSelect
