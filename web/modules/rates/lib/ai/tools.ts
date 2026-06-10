@@ -409,6 +409,35 @@ async function marketRate(input: Record<string, unknown>) {
     ...params,
   );
   const totalRows = byUnit.reduce((s, u) => s + Number(u.rows), 0);
+
+  // Nothing in this currency/unit → show where the item DOES exist (any
+  // currency/unit) so the agent can offer the closest cut instead of "no data".
+  if (totalRows === 0) {
+    const covWhere = ["ri.rate > 0"];
+    const covParams: unknown[] = [];
+    for (const w of words) { covParams.push(`%${w}%`); covWhere.push(`ri.description ILIKE $${covParams.length}`); }
+    const coverage = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      `SELECT cur.iso4217 currency, COALESCE(u.code,'(none)') unit, count(*)::int rows
+       FROM rates_fact_rate_item ri
+       LEFT JOIN rates_dim_uom u ON u.id=ri.unit_id
+       LEFT JOIN rates_dim_currency cur ON cur.id=ri.currency_id
+       WHERE ${covWhere.join(" AND ")}
+       GROUP BY 1,2 ORDER BY rows DESC LIMIT 8`,
+      ...covParams,
+    );
+    return {
+      query: words.join(" "),
+      currency,
+      totalRows: 0,
+      perUnit: [],
+      samples: [],
+      availableIn: coverage.map((c) => ({ currency: c.currency, unit: c.unit, rows: Number(c.rows) })),
+      note: coverage.length
+        ? `No priced lines for "${words.join(" ")}" in ${currency}${input.unit ? "/" + input.unit : ""}. 'availableIn' lists the currencies/units that DO have it — offer the closest cut, don't say the library has nothing.`
+        : `No priced lines anywhere for "${words.join(" ")}" — the library genuinely has no market rate for this item. Don't invent one.`,
+    };
+  }
+
   return {
     query: words.join(" "),
     currency,
@@ -417,7 +446,6 @@ async function marketRate(input: Record<string, unknown>) {
       unit: u.unit, median: num(u.median), q1: num(u.q1), q3: num(u.q3), min: num(u.min), max: num(u.max), rows: Number(u.rows),
     })),
     samples: samples.map((s) => ({ description: s.description, rate: num(s.rate), unit: s.unit })),
-    ...(totalRows === 0 ? { note: "No matching priced lines — tell the user the library has no market rate for this." } : {}),
   };
 }
 
