@@ -8,6 +8,7 @@
  * Pure structural — no project-specific tables, no sheet-name lists.
  */
 import ExcelJS from "exceljs";
+import { assertXlsxBuffer } from "@/lib/xlsxGuard";
 
 export type ColumnKind =
   | "item_ref"
@@ -89,6 +90,10 @@ function cellValue(c: ExcelJS.Cell): string | number | null {
 }
 
 export async function inspectXlsx(buf: Buffer): Promise<SheetInspection[]> {
+  // Fail fast with a clear message if the upload isn't a real OOXML workbook —
+  // otherwise ExcelJS throws the opaque JSZip "end of central directory" error.
+  assertXlsxBuffer(buf);
+
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buf as unknown as ArrayBuffer);
 

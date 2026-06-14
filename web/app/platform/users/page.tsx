@@ -20,11 +20,11 @@ export default async function UsersAdminPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white px-6 py-8">
+    <div className="p-4">
       <div className="mx-auto max-w-4xl">
         <header className="mb-5">
-          <h1 className="text-xl font-semibold text-zinc-900">Users &amp; Roles</h1>
-          <p className="mt-1 text-[13px] text-zinc-500">
+          <h1 className="text-xl font-semibold text-suite-ink">Users &amp; Roles</h1>
+          <p className="mt-1 text-[13px] text-suite-ink-3">
             Manage IOX-wide access. Super admins can use every module; the RatesX
             AI assistant is restricted to super admins and the testers you enable
             here.
@@ -46,20 +46,20 @@ export default async function UsersAdminPage() {
           ).map(([label, n]) => (
             <div
               key={label}
-              className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5"
+              className="rounded-lg border border-suite-line bg-suite-card-soft px-3 py-2.5"
             >
-              <div className="text-lg font-semibold tabular-nums text-zinc-900">
+              <div className="text-lg font-semibold suite-num text-suite-ink">
                 {n}
               </div>
-              <div className="text-[11px] text-zinc-500">{label}</div>
+              <div className="text-[11px] text-suite-ink-3">{label}</div>
             </div>
           ))}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-zinc-200">
+        <div className="suite-tbl">
           <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
+              <tr>
                 <th className="py-2.5 px-3 font-medium">User</th>
                 <th className="py-2.5 px-3 font-medium">Current role</th>
                 <th className="py-2.5 px-3 font-medium">Change role</th>
@@ -84,7 +84,7 @@ export default async function UsersAdminPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="py-10 text-center text-sm text-zinc-400"
+                    className="py-10 text-center text-sm text-suite-ink-4"
                   >
                     No users yet.
                   </td>
@@ -94,6 +94,6 @@ export default async function UsersAdminPage() {
           </table>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

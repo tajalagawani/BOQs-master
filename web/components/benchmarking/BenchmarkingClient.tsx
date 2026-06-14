@@ -3,9 +3,17 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import UploadProjectModal from "./UploadProjectModal";
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import MultiLineChart from "@/components/charts/MultiLineChart";
 import { getRCDCBaselineAction } from "@/actions/benchmarking";
+import {
+  SuiteInnerShell,
+  SuiteInnerHeader,
+  SecBar,
+  SuiteTiles,
+  SuiteButton,
+  type SuiteTileData,
+} from "@/components/suite";
 import {
   Select,
   SelectContent,
@@ -105,6 +113,9 @@ export default function BenchmarkingClient({
 }: Props) {
   const [activeTab, setActiveTab] = useState<"buildings" | "infrastructure">("buildings");
   const [showUploadModal, setShowUploadModal] = useState(false);
+  // No free-text search on this page (filtering is via the Select controls);
+  // the suite top-nav search is a local, page-scoped field.
+  const [navSearch, setNavSearch] = useState("");
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>({
     assetClass: "",
@@ -314,278 +325,264 @@ export default function BenchmarkingClient({
     return keys;
   }, [projectNames, projectsForAverage]);
 
-  return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
-      {/* Page Header */}
-      <div className="px-6 py-3 flex-shrink-0 border-b border-gray-200">
-        <h1 className="text-lg font-semibold text-gray-900">Roshn Dashboard</h1>
-      </div>
+  // Summary stat tiles (suite-styled) — same numbers as the original cards.
+  const tiles: SuiteTileData[] = [
+    { k: "# Total Project", v: stats.total },
+    { k: "Avg Cost/GFA", v: stats.avg.toLocaleString() },
+    { k: "Lowest Cost/GFA", v: stats.lowest.toLocaleString() },
+    { k: "Highest Cost/GFA", v: stats.highest.toLocaleString() },
+  ];
 
-      {/* Tabs */}
-      <div className="px-6 border-b border-gray-200 flex-shrink-0">
-        <div className="flex gap-6">
+  return (
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">Benchmarking</span>}
+      search={navSearch}
+      onSearch={setNavSearch}
+      header={<SuiteInnerHeader title="Roshn Dashboard" />}
+    >
+      <div className="p-3">
+        {/* Tabs — segmented control, kept as the first content block. */}
+        <div className="flex gap-6 border-b border-suite-line mb-4">
           <button
             onClick={() => setActiveTab("buildings")}
-            className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-2 text-[13px] font-medium border-b-2 transition-colors ${
               activeTab === "buildings"
-                ? "border-zinc-900 text-gray-900"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-suite-ink text-suite-ink"
+                : "border-transparent text-suite-ink-3 hover:text-suite-ink"
             }`}
           >
             Buildings
           </button>
           <button
             onClick={() => setActiveTab("infrastructure")}
-            className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-2 text-[13px] font-medium border-b-2 transition-colors ${
               activeTab === "infrastructure"
-                ? "border-zinc-900 text-gray-900"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-suite-ink text-suite-ink"
+                : "border-transparent text-suite-ink-3 hover:text-suite-ink"
             }`}
           >
             Infrastructure
           </button>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden p-6 gap-6 bg-gray-100">
-        {/* Filters Sidebar */}
-        <div className="w-[350px] flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
-            {/* Header */}
-            <div className="px-4 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-base font-semibold text-gray-800">Filters</h2>
-                <button
-                  onClick={resetFilters}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-full"
-                >
-                  Reset
-                  <X className="w-3 h-3" />
-                </button>
+        <div className="flex gap-6">
+          {/* Filters Sidebar */}
+          <div className="w-[300px] flex-shrink-0">
+            <div className="rounded-[14px] border border-suite-line bg-suite-card-soft">
+              {/* Header */}
+              <div className="px-4 py-4 border-b border-suite-line">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-[15px] font-semibold text-suite-ink">Filters</h2>
+                  <SuiteButton variant="dark" size="sm" onClick={resetFilters}>
+                    Reset
+                    <X className="size-3" />
+                  </SuiteButton>
+                </div>
+                <p className="text-[12px] text-suite-ink-3">
+                  Filter benchmarking data by asset attributes
+                </p>
               </div>
-              <p className="text-xs text-gray-500">
-                Filter benchmarking data by asset attributes
-              </p>
-            </div>
 
-            {/* Filters Content */}
-            <div className="flex-1 overflow-auto p-4">
-              <div className="space-y-4">
-                {/* Asset Class */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Asset Class
-                  </label>
-                  <Select
-                    value={filters.assetClass || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, assetClass: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {assetClassOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Filters Content */}
+              <div className="p-4">
+                <div className="space-y-4">
+                  {/* Asset Class */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Asset Class
+                    </label>
+                    <Select
+                      value={filters.assetClass || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, assetClass: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {assetClassOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Asset Type */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Asset Type
-                  </label>
-                  <Select
-                    value={filters.assetType || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, assetType: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {assetTypeOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Asset Type */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Asset Type
+                    </label>
+                    <Select
+                      value={filters.assetType || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, assetType: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {assetTypeOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Asset Massing */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Asset Massing
-                  </label>
-                  <Select
-                    value={filters.assetMassing || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, assetMassing: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {assetMassingOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Asset Massing */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Asset Massing
+                    </label>
+                    <Select
+                      value={filters.assetMassing || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, assetMassing: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {assetMassingOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Country */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Country
-                  </label>
-                  <Select
-                    value={filters.country || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, country: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {countryOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Country */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Country
+                    </label>
+                    <Select
+                      value={filters.country || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, country: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {countryOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* City */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    City
-                  </label>
-                  <Select
-                    value={filters.city || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, city: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {cityOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* City */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      City
+                    </label>
+                    <Select
+                      value={filters.city || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, city: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {cityOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Developer */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Developer
-                  </label>
-                  <Select
-                    value={filters.developer || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, developer: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {developerOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Developer */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Developer
+                    </label>
+                    <Select
+                      value={filters.developer || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, developer: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {developerOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Project */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-900 mb-1">
-                    Project
-                  </label>
-                  <Select
-                    value={filters.project || "all"}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, project: value === "all" ? "" : value })
-                    }
-                  >
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Select an option</SelectItem>
-                      {projectOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Project */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-suite-ink-2 mb-1">
+                      Project
+                    </label>
+                    <Select
+                      value={filters.project || "all"}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, project: value === "all" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Select an option</SelectItem>
+                        {projectOptions.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Main Dashboard Area */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* Summary Cards Row */}
-          <div className="flex-shrink-0 mb-4">
-            <div className="grid grid-cols-4 gap-3">
-              <div className="bg-zinc-900 rounded-lg p-3 text-center shadow-sm">
-                <p className="text-2xl font-bold text-white">{stats.total}</p>
-                <p className="text-xs text-white/80"># Total Project</p>
-              </div>
-              <div className="bg-[#2a9d8f] rounded-lg p-3 text-center shadow-sm">
-                <p className="text-2xl font-bold text-white">{stats.avg.toLocaleString()}</p>
-                <p className="text-xs text-white/80">Avg Cost/GFA</p>
-              </div>
-              <div className="bg-[#2a9d8f] rounded-lg p-3 text-center shadow-sm">
-                <p className="text-2xl font-bold text-white">{stats.lowest.toLocaleString()}</p>
-                <p className="text-xs text-white/80">Lowest Cost/GFA</p>
-              </div>
-              <div className="bg-[#2a9d8f] rounded-lg p-3 text-center shadow-sm">
-                <p className="text-2xl font-bold text-white">{stats.highest.toLocaleString()}</p>
-                <p className="text-xs text-white/80">Highest Cost/GFA</p>
-              </div>
-            </div>
-          </div>
+          {/* Main Dashboard Area */}
+          <div className="flex-1 min-w-0">
+            {/* Summary Tiles */}
+            <SuiteTiles items={tiles} cols={4} className="mb-4" />
 
-          {/* Chart Section */}
-          <div className="flex-1 overflow-hidden">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
+            {/* Chart Section */}
+            <div className="rounded-[14px] border border-suite-line bg-suite-panel flex flex-col">
               {/* Chart Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
-                <h3 className="text-sm font-medium text-gray-800">Sum of cost/GFA</h3>
-                <div className="flex gap-2">
-                  <button className="px-4 py-1.5 text-xs font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-full">
-                    Data
-                  </button>
-                  <button onClick={() => setShowUploadModal(true)} className="px-4 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full">
-                    Upload Data
-                  </button>
-                </div>
-              </div>
+              <SecBar
+                title="Sum of cost/GFA"
+                actions={
+                  <>
+                    <SuiteButton variant="dark" size="sm">
+                      Data
+                    </SuiteButton>
+                    <SuiteButton size="sm" onClick={() => setShowUploadModal(true)}>
+                      <Upload className="size-4" strokeWidth={2} />
+                      Upload Data
+                    </SuiteButton>
+                  </>
+                }
+              />
 
               {/* Chart with Legend */}
-              <div className="flex-1 flex overflow-hidden">
+              <div className="flex overflow-hidden border-t border-suite-line">
                 {/* Chart Area */}
-                <div className="flex-1 p-4 flex items-center justify-center">
+                <div className="flex-1 p-4 flex items-center justify-center min-w-0">
                   {!hasActiveFilters ? (
-                    <div className="h-full flex items-center justify-center">
+                    <div className="h-[400px] flex items-center justify-center">
                       <div className="text-center">
-                        <p className="text-gray-500 text-sm">Select filters to view benchmarking data</p>
-                        <p className="text-gray-400 text-xs mt-1">Use the filters on the left to compare projects</p>
+                        <p className="text-suite-ink-2 text-[13px]">Select filters to view benchmarking data</p>
+                        <p className="text-suite-ink-3 text-[12px] mt-1">Use the filters on the left to compare projects</p>
                       </div>
                     </div>
                   ) : (
@@ -601,10 +598,10 @@ export default function BenchmarkingClient({
                 </div>
 
                 {/* Legend Panel */}
-                <div className="w-[180px] border-l border-gray-200 p-4 overflow-auto flex-shrink-0 bg-gray-50">
-                  <p className="text-xs font-medium text-gray-700 mb-3">Legend</p>
+                <div className="w-[180px] border-l border-suite-line p-4 overflow-auto flex-shrink-0 bg-suite-card-soft">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.05em] text-suite-ink-4 mb-3">Legend</p>
                   {!hasActiveFilters ? (
-                    <p className="text-xs text-gray-400">No projects selected</p>
+                    <p className="text-[12px] text-suite-ink-3">No projects selected</p>
                   ) : (
                     <div className="space-y-2">
                       {projectNames.map((name, index) => (
@@ -613,17 +610,17 @@ export default function BenchmarkingClient({
                             className="w-4 h-0.5 flex-shrink-0"
                             style={{ backgroundColor: projectColorPalette[index % projectColorPalette.length] }}
                           />
-                          <span className="text-xs text-gray-600 truncate">{name}</span>
+                          <span className="text-[12px] text-suite-ink-2 truncate">{name}</span>
                         </div>
                       ))}
-                      <div className="flex items-center gap-2 pt-2 border-t border-gray-200 mt-2">
+                      <div className="flex items-center gap-2 pt-2 border-t border-suite-line mt-2">
                         <div className="w-4 h-0.5 bg-black flex-shrink-0" />
-                        <span className="text-xs text-gray-600">RCDC Cost Model</span>
+                        <span className="text-[12px] text-suite-ink-2">RCDC Cost Model</span>
                       </div>
                       {projectsForAverage.length > 0 && (
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-1 bg-black flex-shrink-0" />
-                          <span className="text-xs text-gray-600 font-medium">Average ({projectsForAverage.length} projects)</span>
+                          <span className="text-[12px] text-suite-ink-2 font-medium">Average ({projectsForAverage.length} projects)</span>
                         </div>
                       )}
                     </div>
@@ -635,13 +632,12 @@ export default function BenchmarkingClient({
         </div>
       </div>
 
-        {/* Upload Project Modal */}
-        <UploadProjectModal
-          isOpen={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onSuccess={() => router.refresh()}
-        />
-    </div>
-
+      {/* Upload Project Modal */}
+      <UploadProjectModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={() => router.refresh()}
+      />
+    </SuiteInnerShell>
   );
 }

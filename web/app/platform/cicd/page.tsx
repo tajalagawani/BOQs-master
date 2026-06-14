@@ -154,7 +154,7 @@ GH_TOKEN="github_pat_…"`}
               href={`${repoLink}/actions`}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-[11.5px] text-zinc-600 hover:text-zinc-900 inline-flex items-center gap-1"
+              className="text-[11.5px] text-suite-ink-2 hover:text-suite-ink inline-flex items-center gap-1"
             >
               GitHub <ExternalLink className="size-2.5" strokeWidth={2} />
             </Link>
@@ -206,8 +206,8 @@ function SectionHeader({
   return (
     <header className="flex items-baseline justify-between mb-2.5 px-1">
       <div>
-        <h2 className="text-[12.5px] font-semibold text-zinc-900">{title}</h2>
-        {subtitle && <p className="text-[11px] text-zinc-500">{subtitle}</p>}
+        <h2 className="text-[12.5px] font-semibold text-suite-ink">{title}</h2>
+        {subtitle && <p className="text-[11px] text-suite-ink-3">{subtitle}</p>}
       </div>
       {children}
     </header>
@@ -218,17 +218,17 @@ function Hero({ repoLink }: { repoLink?: string }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium inline-flex items-center gap-1.5">
+        <div className="text-[11px] uppercase tracking-[0.12em] text-suite-ink-3 font-medium inline-flex items-center gap-1.5">
           <GitBranch className="size-3" strokeWidth={2} /> Operations
         </div>
-        <h1 className="mt-1 text-[clamp(22px,2.2vw,28px)] leading-tight font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-1 text-[clamp(22px,2.2vw,28px)] leading-tight font-semibold tracking-tight text-suite-ink">
           CI/CD <span style={{ color: "#60B78C" }}>.</span>
         </h1>
-        <p className="mt-1 text-[12.5px] text-zinc-500 max-w-2xl">
+        <p className="mt-1 text-[12.5px] text-suite-ink-3 max-w-2xl">
           Live GitHub Actions runs, workflow scorecards, deploy freshness, commits on{" "}
-          <code className="text-[11px] bg-zinc-100 px-1 py-0.5 rounded">main</code>, and open
+          <code className="text-[11px] bg-suite-card-soft px-1 py-0.5 rounded suite-num">main</code>, and open
           pull requests. Push to main triggers{" "}
-          <code className="text-[11px] bg-zinc-100 px-1 py-0.5 rounded">deploy.yml</code>.
+          <code className="text-[11px] bg-suite-card-soft px-1 py-0.5 rounded suite-num">deploy.yml</code>.
         </p>
       </div>
       {repoLink && (
@@ -236,7 +236,7 @@ function Hero({ repoLink }: { repoLink?: string }) {
           href={repoLink}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-zinc-200 bg-white text-[12.5px] text-zinc-700 hover:border-zinc-300 hover:text-zinc-900"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-suite-line bg-white text-[12.5px] text-suite-ink-2 hover:border-suite-line-2 hover:text-suite-ink"
         >
           GitHub Actions <ExternalLink className="size-3" strokeWidth={1.75} />
         </a>
@@ -260,24 +260,24 @@ function Stat({
 }) {
   const cls =
     tone === "emerald"
-      ? { tile: "bg-emerald-50 ring-emerald-100 text-emerald-700", text: "text-emerald-700" }
+      ? { tile: "bg-suite-good-bg ring-suite-good-bg text-suite-good", text: "text-suite-good" }
       : tone === "amber"
-        ? { tile: "bg-amber-50 ring-amber-100 text-amber-700", text: "text-amber-700" }
+        ? { tile: "bg-suite-warn-bg ring-suite-warn-bg text-suite-warn", text: "text-suite-warn" }
         : tone === "rose"
-          ? { tile: "bg-rose-50 ring-rose-100 text-rose-700", text: "text-rose-700" }
-          : { tile: "bg-zinc-900 ring-zinc-200 text-white", text: "text-zinc-900" };
+          ? { tile: "bg-suite-dang-bg ring-suite-dang-bg text-suite-dang", text: "text-suite-dang" }
+          : { tile: "bg-suite-navy ring-suite-line text-white", text: "text-suite-ink" };
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-4">
+    <div className="bg-white border border-suite-line rounded-2xl p-4">
       <div
         className={`size-8 rounded-lg inline-flex items-center justify-center ring-1 ${cls.tile}`}
       >
         {icon}
       </div>
-      <div className="mt-3 text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">
+      <div className="mt-3 text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">
         {label}
       </div>
-      <div className={`mt-1 text-2xl font-semibold tabular-nums ${cls.text}`}>{value}</div>
-      {hint && <div className="text-[11px] text-zinc-500 mt-1 truncate">{hint}</div>}
+      <div className={`mt-1 text-2xl font-semibold tabular-nums suite-num ${cls.text}`}>{value}</div>
+      {hint && <div className="text-[11px] text-suite-ink-3 mt-1 truncate">{hint}</div>}
     </div>
   );
 }

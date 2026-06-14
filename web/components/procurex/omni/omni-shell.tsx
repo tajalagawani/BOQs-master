@@ -8,8 +8,8 @@ import { Plus } from "lucide-react"
  */
 export function OmniShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-[#f8f8f8] min-h-screen">
-      <header className="bg-white border-b border-[#e2edf7] sticky top-0 z-30 print:hidden">
+    <div className="suite bg-suite-page min-h-screen">
+      <header className="bg-white border-b border-suite-line sticky top-0 z-30 print:hidden">
         <div className="max-w-[1400px] mx-auto px-[24px] h-[64px] flex items-center justify-between gap-[16px]">
           <Link
             href="/"

@@ -80,7 +80,7 @@ function NodeList({
                 type="button"
                 onClick={() => onToggle(n.slug)}
                 className={cn(
-                  "w-full flex items-center gap-1.5 rounded-md py-1 px-2 text-zinc-700 hover:bg-zinc-100 transition-colors",
+                  "w-full flex items-center gap-1.5 rounded-md py-1 px-2 text-suite-ink-2 hover:bg-suite-card-soft transition-colors",
                   "text-left",
                 )}
                 style={{ paddingLeft: 8 + depth * 14 }}
@@ -88,17 +88,17 @@ function NodeList({
               >
                 <ChevronRight
                   className={cn(
-                    "size-3 text-zinc-400 transition-transform shrink-0",
+                    "size-3 text-suite-ink-3 transition-transform shrink-0",
                     isOpen && "rotate-90",
                   )}
                   strokeWidth={2}
                 />
                 {isOpen ? (
-                  <FolderOpen className="size-3.5 text-zinc-500 shrink-0" strokeWidth={1.75} />
+                  <FolderOpen className="size-3.5 text-suite-ink-3 shrink-0" strokeWidth={1.75} />
                 ) : (
-                  <Folder className="size-3.5 text-zinc-500 shrink-0" strokeWidth={1.75} />
+                  <Folder className="size-3.5 text-suite-ink-3 shrink-0" strokeWidth={1.75} />
                 )}
-                <span className="text-[13px] font-medium text-zinc-800 truncate">{n.label}</span>
+                <span className="text-[13px] font-medium text-suite-ink truncate">{n.label}</span>
               </button>
               {isOpen && n.children?.length ? (
                 <NodeList
@@ -120,13 +120,13 @@ function NodeList({
               className={cn(
                 "flex items-center gap-1.5 rounded-md py-1 px-2 transition-colors",
                 isActive
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-100",
+                  ? "bg-suite-navy text-white"
+                  : "text-suite-ink-2 hover:bg-suite-card-soft",
               )}
               style={{ paddingLeft: 8 + depth * 14 + 18 }}
             >
               <FileText
-                className={cn("size-3.5 shrink-0", isActive ? "text-white/90" : "text-zinc-400")}
+                className={cn("size-3.5 shrink-0", isActive ? "text-white/90" : "text-suite-ink-3")}
                 strokeWidth={1.75}
               />
               <span className="text-[13px] truncate">{n.label}</span>

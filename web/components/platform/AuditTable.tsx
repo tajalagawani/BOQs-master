@@ -37,30 +37,30 @@ export function AuditTable({ events }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-zinc-200 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-suite-line rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            className="size-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2"
+            className="size-3.5 text-suite-ink-4 absolute left-3 top-1/2 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search action, actor, target, payload…"
-            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-zinc-50 border border-zinc-200 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400"
+            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-suite-card-soft border border-suite-line rounded-md placeholder:text-suite-ink-4 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-suite-ink-4 hover:text-suite-ink-2"
             >
               <X className="size-3.5" strokeWidth={2} />
             </button>
           )}
         </div>
 
-        <div className="inline-flex items-center gap-0.5 bg-zinc-100 rounded-md p-0.5">
+        <div className="inline-flex items-center gap-0.5 bg-suite-card-soft rounded-md p-0.5">
           {(["all", "IOX", "ProcureX"] as const).map((m) => {
             const active = module === m;
             return (
@@ -69,7 +69,7 @@ export function AuditTable({ events }: Props) {
                 onClick={() => setModule(m)}
                 className={cn(
                   "h-7 px-2.5 text-[11.5px] font-medium rounded transition-colors",
-                  active ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900",
+                  active ? "bg-white text-suite-ink shadow-sm" : "text-suite-ink-2 hover:text-suite-ink",
                 )}
               >
                 {m === "all" ? "Both modules" : m}
@@ -79,11 +79,11 @@ export function AuditTable({ events }: Props) {
         </div>
 
         <div className="inline-flex items-center gap-1.5">
-          <Filter className="size-3 text-zinc-500" strokeWidth={1.75} />
+          <Filter className="size-3 text-suite-ink-3" strokeWidth={1.75} />
           <select
             value={actor}
             onChange={(e) => setActor(e.target.value)}
-            className="h-7 px-2 text-[11.5px] bg-zinc-100 rounded-md border-0 focus:ring-2 focus:ring-zinc-900/10 max-w-[180px]"
+            className="h-7 px-2 text-[11.5px] bg-suite-card-soft rounded-md border-0 focus:ring-2 focus:ring-suite-navy/10 max-w-[180px]"
           >
             {actors.map((a) => (
               <option key={a} value={a}>
@@ -93,21 +93,21 @@ export function AuditTable({ events }: Props) {
           </select>
         </div>
 
-        <div className="ml-auto text-[11.5px] text-zinc-500 tabular-nums">
+        <div className="ml-auto text-[11.5px] text-suite-ink-3 suite-num">
           {filtered.length} of {events.length}
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white border border-dashed border-zinc-200 rounded-2xl px-6 py-12 text-center text-[12px] text-zinc-500">
+        <div className="bg-white border border-dashed border-suite-line rounded-2xl px-6 py-12 text-center text-[12px] text-suite-ink-3">
           {events.length === 0
             ? "No activity yet — events appear here as soon as users start interacting with IOX modules."
             : "No events match these filters."}
         </div>
       ) : (
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+        <div className="suite-tbl bg-white">
           <table className="w-full text-[12.5px]">
-            <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 text-[11px] uppercase tracking-wide">
+            <thead className="bg-suite-card-soft border-b border-suite-line text-suite-ink-3 text-[11px] uppercase tracking-wide">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">When</th>
                 <th className="px-3 py-2 text-left font-medium">Module</th>
@@ -117,31 +117,31 @@ export function AuditTable({ events }: Props) {
                 <th className="px-3 py-2 text-left font-medium">Payload</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody className="divide-y divide-suite-line-soft">
               {filtered.map((e) => (
-                <tr key={`${e.module}-${e.id}`} className="hover:bg-zinc-50/60">
-                  <td className="px-3 py-2 whitespace-nowrap text-zinc-600 text-[11.5px] tabular-nums">
+                <tr key={`${e.module}-${e.id}`} className="hover:bg-suite-card-soft">
+                  <td className="px-3 py-2 whitespace-nowrap text-suite-ink-2 text-[11.5px] suite-num">
                     {formatRelative(e.ts)}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <ModuleBadge module={e.module} />
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-zinc-800">{e.actor}</td>
-                  <td className="px-3 py-2 whitespace-nowrap font-mono text-[11.5px] text-zinc-900">
+                  <td className="px-3 py-2 whitespace-nowrap text-suite-ink">{e.actor}</td>
+                  <td className="px-3 py-2 whitespace-nowrap font-mono text-[11.5px] text-suite-ink">
                     {e.action}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-zinc-600 text-[11.5px]">
+                  <td className="px-3 py-2 whitespace-nowrap text-suite-ink-2 text-[11.5px]">
                     <span className="font-mono">{e.target}</span>
                     {e.targetId && (
-                      <span className="text-zinc-400">{` · ${e.targetId.slice(0, 8)}`}</span>
+                      <span className="text-suite-ink-4">{` · ${e.targetId.slice(0, 8)}`}</span>
                     )}
                   </td>
                   <td className="px-3 py-2 max-w-[320px]">
                     <div
-                      className="text-zinc-600 text-[11px] font-mono truncate"
+                      className="text-suite-ink-2 text-[11px] font-mono truncate"
                       title={e.payloadSummary}
                     >
-                      {e.payloadSummary ?? <span className="text-zinc-400">—</span>}
+                      {e.payloadSummary ?? <span className="text-suite-ink-4">—</span>}
                     </div>
                   </td>
                 </tr>
@@ -157,8 +157,8 @@ export function AuditTable({ events }: Props) {
 function ModuleBadge({ module }: { module: AuditModule }) {
   const tone =
     module === "IOX"
-      ? "bg-violet-50 ring-violet-200 text-violet-700"
-      : "bg-sky-50 ring-sky-200 text-sky-700";
+      ? "bg-suite-neut-bg ring-suite-line text-suite-neut"
+      : "bg-suite-blue-soft ring-suite-line text-suite-blue";
   return (
     <span
       className={cn(

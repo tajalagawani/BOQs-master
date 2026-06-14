@@ -89,23 +89,23 @@ export function DefectTable({ defects }: Props) {
   return (
     <div className="space-y-4">
       {/* Filter bar */}
-      <div className="bg-white border border-zinc-200 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-suite-line rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            className="size-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2"
+            className="size-3.5 text-suite-ink-4 absolute left-3 top-1/2 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search ID, title, module, notes…"
-            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-zinc-50 border border-zinc-200 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400"
+            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-suite-card-soft border border-suite-line rounded-md placeholder:text-suite-ink-4 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-suite-ink-4 hover:text-suite-ink-2"
               aria-label="Clear search"
             >
               <X className="size-3.5" strokeWidth={2} />
@@ -132,28 +132,28 @@ export function DefectTable({ defects }: Props) {
           options={modules.map((m) => ({ value: m, label: m === "all" ? "All" : m }))}
         />
 
-        <div className="ml-auto text-[11.5px] text-zinc-500 tabular-nums">
+        <div className="ml-auto text-[11.5px] text-suite-ink-2 suite-num">
           {filtered.length} of {defects.length}
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white border border-dashed border-zinc-200 rounded-2xl px-6 py-12 text-center">
-          <div className="size-10 mx-auto rounded-xl bg-emerald-50 text-emerald-700 inline-flex items-center justify-center ring-1 ring-emerald-200">
+        <div className="bg-white border border-dashed border-suite-line rounded-2xl px-6 py-12 text-center">
+          <div className="size-10 mx-auto rounded-xl bg-suite-good-bg text-suite-good inline-flex items-center justify-center ring-1 ring-suite-good/20">
             <BadgeCheck className="size-4" strokeWidth={1.75} />
           </div>
-          <h3 className="mt-3 text-[13px] font-semibold text-zinc-900">No defects match these filters</h3>
-          <p className="mt-1 text-[11.5px] text-zinc-500">
+          <h3 className="mt-3 text-[13px] font-semibold text-suite-ink">No defects match these filters</h3>
+          <p className="mt-1 text-[11.5px] text-suite-ink-2">
             {defects.length === 0
               ? "Defect log is empty."
               : "Try clearing the search or relaxing the filters."}
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+        <div className="bg-white border border-suite-line rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-[12.5px]">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 text-[11px] uppercase tracking-wide">
+              <thead className="bg-suite-card-soft border-b border-suite-line text-suite-ink-3 text-[11px] uppercase tracking-wide">
                 <tr>
                   <Th sortable onClick={() => toggleSort("id")} active={sortKey === "id"} dir={sortDir}>
                     ID
@@ -172,12 +172,12 @@ export function DefectTable({ defects }: Props) {
                   <Th>Resolution</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-suite-line-soft">
                 {filtered.map((d) => {
                   const tone = severityTone(d.severity);
                   return (
-                    <tr key={d.id} className="hover:bg-zinc-50/60">
-                      <td className="px-3 py-2 font-mono text-[11.5px] text-zinc-900 whitespace-nowrap">
+                    <tr key={d.id} className="hover:bg-suite-card-soft">
+                      <td className="px-3 py-2 suite-num text-[11.5px] text-suite-ink whitespace-nowrap">
                         {d.id}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
@@ -193,13 +193,13 @@ export function DefectTable({ defects }: Props) {
                           {d.severity}
                         </span>
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-zinc-700">{d.module}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-suite-ink-2">{d.module}</td>
                       <td className="px-3 py-2 max-w-[420px]">
-                        <div className="text-zinc-900 line-clamp-2" title={d.title}>
+                        <div className="text-suite-ink line-clamp-2" title={d.title}>
                           {d.title}
                         </div>
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap tabular-nums text-zinc-600 text-[11.5px]">
+                      <td className="px-3 py-2 whitespace-nowrap suite-num text-suite-ink-2 text-[11.5px]">
                         {d.date}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
@@ -207,17 +207,17 @@ export function DefectTable({ defects }: Props) {
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full px-2 h-5 text-[10.5px] font-medium ring-1",
                             d.state === "open"
-                              ? "bg-rose-50 text-rose-700 ring-rose-200"
-                              : "bg-emerald-50 text-emerald-700 ring-emerald-200",
+                              ? "bg-suite-dang-bg text-suite-dang ring-suite-dang/20"
+                              : "bg-suite-good-bg text-suite-good ring-suite-good/20",
                           )}
                         >
                           {d.state === "open" ? "Open" : "Closed"}
                         </span>
                       </td>
                       <td className="px-3 py-2 max-w-[300px]">
-                        <div className="text-zinc-600 text-[11.5px] line-clamp-2" title={d.notes}>
+                        <div className="text-suite-ink-2 text-[11.5px] line-clamp-2" title={d.notes}>
                           {d.ownerOrCommit && (
-                            <span className="text-zinc-500">{d.ownerOrCommit} · </span>
+                            <span className="text-suite-ink-3">{d.ownerOrCommit} · </span>
                           )}
                           {d.notes}
                         </div>
@@ -256,8 +256,8 @@ function Th({
         type="button"
         onClick={onClick}
         className={cn(
-          "inline-flex items-center gap-1 hover:text-zinc-900",
-          active && "text-zinc-900",
+          "inline-flex items-center gap-1 hover:text-suite-ink",
+          active && "text-suite-ink",
         )}
       >
         {children}
@@ -283,10 +283,10 @@ function Chips({
 }) {
   return (
     <div className="inline-flex items-center gap-1.5">
-      <span className="text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">
+      <span className="text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">
         {label}
       </span>
-      <div className="inline-flex items-center gap-0.5 bg-zinc-100 rounded-md p-0.5">
+      <div className="inline-flex items-center gap-0.5 bg-suite-card-soft border border-suite-line rounded-md p-0.5">
         {options.map((o) => {
           const active = value === o.value;
           return (
@@ -295,7 +295,7 @@ function Chips({
               onClick={() => onChange(o.value)}
               className={cn(
                 "h-6.5 px-2 text-[11px] font-medium rounded transition-colors whitespace-nowrap",
-                active ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-600 hover:text-zinc-900",
+                active ? "bg-white text-suite-ink shadow-sm" : "text-suite-ink-2 hover:text-suite-ink",
               )}
             >
               {o.label}

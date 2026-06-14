@@ -48,7 +48,7 @@ export function Toc({ entries }: Props) {
 
   return (
     <nav className="text-[12px]">
-      <div className="px-2 mb-2 text-[10px] uppercase tracking-[0.12em] text-zinc-400 font-semibold">
+      <div className="px-2 mb-2 text-[10px] uppercase tracking-[0.12em] text-suite-ink-3 font-semibold">
         On this page
       </div>
       <ul className="space-y-0.5 relative">
@@ -62,8 +62,8 @@ export function Toc({ entries }: Props) {
                   "block px-2 py-1 rounded text-[12px] leading-snug truncate transition-colors",
                   e.depth === 3 && "pl-5 text-[11.5px]",
                   isActive
-                    ? "text-zinc-900 font-medium bg-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50",
+                    ? "text-suite-ink font-medium bg-suite-neut-bg"
+                    : "text-suite-ink-3 hover:text-suite-ink hover:bg-suite-card-soft",
                 )}
               >
                 {e.text}

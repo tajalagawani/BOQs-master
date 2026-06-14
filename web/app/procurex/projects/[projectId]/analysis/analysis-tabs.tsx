@@ -38,7 +38,7 @@ function ValidateToggle() {
       aria-checked={on}
       onClick={() => setOn((v) => !v)}
       className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-        on ? "bg-emerald-500" : "bg-gray-200"
+        on ? "bg-emerald-500" : "bg-suite-line-2"
       }`}
     >
       <span
@@ -60,15 +60,15 @@ function RateTable({
   variancePositive: boolean
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">{title}</h2>
+    <div className="bg-white rounded-2xl border border-suite-line p-6">
+      <h2 className="text-base font-semibold text-suite-ink mb-4">{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">No items</p>
+        <p className="text-sm text-suite-ink-4 py-8 text-center">No items</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500">
+              <tr className="text-suite-ink-3">
                 <th className="text-left font-medium py-3 pr-4">Item ID</th>
                 <th className="text-left font-medium py-3 pr-4">Description</th>
                 <th className="text-left font-medium py-3 pr-4">Unit</th>
@@ -81,7 +81,7 @@ function RateTable({
                 <th className="text-left font-medium py-3">Validate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-suite-line-soft">
               {rows.map((row) => {
                 const varianceColor =
                   (variancePositive && row.variancePct > 0) ||
@@ -90,24 +90,24 @@ function RateTable({
                     : "text-emerald-600"
                 return (
                   <tr key={row.id}>
-                    <td className="py-3 pr-4 text-gray-900">{row.itemId}</td>
-                    <td className="py-3 pr-4 text-gray-700">
+                    <td className="py-3 pr-4 text-suite-ink suite-num">{row.itemId}</td>
+                    <td className="py-3 pr-4 text-suite-ink-2">
                       {row.description}
                     </td>
-                    <td className="py-3 pr-4 text-gray-700">{row.unit}</td>
-                    <td className="py-3 pr-4 text-right text-gray-900">
+                    <td className="py-3 pr-4 text-suite-ink-2">{row.unit}</td>
+                    <td className="py-3 pr-4 text-right text-suite-ink suite-num">
                       {formatCurrency(row.rate)}
                     </td>
-                    <td className="py-3 pr-4 text-right text-gray-700">
+                    <td className="py-3 pr-4 text-right text-suite-ink-2 suite-num">
                       {formatCurrency(row.benchmark)}
                     </td>
                     <td
-                      className={`py-3 pr-4 text-right font-medium ${varianceColor}`}
+                      className={`py-3 pr-4 text-right font-medium suite-num ${varianceColor}`}
                     >
                       {row.variancePct > 0 ? "+" : ""}
                       {row.variancePct.toFixed(1)}%
                     </td>
-                    <td className="py-3 pr-4 text-gray-700">
+                    <td className="py-3 pr-4 text-suite-ink-2">
                       {row.bidderComparison}
                     </td>
                     <td className="py-3">
@@ -126,17 +126,17 @@ function RateTable({
 
 function UnpricedTable({ rows }: { rows: UnpricedRow[] }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-2xl border border-suite-line p-6">
+      <h2 className="text-base font-semibold text-suite-ink mb-4">
         Unpriced Items Analysis
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">No items</p>
+        <p className="text-sm text-suite-ink-4 py-8 text-center">No items</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500">
+              <tr className="text-suite-ink-3">
                 <th className="text-left font-medium py-3 pr-4">Item ID</th>
                 <th className="text-left font-medium py-3 pr-4">Description</th>
                 <th className="text-left font-medium py-3 pr-4">Unit</th>
@@ -145,14 +145,14 @@ function UnpricedTable({ rows }: { rows: UnpricedRow[] }) {
                 <th className="text-left font-medium py-3">Validate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-suite-line-soft">
               {rows.map((row) => (
                 <tr key={row.id}>
-                  <td className="py-3 pr-4 text-gray-900">{row.itemId}</td>
-                  <td className="py-3 pr-4 text-gray-700">{row.description}</td>
-                  <td className="py-3 pr-4 text-gray-700">{row.unit}</td>
-                  <td className="py-3 pr-4 text-gray-700">{row.bidder}</td>
-                  <td className="py-3 pr-4 text-gray-700">{row.status}</td>
+                  <td className="py-3 pr-4 text-suite-ink suite-num">{row.itemId}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">{row.description}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">{row.unit}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">{row.bidder}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">{row.status}</td>
                   <td className="py-3">
                     <ValidateToggle />
                   </td>
@@ -168,17 +168,17 @@ function UnpricedTable({ rows }: { rows: UnpricedRow[] }) {
 
 function ArithmeticalTable({ rows }: { rows: ArithmeticalRow[] }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-2xl border border-suite-line p-6">
+      <h2 className="text-base font-semibold text-suite-ink mb-4">
         Arithmetical Errors Analysis
       </h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">No items</p>
+        <p className="text-sm text-suite-ink-4 py-8 text-center">No items</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500">
+              <tr className="text-suite-ink-3">
                 <th className="text-left font-medium py-3 pr-4">Bidder</th>
                 <th className="text-right font-medium py-3 pr-4">Tender Sum</th>
                 <th className="text-right font-medium py-3 pr-4">
@@ -190,17 +190,17 @@ function ArithmeticalTable({ rows }: { rows: ArithmeticalRow[] }) {
                 <th className="text-left font-medium py-3">Validate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-suite-line-soft">
               {rows.map((row) => (
                 <tr key={row.id}>
-                  <td className="py-3 pr-4 text-gray-900">{row.bidder}</td>
-                  <td className="py-3 pr-4 text-right text-gray-700">
+                  <td className="py-3 pr-4 text-suite-ink">{row.bidder}</td>
+                  <td className="py-3 pr-4 text-right text-suite-ink-2 suite-num">
                     {formatCurrency(row.tenderSum)}
                   </td>
-                  <td className="py-3 pr-4 text-right text-red-500 font-medium">
+                  <td className="py-3 pr-4 text-right text-red-500 font-medium suite-num">
                     {formatCurrency(row.errorAmount)}
                   </td>
-                  <td className="py-3 pr-4 text-right text-gray-900">
+                  <td className="py-3 pr-4 text-right text-suite-ink suite-num">
                     {formatCurrency(row.adjustedSum)}
                   </td>
                   <td className="py-3">
@@ -218,15 +218,15 @@ function ArithmeticalTable({ rows }: { rows: ArithmeticalRow[] }) {
 
 function DeviationTable({ title, rows }: { title: string; rows: DeviationRow[] }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">{title}</h2>
+    <div className="bg-white rounded-2xl border border-suite-line p-6">
+      <h2 className="text-base font-semibold text-suite-ink mb-4">{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">No items</p>
+        <p className="text-sm text-suite-ink-4 py-8 text-center">No items</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500">
+              <tr className="text-suite-ink-3">
                 <th className="text-left font-medium py-3 pr-4">Bidder</th>
                 <th className="text-left font-medium py-3 pr-4">Document</th>
                 <th className="text-left font-medium py-3 pr-4">Status</th>
@@ -234,15 +234,15 @@ function DeviationTable({ title, rows }: { title: string; rows: DeviationRow[] }
                 <th className="text-left font-medium py-3">Validate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-suite-line-soft">
               {rows.map((row) => (
                 <tr key={row.id}>
-                  <td className="py-3 pr-4 text-gray-900">{row.bidder}</td>
-                  <td className="py-3 pr-4 text-gray-700">
+                  <td className="py-3 pr-4 text-suite-ink">{row.bidder}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">
                     {row.documentCode} — {row.documentName}
                   </td>
                   <td className="py-3 pr-4 text-red-500">{row.status}</td>
-                  <td className="py-3 pr-4 text-gray-700">{row.notes ?? "—"}</td>
+                  <td className="py-3 pr-4 text-suite-ink-2">{row.notes ?? "—"}</td>
                   <td className="py-3">
                     <ValidateToggle />
                   </td>
@@ -261,7 +261,7 @@ export function AnalysisTabs({ analysis }: { analysis: OmniDetailedAnalysis }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-1 bg-white rounded-full p-1 border border-gray-100">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1 bg-white rounded-full p-1 border border-suite-line">
         {TABS.map((t) => {
           const selected = t.key === tab
           return (
@@ -271,8 +271,8 @@ export function AnalysisTabs({ analysis }: { analysis: OmniDetailedAnalysis }) {
               onClick={() => setTab(t.key)}
               className={`text-sm font-medium py-2.5 px-3 rounded-full transition-colors ${
                 selected
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-suite-card-soft text-suite-ink shadow-sm"
+                  : "text-suite-ink-3 hover:text-suite-ink"
               }`}
             >
               {t.label}

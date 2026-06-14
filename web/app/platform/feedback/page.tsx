@@ -25,11 +25,11 @@ export default async function FeedbackAdminPage() {
       : "";
 
   return (
-    <main className="min-h-screen bg-white px-6 py-8">
+    <div className="p-4 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-5xl">
         <header className="mb-5">
-          <h1 className="text-xl font-semibold text-zinc-900">AI Assistant Feedback</h1>
-          <p className="mt-1 text-[13px] text-zinc-500">
+          <h1 className="text-xl font-semibold text-suite-ink">AI Assistant Feedback</h1>
+          <p className="mt-1 text-[13px] text-suite-ink-3">
             What testers flagged in the RatesX AI chat. Down-votes capture the
             reason the answer was wrong — use these to improve the tools and data.
           </p>
@@ -45,18 +45,18 @@ export default async function FeedbackAdminPage() {
           ).map(([label, n]) => (
             <div
               key={label}
-              className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5"
+              className="rounded-lg border border-suite-line bg-suite-card-soft px-3 py-2.5"
             >
-              <div className="text-lg font-semibold tabular-nums text-zinc-900">{n}</div>
-              <div className="text-[11px] text-zinc-500">{label}</div>
+              <div className="text-lg font-semibold suite-num text-suite-ink">{n}</div>
+              <div className="text-[11px] text-suite-ink-3">{label}</div>
             </div>
           ))}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-zinc-200">
+        <div className="suite-tbl bg-white">
           <table className="w-full border-collapse text-left align-top">
             <thead>
-              <tr className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
+              <tr className="bg-suite-card-soft text-[11px] uppercase tracking-wider text-suite-ink-3">
                 <th className="px-3 py-2.5 font-medium">When</th>
                 <th className="px-3 py-2.5 font-medium">User</th>
                 <th className="px-3 py-2.5 font-medium">Vote</th>
@@ -65,11 +65,11 @@ export default async function FeedbackAdminPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-t border-zinc-100 align-top">
-                  <td className="whitespace-nowrap px-3 py-3 text-[12px] text-zinc-500">
+                <tr key={r.id} className="border-t border-suite-line-soft align-top">
+                  <td className="whitespace-nowrap px-3 py-3 text-[12px] text-suite-ink-3 suite-num">
                     {fmt(r.createdAt)}
                   </td>
-                  <td className="px-3 py-3 text-[12px] text-zinc-600">
+                  <td className="px-3 py-3 text-[12px] text-suite-ink-2">
                     {r.userEmail ?? "—"}
                   </td>
                   <td className="px-3 py-3">
@@ -77,8 +77,8 @@ export default async function FeedbackAdminPage() {
                       className={
                         "inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium " +
                         (r.vote === "down"
-                          ? "bg-red-50 text-red-700"
-                          : "bg-emerald-50 text-emerald-700")
+                          ? "bg-suite-dang-bg text-suite-dang"
+                          : "bg-suite-good-bg text-suite-good")
                       }
                     >
                       {r.vote === "down" ? "👎 Bad" : "👍 Good"}
@@ -86,19 +86,19 @@ export default async function FeedbackAdminPage() {
                   </td>
                   <td className="px-3 py-3">
                     {r.question ? (
-                      <p className="text-[13px] font-medium text-zinc-800">{r.question}</p>
+                      <p className="text-[13px] font-medium text-suite-ink">{r.question}</p>
                     ) : null}
                     {r.reason ? (
-                      <p className="mt-1 rounded-md bg-red-50/60 px-2 py-1 text-[12.5px] text-red-800">
+                      <p className="mt-1 rounded-md bg-suite-dang-bg px-2 py-1 text-[12.5px] text-suite-dang">
                         {r.reason}
                       </p>
                     ) : null}
                     {r.answer ? (
                       <details className="mt-1.5">
-                        <summary className="cursor-pointer text-[11px] text-zinc-400 hover:text-zinc-600">
+                        <summary className="cursor-pointer text-[11px] text-suite-ink-4 hover:text-suite-ink-2">
                           View AI answer
                         </summary>
-                        <p className="mt-1 whitespace-pre-wrap text-[12px] text-zinc-500">
+                        <p className="mt-1 whitespace-pre-wrap text-[12px] text-suite-ink-3">
                           {r.answer}
                         </p>
                       </details>
@@ -108,7 +108,7 @@ export default async function FeedbackAdminPage() {
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={4} className="py-10 text-center text-sm text-suite-ink-4">
                     No feedback yet.
                   </td>
                 </tr>
@@ -117,6 +117,6 @@ export default async function FeedbackAdminPage() {
           </table>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

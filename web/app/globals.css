@@ -155,6 +155,44 @@
   --color-ring: var(--om-ring, #18181b);
   --font-sans: var(--font-inter);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── 10X Suite design system — tokens ──────────────────────────────────
+     Canonical palette from 10x-suite-launcher.html + procurex-step3-10x-style.html
+     (the latter is the superset). Exposed as Tailwind utilities so the whole app
+     can adopt the look: bg-suite-navy, text-suite-ink-2, border-suite-line,
+     bg-suite-good-bg, text-suite-good, etc. */
+  --color-suite-navy: #152340;
+  --color-suite-navy-2: #1b2c4e;
+  --color-suite-navy-3: #24365c;
+  --color-suite-navy-deep: #101b33;
+  --color-suite-ink: #1d2b45;
+  --color-suite-ink-2: #5a6478;
+  --color-suite-ink-3: #8b93a4;
+  --color-suite-ink-4: #aab1c0;
+  --color-suite-page: #f6f7f9;
+  --color-suite-panel: #ffffff;
+  --color-suite-card: #f4f2ee;
+  --color-suite-card-soft: #faf9f6;
+  --color-suite-line: #e7e4dc;
+  --color-suite-line-2: #dcd8ce;
+  --color-suite-line-soft: #edebe4;
+  --color-suite-btn: #1b2c4e;
+  --color-suite-blue: #3b6fd6;
+  --color-suite-blue-soft: #eaf0fb;
+  --color-suite-amber: #e0a83e;
+  --color-suite-olive: #b9a93f;
+  --color-suite-green: #4f9070;
+  --color-suite-red: #c0564d;
+  --color-suite-good: #357a59;
+  --color-suite-good-bg: #eef4f0;
+  --color-suite-warn: #8a6a20;
+  --color-suite-warn-bg: #faf3e1;
+  --color-suite-dang: #a13d35;
+  --color-suite-dang-bg: #fbecea;
+  --color-suite-neut: #5a6478;
+  --color-suite-neut-bg: #edebe4;
+  --font-suite: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-suite-mono: var(--font-plex-mono), ui-monospace, "IBM Plex Mono", monospace;
 }
 
 html {
@@ -180,4 +218,95 @@ body {
 }
 .iox-arrow {
   transition: transform 0.15s ease;
+}
+
+/* ─────────────────────────── 10X Suite design system ──────────────────────
+   Component-level helpers that can't be expressed as plain utilities (gradients,
+   fixed rails, type ramp). Put `.suite` on a page root to opt the subtree into
+   the Poppins type ramp + ink colour. */
+.suite {
+  font-family: var(--font-suite);
+  color: var(--color-suite-ink);
+}
+/* Tabular mono numerals — for sums, codes, metrics. */
+.suite-num {
+  font-family: var(--font-suite-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* Navy radial hero — shared by the launcher and the inner-app heroes. */
+.suite-hero {
+  background: radial-gradient(
+    120% 150% at 30% -20%,
+    var(--color-suite-navy-3),
+    var(--color-suite-navy) 58%,
+    var(--color-suite-navy-deep)
+  );
+}
+/* The signature soft card/panel shadow. */
+.suite-shadow {
+  box-shadow:
+    0 1px 2px rgba(18, 30, 55, 0.04),
+    0 10px 30px rgba(18, 30, 55, 0.07);
+}
+/* Fixed accent rails down both window edges. */
+.suite-rail {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  z-index: 50;
+  background: linear-gradient(#2f6df0, #7aa6ff);
+  opacity: 0.45;
+}
+@keyframes suite-fab {
+  0%,
+  100% {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(243, 196, 62, 0.5);
+  }
+}
+
+/* Roster/data table — port of `.tbl`/`table` in procurex-step3-10x-style.html.
+   Wrap a semantic <table> in `.suite-tbl`; add `.r`/`.c` to th/td to align. */
+.suite-tbl {
+  border: 1px solid var(--color-suite-line);
+  border-radius: var(--radius-suite, 14px);
+  overflow: hidden;
+}
+.suite-tbl table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.suite-tbl thead th {
+  background: var(--color-suite-card-soft);
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-suite-line);
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-suite-ink-3);
+}
+.suite-tbl td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--color-suite-line-soft);
+  vertical-align: middle;
+}
+.suite-tbl tbody tr:last-child td {
+  border-bottom: none;
+}
+.suite-tbl tbody tr:hover td {
+  background: var(--color-suite-card-soft);
+}
+.suite-tbl th.r,
+.suite-tbl td.r {
+  text-align: right;
+}
+.suite-tbl th.c,
+.suite-tbl td.c {
+  text-align: center;
 }

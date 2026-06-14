@@ -1,4 +1,3 @@
-import { Header } from "@/components/Header";
 import { getSession } from "@/lib/session";
 import { getBenchmarkProjects, getRCDCBaseline } from "@/lib/queries/benchmarking";
 import { getCostModelEntries } from "@/lib/queries/configuration";
@@ -97,17 +96,19 @@ export default async function BenchmarkingPage() {
     : benchmarkProjectsAll;
 
   return (
-    <BenchmarkingClient
-      initialProjects={benchmarkProjects}
-      rcdcBaseline={rcdcBaseline}
-      nrmCategories={nrmCategories}
-      assetClassOptions={assetClassOptions}
-      assetTypeOptions={assetTypeOptions}
-      assetMassingOptions={assetMassingOptions}
-      countryOptions={countryOptions}
-      cityOptions={cityOptions}
-      developerOptions={developerOptions}
-      projectOptions={projectOptions}
-    />
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <BenchmarkingClient
+        initialProjects={benchmarkProjects}
+        rcdcBaseline={rcdcBaseline}
+        nrmCategories={nrmCategories}
+        assetClassOptions={assetClassOptions}
+        assetTypeOptions={assetTypeOptions}
+        assetMassingOptions={assetMassingOptions}
+        countryOptions={countryOptions}
+        cityOptions={cityOptions}
+        developerOptions={developerOptions}
+        projectOptions={projectOptions}
+      />
+    </main>
   );
 }

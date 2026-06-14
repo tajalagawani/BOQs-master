@@ -1,11 +1,10 @@
 // Always read live project store — no static caching
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
 import {
-  BoqsWorkspace,
+  BoqsSuiteWorkspace,
   type BoqsGridEntry,
-} from "@/components/boqs/BoqsWorkspace";
+} from "@/components/boqs/BoqsSuiteWorkspace";
 import type { BoqCardStatus } from "@/components/boqs/BoqCard";
 import { demoProjects } from "@/lib/demoProjects";
 import { fmtINR } from "@/lib/demoBoq";
@@ -69,23 +68,8 @@ export default async function BoqsHome() {
   const projects: BoqsGridEntry[] = [...importedCards, ...demoCards];
 
   return (
-    <>
-      {/* Same fixed bg as the home page. */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
-        style={{
-          backgroundImage: "url(/iox-bg.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center center",
-        }}
-      />
-
-      <Header />
-
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <BoqsWorkspace projects={projects} pulse={pulse} />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <BoqsSuiteWorkspace projects={projects} pulse={pulse} />
+    </main>
   );
 }

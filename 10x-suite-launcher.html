@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>10X — Product Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#152340; --navy-2:#1b2c4e; --navy-3:#24365c; --navy-deep:#101b33;
+    --ink:#1d2b45; --ink-2:#5a6478; --ink-3:#8b93a4;
+    --page:#ffffff; --panel:#ffffff; --card:#f4f2ee; --card-2:#eeebe4;
+    --line:#e7e4dc; --line-2:#dcd8ce;
+    --btn:#1b2c4e;
+    --blue:#3b6fd6; --amber:#e0a83e; --olive:#b9a93f; --green:#4f9070; --red:#c0564d;
+    --accent-rail:#2f6df0;
+    --r:14px; --r-sm:10px; --r-pill:999px;
+    --sans:"Poppins",system-ui,sans-serif; --mono:"IBM Plex Mono",monospace;
+    --shadow:0 1px 2px rgba(18,30,55,.04),0 8px 26px rgba(18,30,55,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:400;-webkit-font-smoothing:antialiased}
+  .rail{position:fixed;top:0;bottom:0;width:3px;background:linear-gradient(var(--accent-rail),#7aa6ff);opacity:.5}
+  .rail.l{left:0}.rail.r{right:0}
+
+  /* ===== HERO (navy) ===== */
+  .hero{background:radial-gradient(120% 140% at 50% -10%,var(--navy-3),var(--navy) 55%,var(--navy-deep));padding:0 0 92px;position:relative}
+  .topnav{display:flex;align-items:center;gap:18px;padding:16px 26px}
+  .waffle{width:34px;height:34px;border-radius:9px;background:#fff;display:grid;place-items:center}
+  .waffle .dots{display:grid;grid-template-columns:repeat(2,5px);gap:4px}
+  .waffle .dots i{width:5px;height:5px;border-radius:1.5px;background:var(--navy)}
+  .topnav .logo{margin-left:6px;font-family:var(--mono);font-weight:600;color:#dfe6f2;letter-spacing:.04em;font-size:15px}
+  .topnav .sp{flex:1}
+  .search{flex:0 1 460px;display:flex;align-items:center;gap:10px;height:42px;background:#fff;border-radius:var(--r-pill);padding:0 18px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  .search input{border:none;outline:none;flex:1;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
+  .search input::placeholder{color:var(--ink-3)}
+  .search .mag{color:var(--ink-3);font-size:15px}
+  .iconbtn{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;position:relative;cursor:pointer;color:var(--navy);font-size:15px}
+  .badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:9px;background:var(--red);color:#fff;font-size:9px;font-weight:600;display:grid;place-items:center;padding:0 3px;border:2px solid var(--navy)}
+  .ava{width:38px;height:38px;border-radius:50%;background:#3a5fa0;color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px}
+
+  .welcome{text-align:center;color:#fff;font-weight:600;font-size:30px;margin:30px 0 34px;letter-spacing:-.01em}
+
+  .suite{max-width:1180px;margin:0 auto;padding:0 26px}
+  .suite .lab{color:#aeb8cc;font-weight:600;font-size:13px;margin-bottom:12px;padding-left:4px}
+  .tabs{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:var(--r-pill);padding:5px}
+  .tab{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:var(--r-pill);color:#c3ccdd;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+  .tab .d{width:7px;height:7px;border-radius:50%}
+  .tab.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .d.blue{background:var(--blue)}.d.amber{background:var(--amber)}.d.olive{background:var(--olive)}.d.green{background:var(--green)}.d.red{background:var(--red)}
+
+  /* ===== APPLICATIONS PANEL ===== */
+  .panel{max-width:1180px;margin:-60px auto 40px;background:var(--panel);border-radius:22px;box-shadow:var(--shadow);padding:26px 26px 34px;position:relative}
+  .panel .phead{display:flex;align-items:center;gap:11px;margin:4px 4px 20px}
+  .panel .phead .wf{width:26px;height:26px;border-radius:7px;background:var(--navy);display:grid;place-items:center}
+  .panel .phead .wf .dots{display:grid;grid-template-columns:repeat(2,4px);gap:3px}
+  .panel .phead .wf .dots i{width:4px;height:4px;border-radius:1px;background:#fff}
+  .panel .phead h2{font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .appcard{display:grid;grid-template-columns:1fr 1.05fr;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;min-height:200px}
+  .appcard .body{padding:22px 22px 20px}
+  .appcard h3{font-size:22px;font-weight:700;margin:0 0 4px;color:var(--ink);letter-spacing:-.01em}
+  .appcard .tag{font-size:13px;color:var(--ink-2);margin-bottom:16px}
+  .feat{display:flex;flex-direction:column;gap:8px}
+  .feat .f{font-size:12.5px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-weight:500}
+  .feat .f.stat{display:flex;align-items:center;gap:8px;border:none;background:transparent;padding:2px 0;color:var(--ink-2)}
+  .feat .f.stat b{font-family:var(--mono);color:var(--ink);font-weight:600}
+  .feat .f.stat .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+
+  /* thumbnail/preview area */
+  .thumb{position:relative;background:linear-gradient(135deg,#fbfbfb,#eef0f3);border-left:1px solid var(--line);overflow:hidden;display:grid;place-items:center}
+  .openbtn{position:absolute;z-index:3;display:inline-flex;align-items:center;gap:8px;background:var(--btn);color:#fff;font-weight:600;font-size:13px;padding:11px 18px;border-radius:var(--r-pill);box-shadow:0 8px 22px rgba(18,30,55,.28);cursor:pointer}
+  .openbtn:hover{background:#24365c}
+  .thumb .mini{position:absolute;inset:0;opacity:.95}
+
+  /* ProcureX mini */
+  .px-head{position:absolute;top:14px;left:16px;right:16px;display:flex;gap:8px;font-size:8px;color:#9aa1b2}
+  .px-head .a{color:var(--blue);font-weight:600;border-bottom:2px solid var(--blue);padding-bottom:3px}
+  .px-rows{position:absolute;top:42px;left:16px;width:120px;display:flex;flex-direction:column;gap:7px}
+  .px-rows i{height:7px;border-radius:3px;background:#dfe2ea}
+  .px-rows i:nth-child(2){width:80%}.px-rows i:nth-child(3){width:60%}
+  .px-card{position:absolute;right:14px;bottom:16px;width:150px;background:linear-gradient(135deg,#3b6fd6,#5b86e0);border-radius:10px;padding:11px 12px;color:#fff;box-shadow:0 8px 20px rgba(59,111,214,.35)}
+  .px-card .t{font-size:8px;opacity:.85;margin-bottom:7px}
+  .px-card .nums{display:flex;gap:12px}
+  .px-card .nums b{font-family:var(--mono);font-size:14px;font-weight:600;display:block}
+  .px-card .nums span{font-size:7px;opacity:.8}
+
+  /* Parametrix mini — massing */
+  .pm-grid{position:absolute;inset:0;background-image:linear-gradient(#e7eaef 1px,transparent 1px),linear-gradient(90deg,#e7eaef 1px,transparent 1px);background-size:22px 22px;opacity:.6}
+  .pm-block{position:absolute;background:linear-gradient(135deg,#cfd6e2,#aab4c6);transform:skewY(-12deg)}
+  .pm-b1{width:46px;height:70px;left:120px;top:70px}
+  .pm-b2{width:40px;height:48px;left:166px;top:92px;background:linear-gradient(135deg,#b8c1d2,#97a3ba)}
+  .pm-b3{width:38px;height:34px;left:96px;top:104px;background:linear-gradient(135deg,#dde2ea,#c2cad8)}
+  .pm-cost{position:absolute;top:14px;right:16px;font-family:var(--mono);font-size:9px;color:#6b7488}
+  .pm-cost b{color:var(--ink)}
+
+  /* Controlx mini — dashboard */
+  .cx-tiles{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:8px}
+  .cx-tile{flex:1;background:#3f8f7f;border-radius:8px;height:42px;display:grid;place-items:center;color:#fff}
+  .cx-tile.b{background:#2f6d62}
+  .cx-tile b{font-family:var(--mono);font-size:15px}
+  .cx-chart{position:absolute;left:16px;right:16px;bottom:14px;height:64px;display:flex;align-items:flex-end;gap:5px}
+  .cx-chart i{flex:1;background:#cdd9d4;border-radius:2px 2px 0 0}
+  .cx-chart i:nth-child(odd){background:#9fc2b6}
+
+  /* Intellex mini — map */
+  .ix-map{position:absolute;inset:0;background:linear-gradient(135deg,#eef1f4,#e3e7ec)}
+  .ix-plan{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-8deg);width:88px;height:64px;border:2px solid #4f9070;background:rgba(79,144,112,.16);border-radius:4px}
+  .ix-pin{position:absolute;left:62%;top:38%;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .ix-meta{position:absolute;left:16px;bottom:14px;font-size:9px;color:var(--ink-2)}
+  .ix-meta .loc{color:var(--ink);font-weight:600}
+  .ix-tag{position:absolute;top:14px;left:16px;background:#fff;border:1px solid var(--line);border-radius:6px;font-size:8px;color:var(--ink-2);padding:3px 7px;font-weight:500}
+
+  .chatbtn{position:fixed;right:22px;bottom:22px;width:46px;height:46px;border-radius:50%;background:#f3c43e;color:#3a2f00;font-weight:700;display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.22);cursor:pointer;z-index:20}
+
+  @media(max-width:860px){.grid{grid-template-columns:1fr}.appcard{grid-template-columns:1fr}.thumb{min-height:170px}.search{flex-basis:auto}}
+</style>
+</head>
+<body>
+  <div class="rail l"></div><div class="rail r"></div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="topnav">
+      <div class="waffle"><div class="dots"><i></i><i></i><i></i><i></i></div></div>
+      <span class="logo">10X</span>
+      <span class="sp"></span>
+      <div class="search"><span class="mag">⌕</span><input placeholder="Search projects, applications, reports…" /></div>
+      <span class="sp"></span>
+      <div class="iconbtn">🔔<span class="badge">1</span></div>
+      <div class="iconbtn">🌐</div>
+      <div class="ava">DM</div>
+    </div>
+
+    <div class="welcome">Welcome back, Daniel</div>
+
+    <div class="suite">
+      <div class="lab">Product Suite</div>
+      <div class="tabs">
+        <div class="tab on"><span class="d blue"></span>CapEx Intelligence</div>
+        <div class="tab"><span class="d amber"></span>OpEx Intelligence</div>
+        <div class="tab"><span class="d olive"></span>TotEx Financial Intelligence</div>
+        <div class="tab"><span class="d green"></span>ESG &amp; Carbon Intelligence</div>
+        <div class="tab"><span class="d red"></span>Variation &amp; Foresight Layer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="panel">
+    <div class="phead"><div class="wf"><div class="dots"><i></i><i></i><i></i><i></i></div></div><h2>Applications</h2></div>
+
+    <div class="grid">
+
+      <!-- ProcureX -->
+      <div class="appcard">
+        <div class="body">
+          <h3>ProcureX</h3>
+          <div class="tag">Tender Analysis, Accelerated</div>
+          <div class="feat">
+            <div class="f stat"><span class="dot"></span><b>10</b> active projects</div>
+            <div class="f stat"><span class="dot"></span><b>3</b> reports due</div>
+            <div class="f stat"><span class="dot"></span><b>3</b> pending FOT</div>
+            <div class="f stat"><span class="dot"></span><b>6</b> pending QS reviews</div>
+          </div>
+        </div>
+        <div class="thumb">
+          <div class="mini">
+            <div class="px-head"><span class="a">Tender Review</span><span>Compare</span><span>Report</span></div>
+            <div class="px-rows"><i></i><i></i><i></i></div>
+            <div class="px-card"><div class="t">Orion Property Group</div><div class="nums"><div><b>11.98M</b><span>Tender Sum</span></div><div><b>11.46M</b><span>Adjusted</span></div></div></div>
+          </div>
+          <div class="openbtn">Open ProcureX →</div>
+        </div>
+      </div>
+
+      <!-- ParametriX -->
+      <div class="appcard">
+        <div class="body">
+          <h3>ParametriX</h3>
+          <div class="tag">Faster investment decisions</div>
+          <div class="feat">
+            <div class="f">Feasibility Estimates &amp; KPIs</div>
+            <div class="f">Phasing-linked Cashflow Forecasts</div>
+            <div class="f">Cost Model Sensitivity Analysis</div>
+          </div>
+        </div>
+        <div class="thumb">
+          <div class="mini">
+            <div class="pm-grid"></div>
+            <div class="pm-block pm-b3"></div><div class="pm-block pm-b1"></div><div class="pm-block pm-b2"></div>
+            <div class="pm-cost">Overall cost<br><b>AED 251.2M</b></div>
+          </div>
+          <div class="openbtn">Open ParametriX →</div>
+        </div>
+      </div>
+
+      <!-- ControlX -->
+      <div class="appcard">
+        <div class="body">
+          <h3>ControlX</h3>
+          <div class="tag">Programme-wide Cost Insight</div>
+          <div class="feat">
+            <div class="f">Tiered Cost Reporting Output</div>
+            <div class="f">Baseline vs. Forecast Cost Analytics</div>
+            <div class="f">Variation Analytics</div>
+          </div>
+        </div>
+        <div class="thumb">
+          <div class="mini">
+            <div class="cx-tiles"><div class="cx-tile"><b>0</b></div><div class="cx-tile b"><b>0</b></div></div>
+            <div class="cx-chart"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:50%"></i><i style="height:85%"></i><i style="height:62%"></i><i style="height:45%"></i></div>
+          </div>
+          <div class="openbtn">Open ControlX →</div>
+        </div>
+      </div>
+
+      <!-- IntelleX -->
+      <div class="appcard">
+        <div class="body">
+          <h3>IntelleX</h3>
+          <div class="tag">Cost intelligence, connected</div>
+          <div class="feat">
+            <div class="f">Benchmark Analytics</div>
+            <div class="f">Cost Rate Identification &amp; Analytics</div>
+            <div class="f">Key Material Tracking Analytics</div>
+          </div>
+        </div>
+        <div class="thumb">
+          <div class="mini">
+            <div class="ix-map"></div>
+            <div class="ix-tag">1 Masterplan</div>
+            <div class="ix-plan"></div><div class="ix-pin"></div>
+            <div class="ix-meta"><span class="loc">Basra, Iraq</span><br>30.036440, 47.913328 · 90 sqm<br>Feb 4, 2026</div>
+          </div>
+          <div class="openbtn">Open IntelleX →</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="chatbtn">S</div>
+</body>
+</html>

@@ -4,7 +4,6 @@
 export const dynamic = "force-dynamic";
 
 import { notFound, redirect } from "next/navigation";
-import { Header } from "@/components/Header";
 import {
   getMasterplanWithCosts,
   getExecutiveSummary,
@@ -77,11 +76,9 @@ export default async function MasterplanSummaryPage({
   } | null) || { steepness: 10, midpoint: 0.5 };
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 min-h-0 overflow-auto">
-        <MasterplanSummaryClient
-          masterplan={{
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <MasterplanSummaryClient
+        masterplan={{
             id: masterplan.id,
             masterplanName: masterplan.name,
             totalCost: masterplan.totalCost,
@@ -95,7 +92,6 @@ export default async function MasterplanSummaryPage({
           phaseTimeline={phaseTimeline}
           scurveSettings={scurveSettings}
         />
-      </main>
-    </>
+    </main>
   );
 }

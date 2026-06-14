@@ -18,7 +18,7 @@ export function TenderReturns({ rounds }: { rounds: Round[] }) {
 
   return (
     <div>
-      <div className="inline-flex items-center gap-1 rounded-lg bg-gray-100 p-1 mb-4">
+      <div className="inline-flex items-center gap-1 rounded-lg bg-suite-card-soft p-1 mb-4">
         {rounds.map((r) => {
           const selected = r.key === activeKey
           return (
@@ -27,8 +27,8 @@ export function TenderReturns({ rounds }: { rounds: Round[] }) {
               onClick={() => setActiveKey(r.key)}
               className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
                 selected
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-suite-ink shadow-sm"
+                  : "text-suite-ink-2 hover:text-suite-ink"
               }`}
             >
               {r.label}
@@ -37,30 +37,30 @@ export function TenderReturns({ rounds }: { rounds: Round[] }) {
         })}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-100">
+      <div className="overflow-hidden rounded-xl border border-suite-line">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-500">
+          <thead className="bg-suite-card-soft text-suite-ink-3">
             <tr>
               <th className="text-left font-medium px-4 py-3">Bidder</th>
               <th className="text-right font-medium px-4 py-3">Total Bid</th>
               <th className="text-right font-medium px-4 py-3">Items Priced</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-suite-line-soft">
             {!active || active.rows.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={3} className="px-4 py-6 text-center text-suite-ink-4">
                   No submissions for this round
                 </td>
               </tr>
             ) : (
               active.rows.map((row) => (
                 <tr key={row.tendererId}>
-                  <td className="px-4 py-3 text-gray-900">{row.companyName}</td>
-                  <td className="px-4 py-3 text-right font-medium text-gray-900">
+                  <td className="px-4 py-3 text-suite-ink">{row.companyName}</td>
+                  <td className="px-4 py-3 text-right font-medium text-suite-ink suite-num">
                     {formatCurrency(row.totalBid)}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700">
+                  <td className="px-4 py-3 text-right text-suite-ink-2 suite-num">
                     {row.itemsPriced}
                   </td>
                 </tr>

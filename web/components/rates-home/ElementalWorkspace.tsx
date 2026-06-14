@@ -2,8 +2,9 @@
 
 /**
  * Full-page workspace for Elemental-by-Project.
- * Left rail = project cohort (search + multi-select). Main = hero + compact
- * control bar + chart canvas. Right = project detail drawer.
+ * Full-bleed inner-page shell (no big navy hero). Left rail = project cohort
+ * (search + multi-select). Main = compact control bar + chart canvas. Right =
+ * project detail drawer.
  *
  * The full benchmark set is filtered entirely client-side, so every filter
  * option shows a live count and the empty ones are disabled — the benchmark
@@ -32,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/rates/components/ui/select";
+import { SuiteInnerShell, SuiteInnerHeader } from "@/components/suite";
 
 export interface ElementalParams {
   basis: Basis;
@@ -199,18 +201,32 @@ export function ElementalWorkspace({ projects, params }: Props) {
   }`;
 
   return (
-    <div className="h-full grid grid-cols-1 lg:grid-cols-[260px_1fr] min-h-0">
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">RatesX</span>}
+      search={query}
+      onSearch={setQuery}
+      searchPlaceholder="Search projects…"
+      header={
+        <SuiteInnerHeader
+          title={title}
+          actions={
+            <span className="truncate text-[11.5px] text-suite-ink-3">{subtitle}</span>
+          }
+        />
+      }
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] min-h-0 h-full bg-white border border-suite-line rounded-[12px] p-3">
       {/* ── Left rail: project cohort ───────────────────────── */}
-      <aside className="hidden lg:flex flex-col min-h-0 border-r border-zinc-200/70 bg-white/50 backdrop-blur-[1px] px-4 py-4 gap-2.5">
+      <aside className="hidden lg:flex flex-col min-h-0 border-r border-suite-line pr-4 py-1 gap-2.5">
         <Link
           href="/rates"
-          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 shrink-0"
+          className="inline-flex items-center gap-1.5 text-xs text-suite-ink-3 hover:text-suite-ink shrink-0"
         >
           <ArrowLeft className="size-3.5" strokeWidth={1.75} />
           Back to RatesX
         </Link>
 
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500 font-semibold shrink-0 mt-2">
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-suite-ink-4 font-semibold shrink-0 mt-2">
           <span>
             Projects ({selected.size}/{cohort.length})
           </span>
@@ -219,7 +235,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
             onClick={() =>
               setSelected(allSelected ? new Set() : new Set(cohort.map((p) => p.projectId)))
             }
-            className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 hover:text-zinc-900"
+            className="text-[10px] uppercase tracking-wider font-semibold text-suite-ink-4 hover:text-suite-ink"
           >
             {allSelected ? "Clear" : "All"}
           </button>
@@ -227,7 +243,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
 
         <div className="relative shrink-0">
           <Search
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-zinc-400"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-suite-ink-4"
             strokeWidth={1.75}
           />
           <input
@@ -235,7 +251,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search projects…"
-            className="w-full h-8 pl-7 pr-2 bg-white border border-zinc-200 rounded-lg text-[11.5px] placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-300"
+            className="w-full h-8 pl-7 pr-2 bg-white border border-suite-line rounded-lg text-[11.5px] placeholder:text-suite-ink-4 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2"
           />
         </div>
 
@@ -250,18 +266,18 @@ export function ElementalWorkspace({ projects, params }: Props) {
                   className={
                     "flex-1 flex items-center gap-2 px-2 py-1 rounded-md transition-colors text-left min-w-0 " +
                     (isSel
-                      ? "text-zinc-900 hover:bg-zinc-50"
-                      : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50")
+                      ? "text-suite-ink hover:bg-suite-card-soft"
+                      : "text-suite-ink-4 hover:text-suite-ink-2 hover:bg-suite-card-soft")
                   }
                 >
                   {isSel ? (
-                    <Eye className="size-3 shrink-0 text-emerald-600" strokeWidth={2} />
+                    <Eye className="size-3 shrink-0 text-suite-good" strokeWidth={2} />
                   ) : (
                     <EyeOff className="size-3 shrink-0" strokeWidth={2} />
                   )}
                   <span className="flex-1 min-w-0 truncate">{p.project}</span>
                   {p.baseYear ? (
-                    <span className="text-[10px] text-zinc-400 tabular-nums shrink-0">
+                    <span className="text-[10px] text-suite-ink-4 tabular-nums shrink-0">
                       {p.baseYear}
                     </span>
                   ) : null}
@@ -270,7 +286,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
             );
           })}
           {filteredList.length === 0 && (
-            <li className="text-xs text-zinc-400 italic py-2 text-center">
+            <li className="text-xs text-suite-ink-4 italic py-2 text-center">
               {cohort.length === 0
                 ? `No ${currency} projects for these filters.`
                 : `No projects match “${query}”.`}
@@ -281,27 +297,16 @@ export function ElementalWorkspace({ projects, params }: Props) {
 
       {/* ── Main column ─────────────────────────────────────── */}
       <div className="min-w-0 min-h-0 overflow-hidden">
-        <div className="h-full mx-auto max-w-[1320px] px-6 lg:px-8 py-3 lg:py-4 flex flex-col gap-3">
-          {/* Hero */}
+        <div className="h-full lg:pl-6 flex flex-col gap-3">
+          {/* Title/subtitle render in the SuiteInnerShell header above. */}
           <div className="shrink-0">
             <Link
               href="/rates"
-              className="lg:hidden inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 mb-2"
+              className="lg:hidden inline-flex items-center gap-1.5 text-xs text-suite-ink-3 hover:text-suite-ink mb-2"
             >
               <ArrowLeft className="size-3.5" strokeWidth={1.75} />
               Back to RatesX
             </Link>
-            <div className="flex items-end justify-between gap-4 flex-wrap">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium mb-0.5">
-                  Elemental
-                </div>
-                <h1 className="text-xl lg:text-2xl font-semibold tracking-tight text-zinc-900">
-                  {title}
-                </h1>
-              </div>
-              <p className="text-[11px] text-zinc-500">{subtitle}</p>
-            </div>
           </div>
 
           {/* Control bar */}
@@ -362,8 +367,8 @@ export function ElementalWorkspace({ projects, params }: Props) {
               className={
                 "h-7 px-2.5 inline-flex items-center rounded-full border text-[11px] transition-colors " +
                 (inflate
-                  ? "bg-emerald-600 text-white border-emerald-600"
-                  : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300")
+                  ? "bg-suite-good text-white border-suite-good"
+                  : "bg-white text-suite-ink-2 border-suite-line hover:border-suite-line-2")
               }
             >
               {inflate
@@ -375,7 +380,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
           {/* Reference-year strip */}
           {inflate ? (
             <div className="shrink-0 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10.5px]">
-              <span className="text-zinc-500">Reference year:</span>
+              <span className="text-suite-ink-3">Reference year:</span>
               {INFLATION_REFERENCE_YEARS.filter((y) => y >= 2018).map((y) => (
                 <Link
                   key={y}
@@ -383,8 +388,8 @@ export function ElementalWorkspace({ projects, params }: Props) {
                   className={
                     "h-6 px-2 inline-flex items-center rounded-full border transition-colors " +
                     (refYear === y
-                      ? "bg-zinc-900 text-white border-zinc-900"
-                      : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300")
+                      ? "bg-suite-navy text-white border-suite-navy"
+                      : "bg-white text-suite-ink-2 border-suite-line hover:border-suite-line-2")
                   }
                 >
                   {y}
@@ -442,6 +447,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
           </div>
         </div>
       </div>
+      </div>
 
       <ProjectDetailDrawer
         project={drawerProject}
@@ -450,7 +456,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
         inflationOn={inflate}
         onClose={() => setDrawerId(null)}
       />
-    </div>
+    </SuiteInnerShell>
   );
 }
 
@@ -466,14 +472,14 @@ function Segmented({
   hrefFor: (value: string) => string;
 }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-zinc-200 bg-white p-0.5">
+    <div className="inline-flex items-center rounded-full border border-suite-line bg-white p-0.5">
       {options.map((o) => (
         <Link
           key={o.value}
           href={hrefFor(o.value)}
           className={
             "h-6 px-2.5 inline-flex items-center rounded-full text-[11px] font-medium transition-colors " +
-            (current === o.value ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900")
+            (current === o.value ? "bg-suite-navy text-white" : "text-suite-ink-2 hover:text-suite-ink")
           }
         >
           {o.label}
@@ -498,7 +504,7 @@ function CompactSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label={label}
-        className="h-7 px-2.5 text-[11px] rounded-full border-zinc-200 bg-white gap-1 min-w-0 w-auto"
+        className="h-7 px-2.5 text-[11px] rounded-full border-suite-line bg-white gap-1 min-w-0 w-auto"
       >
         <SelectValue placeholder={label} />
       </SelectTrigger>
@@ -514,7 +520,7 @@ function CompactSelect({
 }
 
 function Divider() {
-  return <span className="h-5 w-px bg-zinc-200" aria-hidden="true" />;
+  return <span className="h-5 w-px bg-suite-line" aria-hidden="true" />;
 }
 
 function ReadingHint({
@@ -529,17 +535,17 @@ function ReadingHint({
   normalize: boolean;
 }) {
   return (
-    <div className="shrink-0 flex items-start gap-2 text-[11px] leading-relaxed text-zinc-500 bg-zinc-50/70 border border-zinc-200/60 rounded-lg px-3 py-1.5">
-      <Info className="size-3.5 mt-px shrink-0 text-zinc-400" strokeWidth={1.75} />
+    <div className="shrink-0 flex items-start gap-2 text-[11px] leading-relaxed text-suite-ink-3 bg-suite-card-soft border border-suite-line rounded-lg px-3 py-1.5">
+      <Info className="size-3.5 mt-px shrink-0 text-suite-ink-4" strokeWidth={1.75} />
       {view === "composition" ? (
         <p>
-          <span className="font-medium text-zinc-700">How to read · </span>
+          <span className="font-medium text-suite-ink-2">How to read · </span>
           each bar is a project; stacked segments are NRM elements in{" "}
-          <span className="font-medium text-zinc-700">
+          <span className="font-medium text-suite-ink-2">
             {normalize ? "% of project total" : `${currency}/m² (${basis})`}
           </span>
           {normalize ? " — taller share = bigger part of the build" : " — taller = costlier per m²"}.{" "}
-          <span className="text-zinc-400">
+          <span className="text-suite-ink-4">
             Click a legend chip to isolate an element (⌥-click to hide) · click a bar for its full
             breakdown · drag the bottom slider to zoom · toggle{" "}
             {normalize ? "Absolute for money" : "100% to compare mix"}.
@@ -547,11 +553,11 @@ function ReadingHint({
         </p>
       ) : (
         <p>
-          <span className="font-medium text-zinc-700">How to read · </span>
+          <span className="font-medium text-suite-ink-2">How to read · </span>
           each row is an NRM element on a{" "}
-          <span className="font-medium text-zinc-700">logarithmic {currency}/m² axis</span> — further
+          <span className="font-medium text-suite-ink-2">logarithmic {currency}/m² axis</span> — further
           right = costlier per m².{" "}
-          <span className="text-zinc-400">
+          <span className="text-suite-ink-4">
             Every dot is a project · the shaded band is the middle 50% (IQR) · the ringed dot is the
             median · the right column is the median value · click a dot to open that project.
           </span>
@@ -563,7 +569,7 @@ function ReadingHint({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-full h-full grid place-items-center text-center text-sm text-zinc-500 bg-white/85 border border-zinc-200/70 rounded-2xl px-6">
+    <div className="w-full h-full grid place-items-center text-center text-sm text-suite-ink-3 bg-suite-card-soft border border-suite-line rounded-2xl px-6">
       <span className="max-w-sm">{children}</span>
     </div>
   );

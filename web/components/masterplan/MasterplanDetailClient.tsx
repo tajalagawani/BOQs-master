@@ -23,6 +23,11 @@ import {
   Plus,
 } from "lucide-react";
 
+import {
+  SuiteInnerShell,
+  SuiteInnerHeader,
+  SuiteButton,
+} from "@/components/suite";
 import ConfirmDialog from "@/components/costx/ConfirmDialog";
 import SummaryCards from "@/components/SummaryCards";
 import BuildingAssets from "@/components/sections/BuildingAssets";
@@ -497,6 +502,9 @@ export default function MasterplanDetailClient({
     initialVersion.id = "v1";
     initialVersion.masterplanId = masterplan.id;
   }
+
+  // Local-only top-nav search state (no page-level search on this route).
+  const [navSearch, setNavSearch] = useState("");
 
   // Version state
   const [versions, setVersions] = useState<MasterplanVersion[]>([
@@ -1315,109 +1323,111 @@ export default function MasterplanDetailClient({
    *  Render
    * ────────────────────────────────────────────────────────────────*/
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-white border-b border-zinc-200 px-6 py-4 shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-base font-semibold text-zinc-900 truncate">
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">CostX</span>}
+      search={navSearch}
+      onSearch={setNavSearch}
+      searchPlaceholder="Search masterplans, reports…"
+      header={
+        <SuiteInnerHeader
+          title={
+            <>
               {masterplan.name} —{" "}
-              <span className="font-normal text-zinc-500">
+              <span className="font-normal text-suite-ink-3">
                 Masterplan Estimate
               </span>
-            </h1>
-
-            {saveStatus === "saving" && (
-              <span className="text-[11px] text-zinc-500 inline-flex items-center gap-1">
-                <Loader2 className="size-3 animate-spin" />
-                Saving…
+            </>
+          }
+          subtitle={
+            <>
+              <span className="font-semibold">Parametric Cost Model:</span> Manage
+              cost parameters grouped by Asset Class with detailed specifications
+            </>
+          }
+          actions={
+            <>
+              {saveStatus === "saving" && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-suite-ink-3">
+                  <Loader2 className="size-3 animate-spin" />
+                  Saving…
+                </span>
+              )}
+              {saveStatus === "saved" && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-suite-green">
+                  <Check className="size-3" strokeWidth={2.5} />
+                  Saved
+                </span>
+              )}
+              {saveStatus === "error" && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-suite-red">
+                  <X className="size-3" strokeWidth={2.5} />
+                  Error saving
+                </span>
+              )}
+              <SuiteButton variant="dark" size="sm" onClick={handleAddVersion}>
+                <Plus className="size-3.5" strokeWidth={2.25} />
+                Add Masterplan Version
+                <ChevronDown className="size-3.5" strokeWidth={1.75} />
+              </SuiteButton>
+            </>
+          }
+        />
+      }
+    >
+      <div className="px-3 py-3">
+        {/* Version tabs */}
+        <div className="mb-5 flex items-center gap-2 overflow-x-auto">
+          {versions.map((v) => (
+            <div
+              key={v.id}
+              className={cn(
+                "flex items-center gap-1 px-3 py-1.5 text-xs cursor-pointer transition-colors rounded-lg border",
+                activeVersionId === v.id
+                  ? "bg-white text-suite-ink border-suite-line-2"
+                  : "bg-suite-card-soft text-suite-ink-2 border-suite-line hover:bg-suite-line-soft",
+              )}
+              onClick={() => setActiveVersionId(v.id)}
+            >
+              <span className="max-w-[250px] truncate font-medium">
+                {v.versionName}
               </span>
-            )}
-            {saveStatus === "saved" && (
-              <span className="text-[11px] text-emerald-600 inline-flex items-center gap-1">
-                <Check className="size-3" strokeWidth={2.5} />
-                Saved
-              </span>
-            )}
-            {saveStatus === "error" && (
-              <span className="text-[11px] text-rose-600 inline-flex items-center gap-1">
-                <X className="size-3" strokeWidth={2.5} />
-                Error saving
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAddVersion}
-            className="h-9 px-4 inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-full"
-          >
-            <Plus className="size-3.5" strokeWidth={2.25} />
-            Add Masterplan Version
-            <ChevronDown className="size-3.5" strokeWidth={1.75} />
-          </button>
+              <div className="flex items-center gap-0.5 ml-1 border-l border-suite-line pl-1.5">
+                <Link
+                  href={`/costx/${masterplan.id}/summary`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="size-6 inline-flex items-center justify-center rounded hover:bg-suite-line-soft"
+                  title="View Summary"
+                >
+                  <BarChart3 className="size-3.5 text-suite-ink-3" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopyVersion();
+                  }}
+                  className="size-6 inline-flex items-center justify-center rounded hover:bg-suite-line-soft"
+                  title="Copy Version"
+                >
+                  <Copy className="size-3.5 text-suite-ink-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteVersion();
+                  }}
+                  className="size-6 inline-flex items-center justify-center rounded hover:bg-suite-line-soft"
+                  title="Delete Version"
+                >
+                  <Trash2 className="size-3.5 text-suite-ink-3" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
-        <p className="text-xs text-zinc-600">
-          <span className="font-semibold">Parametric Cost Model:</span> Manage
-          cost parameters grouped by Asset Class with detailed specifications
-        </p>
-      </div>
-
-      {/* Version tabs */}
-      <div className="bg-white px-6 py-3 flex items-center gap-2 overflow-x-auto border-b border-zinc-200 shrink-0">
-        {versions.map((v) => (
-          <div
-            key={v.id}
-            className={cn(
-              "flex items-center gap-1 px-3 py-1.5 text-xs cursor-pointer transition-colors rounded-lg border",
-              activeVersionId === v.id
-                ? "bg-white text-zinc-900 border-zinc-300"
-                : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100",
-            )}
-            onClick={() => setActiveVersionId(v.id)}
-          >
-            <span className="max-w-[250px] truncate font-medium">
-              {v.versionName}
-            </span>
-            <div className="flex items-center gap-0.5 ml-1 border-l border-zinc-200 pl-1.5">
-              <Link
-                href={`/costx/${masterplan.id}/summary`}
-                onClick={(e) => e.stopPropagation()}
-                className="size-6 inline-flex items-center justify-center rounded hover:bg-zinc-100"
-                title="View Summary"
-              >
-                <BarChart3 className="size-3.5 text-zinc-500" />
-              </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyVersion();
-                }}
-                className="size-6 inline-flex items-center justify-center rounded hover:bg-zinc-100"
-                title="Copy Version"
-              >
-                <Copy className="size-3.5 text-zinc-500" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteVersion();
-                }}
-                className="size-6 inline-flex items-center justify-center rounded hover:bg-zinc-100"
-                title="Delete Version"
-              >
-                <Trash2 className="size-3.5 text-zinc-500" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-6 bg-zinc-50">
+        {/* Content */}
         <SummaryCards
           initialBudget={masterplan.totalCost}
           constructionCost={constructionCost}
@@ -1501,6 +1511,6 @@ export default function MasterplanDetailClient({
         variant="danger"
         onConfirm={confirmDeleteVersion}
       />
-    </div>
+    </SuiteInnerShell>
   );
 }

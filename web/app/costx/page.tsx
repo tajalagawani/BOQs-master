@@ -4,16 +4,15 @@
 
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
 import { getSession } from "@/lib/session";
 import { getUserPermissions } from "@/lib/permissions";
 import { getMasterplans } from "@/lib/queries/masterplans";
 import { getBenchmarkProjects } from "@/lib/queries/benchmarking";
 import { getUsers } from "@/lib/queries/users";
 import { getCostxPulse } from "@/lib/pulse/costx";
-import MasterplanListClient, {
+import CostxSuiteWorkspace, {
   type MasterplanListEntry,
-} from "@/components/costx/MasterplanListClient";
+} from "@/components/costx/CostxSuiteWorkspace";
 
 export default async function CostxListPage() {
   const { user: currentUser } = await getSession();
@@ -79,29 +78,15 @@ export default async function CostxListPage() {
   }));
 
   return (
-    <>
-      {/* Same fixed bg as the home page. */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
-        style={{
-          backgroundImage: "url(/iox-bg.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center center",
-        }}
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <CostxSuiteWorkspace
+        initialMasterplans={initial}
+        users={users}
+        projects={projects}
+        permissions={permissions}
+        currentUserEmail={currentUser.email}
+        pulse={pulse}
       />
-
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <MasterplanListClient
-          initialMasterplans={initial}
-          users={users}
-          projects={projects}
-          permissions={permissions}
-          currentUserEmail={currentUser.email}
-          pulse={pulse}
-        />
-      </main>
-    </>
+    </main>
   );
 }

@@ -93,14 +93,14 @@ az ad sp create-for-rbac \\
 
       {/* VM detail */}
       {firstVm && vmDetail && (
-        <section className="bg-white border border-zinc-200 rounded-2xl p-5">
+        <section className="bg-white border border-suite-line rounded-2xl p-5">
           <header className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">
+              <div className="text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">
                 Production VM
               </div>
-              <h2 className="text-[15px] font-semibold text-zinc-900 inline-flex items-center gap-2">
-                <span className="size-7 rounded-lg bg-zinc-900 text-white inline-flex items-center justify-center">
+              <h2 className="text-[15px] font-semibold text-suite-ink inline-flex items-center gap-2">
+                <span className="size-7 rounded-lg bg-suite-navy text-white inline-flex items-center justify-center">
                   <Server className="size-3.5" strokeWidth={1.75} />
                 </span>
                 {vmDetail.name}
@@ -110,7 +110,7 @@ az ad sp create-for-rbac \\
               href={firstVm.portalUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="text-[11.5px] font-medium text-zinc-700 hover:text-zinc-900 inline-flex items-center gap-1"
+              className="text-[11.5px] font-medium text-suite-ink-2 hover:text-suite-ink inline-flex items-center gap-1"
             >
               Open in portal <ExternalLink className="size-3" strokeWidth={1.75} />
             </a>
@@ -134,7 +134,7 @@ az ad sp create-for-rbac \\
               label="Power"
               value={vmDetail.powerState ?? "—"}
               icon={<Power className="size-3" strokeWidth={2} />}
-              tone={vmDetail.powerState?.toLowerCase().includes("running") ? "emerald" : "zinc"}
+              tone={vmDetail.powerState?.toLowerCase().includes("running") ? "good" : "neut"}
             />
             <Field
               label="Location"
@@ -195,8 +195,8 @@ az ad sp create-for-rbac \\
       <section>
         <header className="flex items-baseline justify-between mb-2.5 px-1">
           <div>
-            <h2 className="text-[12.5px] font-semibold text-zinc-900">All resources</h2>
-            <p className="text-[11px] text-zinc-500">
+            <h2 className="text-[12.5px] font-semibold text-suite-ink">All resources</h2>
+            <p className="text-[11px] text-suite-ink-3">
               Live from Azure Resource Manager API. Read-only.
             </p>
           </div>
@@ -211,15 +211,15 @@ function Hero({ portalHref }: { portalHref?: string }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <div className="text-[11px] uppercase tracking-[0.12em] text-zinc-500 font-medium inline-flex items-center gap-1.5">
+        <div className="text-[11px] uppercase tracking-[0.12em] text-suite-ink-3 font-medium inline-flex items-center gap-1.5">
           <Server className="size-3" strokeWidth={2} /> Operations
         </div>
-        <h1 className="mt-1 text-[clamp(22px,2.2vw,28px)] leading-tight font-semibold tracking-tight text-zinc-900">
+        <h1 className="mt-1 text-[clamp(22px,2.2vw,28px)] leading-tight font-semibold tracking-tight text-suite-ink">
           Infrastructure <span style={{ color: "#60B78C" }}>.</span>
         </h1>
-        <p className="mt-1 text-[12.5px] text-zinc-500 max-w-2xl">
+        <p className="mt-1 text-[12.5px] text-suite-ink-3 max-w-2xl">
           Every Azure resource backing IOX. Resource group{" "}
-          <code className="text-[11px] bg-zinc-100 px-1 py-0.5 rounded">
+          <code className="text-[11px] suite-num bg-suite-card-soft px-1 py-0.5 rounded">
             {platformEnvSync.AZURE_RESOURCE_GROUP}
           </code>{" "}
           in UAE North.
@@ -230,7 +230,7 @@ function Hero({ portalHref }: { portalHref?: string }) {
           href={portalHref}
           target="_blank"
           rel="noreferrer noopener"
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-zinc-200 bg-white text-[12.5px] text-zinc-700 hover:border-zinc-300 hover:text-zinc-900"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-suite-line bg-white text-[12.5px] text-suite-ink-2 hover:border-suite-line-2 hover:text-suite-ink"
         >
           Open in Azure portal <ExternalLink className="size-3" strokeWidth={1.75} />
         </a>
@@ -251,17 +251,17 @@ function Stat({
   hint?: string;
 }) {
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-4">
-      <div className="size-8 rounded-lg inline-flex items-center justify-center ring-1 bg-zinc-900 text-white ring-zinc-200">
+    <div className="bg-white border border-suite-line rounded-2xl p-4">
+      <div className="size-8 rounded-lg inline-flex items-center justify-center ring-1 bg-suite-navy text-white ring-suite-line">
         {icon}
       </div>
-      <div className="mt-3 text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">
+      <div className="mt-3 text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 truncate">
+      <div className="mt-1 text-2xl font-semibold suite-num text-suite-ink truncate">
         {value}
       </div>
-      {hint && <div className="text-[11px] text-zinc-500 mt-1 truncate">{hint}</div>}
+      {hint && <div className="text-[11px] text-suite-ink-3 mt-1 truncate">{hint}</div>}
     </div>
   );
 }
@@ -276,16 +276,16 @@ function Field({
   label: string;
   value: string;
   icon?: React.ReactNode;
-  tone?: "emerald" | "zinc";
+  tone?: "good" | "neut";
   mono?: boolean;
 }) {
   return (
     <div>
-      <dt className="text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">{label}</dt>
+      <dt className="text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">{label}</dt>
       <dd
         className={`mt-0.5 text-[12.5px] font-medium inline-flex items-center gap-1 ${
-          tone === "emerald" ? "text-emerald-700" : "text-zinc-900"
-        } ${mono ? "font-mono text-[11.5px]" : ""}`}
+          tone === "good" ? "text-suite-good" : "text-suite-ink"
+        } ${mono ? "suite-num text-[11.5px]" : ""}`}
       >
         {icon}
         {value}

@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
 import {
   getCostModelEntries,
   getCostModelStats,
@@ -132,19 +131,16 @@ export default async function CostModelRateAnalysisPage() {
   }
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 min-h-0 overflow-auto">
-        <CostModelAnalysisClient
-          summaryStats={summaryStats}
-          assetClassChartData={assetClassChartData}
-          assetClasses={assetClasses}
-          nrmCategories={nrmCategories}
-          assetTypeDataByClass={assetTypeDataByClass}
-          assetTypeNamesByClass={assetTypeNamesByClass}
-          assetFormDataByType={assetFormDataByType}
-        />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <CostModelAnalysisClient
+        summaryStats={summaryStats}
+        assetClassChartData={assetClassChartData}
+        assetClasses={assetClasses}
+        nrmCategories={nrmCategories}
+        assetTypeDataByClass={assetTypeDataByClass}
+        assetTypeNamesByClass={assetTypeNamesByClass}
+        assetFormDataByType={assetFormDataByType}
+      />
+    </main>
   );
 }

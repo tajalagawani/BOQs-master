@@ -16,7 +16,13 @@ interface Me {
   role: "superadmin" | "director" | "user";
 }
 
-export function AccountMenu() {
+export function AccountMenu({
+  variant = "default",
+}: {
+  /** "onDark" tunes the trigger (avatar + chevron) for navy surfaces like the
+   *  10X suite topnav; the dropdown panel is unchanged. */
+  variant?: "default" | "onDark";
+} = {}) {
   const [me, setMe] = useState<Me | null>(null);
   const [open, setOpen] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
@@ -57,12 +63,20 @@ export function AccountMenu() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Account"
-        className="flex items-center gap-1.5 rounded-full pl-1 pr-1.5 py-1 hover:bg-black/5 transition-colors"
+        className={`flex items-center gap-1.5 rounded-full pl-1 pr-1.5 py-1 transition-colors ${
+          variant === "onDark" ? "hover:bg-white/10" : "hover:bg-black/5"
+        }`}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[#142845] text-[12px] font-semibold text-white">
+        <span
+          className={`grid place-items-center rounded-full text-[12px] font-semibold text-white ${
+            variant === "onDark" ? "h-8 w-8 bg-[#3a5fa0]" : "h-7 w-7 bg-[#142845]"
+          }`}
+        >
           {initial}
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+        <ChevronDown
+          className={`h-3.5 w-3.5 ${variant === "onDark" ? "text-[#9aa6bd]" : "text-zinc-500"}`}
+        />
       </button>
 
       {open ? (

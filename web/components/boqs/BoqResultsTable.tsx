@@ -46,6 +46,7 @@ import {
 import { cn, formatNumber } from "@/modules/rates/lib/utils";
 import type { WorkspaceData } from "@/components/BoqWorkspace";
 import { nrmInfo } from "@/lib/nrm/nrm-map";
+import { SuiteRails, SuiteTopNav, ChatFab } from "@/components/suite";
 
 const SECTION_TITLES: Record<string, string> = {
   A: "General Requirements", B: "Site Work", C: "Concrete", D: "Masonry",
@@ -406,18 +407,32 @@ export function BoqResultsTable({
   const reviewCount = rows.filter((r) => r.flag === "⚠").length;
 
   return (
-    <div className="omnium-rates flex h-full overflow-hidden bg-white text-foreground">
-      {/* Sidebar */}
-      <BoqSidebar
-        projectName={projectName}
-        totals={data.totals}
-        sections={data.sections}
-        totalRows={rows.length}
+    // Table workspace: no big hero — fixed-height, fills the viewport under the
+    // topnav and scrolls internally. Full-bleed with a 4px gutter.
+    <div className="suite flex h-full flex-col bg-suite-page">
+      <SuiteRails />
+
+      <SuiteTopNav
         search={search}
         onSearch={setSearch}
-        active={activeSection}
-        onActive={setActiveSection}
+        searchPlaceholder="Search items…"
+        crumb={<span className="font-semibold text-[#cdd6e6]">BOQsX</span>}
+        notifications={1}
       />
+
+      <div className="min-h-0 flex-1 p-1">
+        <div className="omnium-rates flex h-full min-h-[520px] overflow-hidden rounded-[12px] bg-white text-foreground">
+          {/* Sidebar */}
+          <BoqSidebar
+            projectName={projectName}
+            totals={data.totals}
+            sections={data.sections}
+            totalRows={rows.length}
+            search={search}
+            onSearch={setSearch}
+            active={activeSection}
+            onActive={setActiveSection}
+          />
 
       {/* Main */}
       <main className="flex-1 min-w-0 flex flex-col p-1.5 bg-white">
@@ -707,8 +722,12 @@ export function BoqResultsTable({
               </div>
             </div>
           </div>
+          </div>
+        </main>
         </div>
-      </main>
+      </div>
+
+      <ChatFab />
     </div>
   );
 }

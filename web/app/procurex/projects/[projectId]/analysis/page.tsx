@@ -21,15 +21,15 @@ export default async function OmniDetailedAnalysisPage({
         <div className="flex items-center gap-3">
           <Link
             href={`/procurex/projects/${projectId}`}
-            className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className="w-9 h-9 rounded-lg bg-white border border-suite-line flex items-center justify-center hover:bg-suite-card-soft transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-700" />
+            <ArrowLeft className="w-4 h-4 text-suite-ink-2" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-suite-ink">
               {analysis.projectName}
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">Detailed Analysis</p>
+            <p className="text-sm text-suite-ink-3 mt-0.5">Detailed Analysis</p>
           </div>
         </div>
         <button

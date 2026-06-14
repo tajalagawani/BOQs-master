@@ -12,7 +12,7 @@ interface Props {
 export function CommitsFeed({ commits, deployedSha }: Props) {
   if (commits.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-zinc-200 rounded-2xl px-4 py-6 text-center text-[12px] text-zinc-500">
+      <div className="bg-white border border-dashed border-suite-line rounded-2xl px-4 py-6 text-center text-[12px] text-suite-ink-3">
         No recent commits on <code>main</code>
       </div>
     );
@@ -20,12 +20,12 @@ export function CommitsFeed({ commits, deployedSha }: Props) {
   // Mark commits up to and including deployedSha as "deployed", the rest as "pending"
   let foundDeployed = !deployedSha;
   return (
-    <ol className="bg-white border border-zinc-200 rounded-2xl divide-y divide-zinc-100 overflow-hidden">
+    <ol className="bg-white border border-suite-line rounded-2xl divide-y divide-suite-line-soft overflow-hidden">
       {commits.map((c) => {
         const isDeployed = foundDeployed;
         if (c.sha === deployedSha) foundDeployed = true;
         return (
-          <li key={c.sha} className="px-4 py-2.5 hover:bg-zinc-50/60">
+          <li key={c.sha} className="px-4 py-2.5 hover:bg-suite-card-soft">
             <a
               href={c.htmlUrl}
               target="_blank"
@@ -36,8 +36,8 @@ export function CommitsFeed({ commits, deployedSha }: Props) {
                 className={cn(
                   "size-6 rounded-full inline-flex items-center justify-center text-[10px] font-medium ring-1 shrink-0",
                   isDeployed
-                    ? "bg-emerald-50 ring-emerald-200 text-emerald-700"
-                    : "bg-amber-50 ring-amber-200 text-amber-700",
+                    ? "bg-suite-good-bg ring-suite-good-bg text-suite-good"
+                    : "bg-suite-warn-bg ring-suite-warn-bg text-suite-warn",
                 )}
                 title={isDeployed ? "Deployed" : "Pending deploy"}
               >
@@ -47,10 +47,10 @@ export function CommitsFeed({ commits, deployedSha }: Props) {
                   <GitCommit className="size-2.5" strokeWidth={2} />
                 )}
               </span>
-              <code className="text-[10.5px] font-mono text-zinc-500 bg-zinc-50 rounded px-1.5 py-0.5 shrink-0">
+              <code className="text-[10.5px] font-mono text-suite-ink-3 bg-suite-card-soft rounded px-1.5 py-0.5 shrink-0 suite-num">
                 {c.sha.slice(0, 7)}
               </code>
-              <span className="text-[12.5px] text-zinc-900 truncate flex-1">{c.message}</span>
+              <span className="text-[12.5px] text-suite-ink truncate flex-1">{c.message}</span>
               {c.authorAvatar && (
                 <Image
                   src={c.authorAvatar}
@@ -61,13 +61,13 @@ export function CommitsFeed({ commits, deployedSha }: Props) {
                   unoptimized
                 />
               )}
-              <span className="text-[11px] text-zinc-500 shrink-0 hidden sm:inline">
+              <span className="text-[11px] text-suite-ink-3 shrink-0 hidden sm:inline">
                 {c.authorLogin ?? c.authorName ?? "—"}
               </span>
-              <time className="text-[10.5px] text-zinc-400 tabular-nums shrink-0">
+              <time className="text-[10.5px] text-suite-ink-4 tabular-nums suite-num shrink-0">
                 {timeAgo(c.authoredAt)}
               </time>
-              <ExternalLink className="size-2.5 text-zinc-300 shrink-0" strokeWidth={2} />
+              <ExternalLink className="size-2.5 text-suite-ink-4 shrink-0" strokeWidth={2} />
             </a>
           </li>
         );

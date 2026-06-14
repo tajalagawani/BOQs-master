@@ -4,6 +4,13 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import HorizontalBarChart from "@/components/charts/HorizontalBarChart";
 import { branding } from "@/config/branding";
+import {
+  SuiteInnerShell,
+  SuiteInnerHeader,
+  SuiteTiles,
+  SuiteButton,
+  type SuiteTileData,
+} from "@/components/suite";
 
 interface SummaryStats {
   numberOfAssetClasses: number;
@@ -64,6 +71,7 @@ export default function CostModelAnalysisClient({
   assetTypeNamesByClass,
   assetFormDataByType,
 }: Props) {
+  const [search, setSearch] = useState("");
   const [selectedAssetClass, setSelectedAssetClass] = useState<string>(assetClasses[0] || "Retail");
   const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
   const [stackMode, setStackMode] = useState<"nrm" | "assetType">("nrm");
@@ -121,232 +129,222 @@ export default function CostModelAnalysisClient({
     setSelectedAssetType(assetType);
   };
 
+  // Summary cards → suite tiles (same labels, values and order).
+  const tiles: SuiteTileData[] = [
+    { k: "Number Of Asset Classes:", v: summaryStats.numberOfAssetClasses },
+    { k: "Number Of Asset Types:", v: summaryStats.numberOfAssetTypes },
+    { k: "Min Cost/GFA:", v: `SAR ${summaryStats.minCostGFA}` },
+    { k: "Max Cost/GFA:", v: `SAR ${formatNumber(summaryStats.maxCostGFA)}` },
+    { k: "Average Cost/GFA:", v: `SAR ${formatNumber(summaryStats.avgCostGFA)}` },
+    {
+      k: "Completion Percent:",
+      v: `${summaryStats.completionPercent.toFixed(2)}%`,
+    },
+  ];
+
   return (
-    <div className="h-screen flex flex-col bg-white overflow-hidden">
-      {/* Page Header */}
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-        <h1 className="text-lg font-semibold text-gray-900">Cost Model Analysis Dashboard</h1>
-        <button
-          onClick={handleRefresh}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <RefreshCw className="w-5 h-5" />
-        </button>
-      </div>
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">Rate Analysis</span>}
+      search={search}
+      onSearch={setSearch}
+      header={
+        <SuiteInnerHeader
+          title="Cost Model Analysis Dashboard"
+          actions={
+            <SuiteButton onClick={handleRefresh}>
+              <RefreshCw className="size-4" strokeWidth={2} />
+              Refresh
+            </SuiteButton>
+          }
+        />
+      }
+    >
+      <div className="p-1">
+        {/* Summary tiles */}
+        <SuiteTiles items={tiles} cols={6} className="mb-4" />
 
-      {/* Summary Cards */}
-      <div className="px-6 py-4 border-b border-gray-100 flex-shrink-0">
-        <div className="grid grid-cols-6 gap-4">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">Number Of Asset Classes:</p>
-            <p className="text-2xl font-bold text-gray-900">{summaryStats.numberOfAssetClasses}</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">Number Of Asset Types:</p>
-            <p className="text-2xl font-bold text-gray-900">{summaryStats.numberOfAssetTypes}</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">Min Cost/GFA:</p>
-            <p className="text-lg font-bold text-gray-900">SAR {summaryStats.minCostGFA}</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">Max Cost/GFA:</p>
-            <p className="text-sm font-semibold text-gray-900">SAR</p>
-            <p className="text-xl font-bold text-gray-900">{formatNumber(summaryStats.maxCostGFA)}</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">Average Cost/GFA:</p>
-            <p className="text-sm font-semibold text-gray-900">SAR</p>
-            <p className="text-xl font-bold text-gray-900">{formatNumber(summaryStats.avgCostGFA)}</p>
-          </div>
-          <div className="bg-zinc-900 rounded-lg p-4">
-            <p className="text-xs text-white/80 mb-1">Completion Percent:</p>
-            <p className="text-2xl font-bold text-white">{summaryStats.completionPercent.toFixed(2)}%</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Charts Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Section - Asset Class Chart */}
-        <div className="flex-1 p-6 border-r border-gray-200 overflow-auto min-w-0">
-          <div className="mb-4">
-            <h2 className="text-sm font-semibold text-gray-800">Average Cost/GFA By Asset Class (SAR)</h2>
-          </div>
-
-          <HorizontalBarChart
-            data={leftChartData}
-            dataKeys={assetClasses}
-            colors={assetClassColors}
-            height={700}
-            onBarClick={(assetClass) => setSelectedAssetClass(assetClass)}
-            stacked={true}
-          />
-        </div>
-
-        {/* Right Section - Asset Type Charts */}
-        <div className="flex-1 p-6 overflow-auto min-w-0">
-          {/* Asset Class Selector */}
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="text-sm font-semibold text-gray-800">
-              Average Cost/GFA By Asset Type (L1) - {selectedAssetClass}
-            </h2>
-            <div className="flex gap-2 ml-auto">
-              <button
-                onClick={() => setStackMode("nrm")}
-                className={`px-3 py-1 text-xs font-medium rounded-full ${
-                  stackMode === "nrm"
-                    ? "bg-zinc-900 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                Stack by NRM
-              </button>
-              <button
-                onClick={() => setStackMode("assetType")}
-                className={`px-3 py-1 text-xs font-medium rounded-full ${
-                  stackMode === "assetType"
-                    ? "bg-zinc-900 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                Stack by Asset Type
-              </button>
+        {/* Main Charts Area */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Left Section - Asset Class Chart */}
+          <div className="min-w-0 rounded-[14px] border border-suite-line bg-suite-card-soft p-4">
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-suite-ink">Average Cost/GFA By Asset Class (SAR)</h2>
             </div>
+
+            <HorizontalBarChart
+              data={leftChartData}
+              dataKeys={assetClasses}
+              colors={assetClassColors}
+              height={700}
+              onBarClick={(assetClass) => setSelectedAssetClass(assetClass)}
+              stacked={true}
+            />
           </div>
 
-          {/* Asset Class Buttons */}
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {assetClasses.map((assetClass) => (
-              <button
-                key={assetClass}
-                onClick={() => setSelectedAssetClass(assetClass)}
-                className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
-                  selectedAssetClass === assetClass
-                    ? "bg-zinc-900 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {assetClass}
-              </button>
-            ))}
-          </div>
-
-          {/* Asset Type Chart */}
-          <HorizontalBarChart
-            data={rightChartData}
-            dataKeys={currentAssetTypeNames}
-            colors={assetTypeColors}
-            height={500}
-            onBarClick={(typeName) => handleAssetTypeClick(typeName)}
-            stacked={true}
-          />
-
-          {/* Legend */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs font-semibold text-gray-700 mb-3">Legend</p>
-            <div className="grid grid-cols-3 gap-3">
-              {currentAssetTypeNames.map((typeName) => (
-                <div key={typeName} className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded"
-                    style={{ backgroundColor: assetTypeColors[typeName] || "#999" }}
-                  />
-                  <span className="text-xs text-gray-600">{typeName}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Asset Form (L2) Chart - Shows when Asset Type is selected */}
-          {selectedAssetType ? (
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Average Cost/GFA By Asset Form (L2) - {selectedAssetType}
-                </h3>
+          {/* Right Section - Asset Type Charts */}
+          <div className="min-w-0 rounded-[14px] border border-suite-line bg-suite-card-soft p-4">
+            {/* Asset Class Selector */}
+            <div className="mb-4 flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-suite-ink">
+                Average Cost/GFA By Asset Type (L1) - {selectedAssetClass}
+              </h2>
+              <div className="flex gap-2 ml-auto">
                 <button
-                  onClick={() => setSelectedAssetType(null)}
-                  className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full"
+                  onClick={() => setStackMode("nrm")}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    stackMode === "nrm"
+                      ? "bg-suite-btn text-white"
+                      : "bg-suite-neut-bg text-suite-ink-2"
+                  }`}
                 >
-                  Close
+                  Stack by NRM
+                </button>
+                <button
+                  onClick={() => setStackMode("assetType")}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    stackMode === "assetType"
+                      ? "bg-suite-btn text-white"
+                      : "bg-suite-neut-bg text-suite-ink-2"
+                  }`}
+                >
+                  Stack by Asset Type
                 </button>
               </div>
+            </div>
 
-              {(() => {
-                const assetFormData = assetFormDataByType[selectedAssetClass]?.[selectedAssetType];
+            {/* Asset Class Buttons */}
+            <div className="flex gap-2 mb-6 flex-wrap">
+              {assetClasses.map((assetClass) => (
+                <button
+                  key={assetClass}
+                  onClick={() => setSelectedAssetClass(assetClass)}
+                  className={`px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
+                    selectedAssetClass === assetClass
+                      ? "bg-suite-btn text-white"
+                      : "bg-suite-neut-bg text-suite-ink-2 hover:bg-suite-line"
+                  }`}
+                >
+                  {assetClass}
+                </button>
+              ))}
+            </div>
 
-                if (!assetFormData || assetFormData.length === 0) {
-                  return (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        No Asset Form (L2) data available for <strong>{selectedAssetType}</strong>
-                      </p>
-                    </div>
-                  );
-                }
+            {/* Asset Type Chart */}
+            <HorizontalBarChart
+              data={rightChartData}
+              dataKeys={currentAssetTypeNames}
+              colors={assetTypeColors}
+              height={500}
+              onBarClick={(typeName) => handleAssetTypeClick(typeName)}
+              stacked={true}
+            />
 
-                const assetForms = assetFormData[0]?.assetForms || [];
-                const formChartData = rightNRMCategories.map((nrm) => {
-                  const found = assetFormData.find((d) => d.category === nrm);
-                  const dataPoint: any = { category: nrm };
+            {/* Legend */}
+            <div className="mt-6 rounded-[12px] border border-suite-line bg-suite-panel p-4">
+              <p className="text-xs font-semibold text-suite-ink-2 mb-3">Legend</p>
+              <div className="grid grid-cols-3 gap-3">
+                {currentAssetTypeNames.map((typeName) => (
+                  <div key={typeName} className="flex items-center gap-2">
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: assetTypeColors[typeName] || "#999" }}
+                    />
+                    <span className="text-xs text-suite-ink-2">{typeName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-                  if (found) {
-                    found.values.forEach((v: any) => {
-                      dataPoint[v.name] = v.value;
-                    });
+            {/* Asset Form (L2) Chart - Shows when Asset Type is selected */}
+            {selectedAssetType ? (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-suite-ink-2">
+                    Average Cost/GFA By Asset Form (L2) - {selectedAssetType}
+                  </h3>
+                  <button
+                    onClick={() => setSelectedAssetType(null)}
+                    className="px-3 py-1 text-xs font-medium text-suite-ink-2 bg-suite-neut-bg hover:bg-suite-line rounded-full transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {(() => {
+                  const assetFormData = assetFormDataByType[selectedAssetClass]?.[selectedAssetType];
+
+                  if (!assetFormData || assetFormData.length === 0) {
+                    return (
+                      <div className="rounded-[12px] border border-suite-warn-bg bg-suite-warn-bg p-4">
+                        <p className="text-sm text-suite-ink-2">
+                          No Asset Form (L2) data available for <strong>{selectedAssetType}</strong>
+                        </p>
+                      </div>
+                    );
                   }
 
-                  return dataPoint;
-                });
+                  const assetForms = assetFormData[0]?.assetForms || [];
+                  const formChartData = rightNRMCategories.map((nrm) => {
+                    const found = assetFormData.find((d) => d.category === nrm);
+                    const dataPoint: any = { category: nrm };
 
-                // Create colors mapping for asset forms
-                const assetFormColors = assetForms.reduce((acc: Record<string, string>, form: string, index: number) => {
-                  acc[form] = `hsl(${index * 60}, 70%, 50%)`;
-                  return acc;
-                }, {} as Record<string, string>);
+                    if (found) {
+                      found.values.forEach((v: any) => {
+                        dataPoint[v.name] = v.value;
+                      });
+                    }
 
-                return (
-                  <div>
-                    <HorizontalBarChart
-                      data={formChartData}
-                      dataKeys={assetForms}
-                      colors={assetFormColors}
-                      height={400}
-                      stacked={true}
-                    />
+                    return dataPoint;
+                  });
 
-                    {/* Asset Forms Legend */}
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-semibold text-gray-700 mb-3">Asset Forms</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {assetForms.map((form: string, index: number) => (
-                          <div key={form} className="flex items-center gap-2">
-                            <div
-                              className="w-4 h-4 rounded"
-                              style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
-                            />
-                            <span className="text-xs text-gray-600">{form}</span>
-                          </div>
-                        ))}
+                  // Create colors mapping for asset forms
+                  const assetFormColors = assetForms.reduce((acc: Record<string, string>, form: string, index: number) => {
+                    acc[form] = `hsl(${index * 60}, 70%, 50%)`;
+                    return acc;
+                  }, {} as Record<string, string>);
+
+                  return (
+                    <div>
+                      <HorizontalBarChart
+                        data={formChartData}
+                        dataKeys={assetForms}
+                        colors={assetFormColors}
+                        height={400}
+                        stacked={true}
+                      />
+
+                      {/* Asset Forms Legend */}
+                      <div className="mt-4 rounded-[12px] border border-suite-line bg-suite-panel p-4">
+                        <p className="text-xs font-semibold text-suite-ink-2 mb-3">Asset Forms</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {assetForms.map((form: string, index: number) => (
+                            <div key={form} className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded"
+                                style={{ backgroundColor: `hsl(${index * 60}, 70%, 50%)` }}
+                              />
+                              <span className="text-xs text-suite-ink-2">{form}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })()}
-            </div>
-          ) : (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                Average Cost/GFA By Asset Form (L2)
-              </h3>
-              <p className="text-xs text-gray-600">
-                Click any bar in the Average Cost/GFA By Asset Type (L1) chart above to view the drilldown by Asset Form (L2)
-              </p>
-            </div>
-          )}
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-[12px] border border-suite-blue-soft bg-suite-blue-soft p-4">
+                <h3 className="text-sm font-semibold text-suite-ink-2 mb-1">
+                  Average Cost/GFA By Asset Form (L2)
+                </h3>
+                <p className="text-xs text-suite-ink-2">
+                  Click any bar in the Average Cost/GFA By Asset Type (L1) chart above to view the drilldown by Asset Form (L2)
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </SuiteInnerShell>
   );
 }

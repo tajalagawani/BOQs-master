@@ -1,27 +1,11 @@
-import { Header } from "@/components/Header";
-import { PlatformSidebar } from "@/components/platform/PlatformSidebar";
 import { PlatformNav } from "@/components/platform/PlatformNav";
+import { PLATFORM_SECTIONS } from "@/components/platform/PlatformSidebar";
+import { SuiteRails, SuiteSidebar, SuiteTopNav } from "@/components/suite";
 
 export const metadata = {
   title: "IOX Platform",
   description: "Internal platform dashboard — docs, KPIs, ops, monitoring",
 };
-
-function PlatformBrand() {
-  return (
-    <div className="leading-tight">
-      <div className="text-[9.5px] uppercase tracking-[0.14em] text-zinc-400 font-semibold">
-        IOX
-      </div>
-      <div className="text-[12.5px] font-semibold text-zinc-900 -mt-0.5">
-        Platform
-      </div>
-      <div className="text-[10px] text-zinc-500 leading-none">
-        Internal control plane
-      </div>
-    </div>
-  );
-}
 
 export default function PlatformLayout({
   children,
@@ -29,17 +13,35 @@ export default function PlatformLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <Header variant="transparent" brand={<PlatformBrand />} />
-      <div className="md:hidden shrink-0">
+    <div className="suite flex h-full flex-col bg-suite-page">
+      <SuiteRails />
+      <SuiteTopNav
+        crumb={<span className="font-semibold text-[#cdd6e6]">Platform</span>}
+        notifications={1}
+      />
+      <div className="shrink-0 md:hidden">
         <PlatformNav />
       </div>
-      <div className="flex flex-1 min-h-0">
-        <PlatformSidebar />
-        <main className="flex-1 min-w-0 overflow-y-auto bg-zinc-50">
+      <div className="flex min-h-0 flex-1">
+        <SuiteSidebar
+          sections={PLATFORM_SECTIONS}
+          footer={
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="relative inline-flex size-1.5">
+                  <span className="absolute inset-0 animate-ping rounded-full bg-emerald-500 opacity-50" />
+                  <span className="relative size-1.5 rounded-full bg-emerald-500" />
+                </span>
+                Live · UAE North
+              </div>
+              <div className="mt-0.5">iox-vm-01 · D2s_v3</div>
+            </>
+          }
+        />
+        <main className="min-w-0 flex-1 overflow-y-auto bg-suite-page">
           {children}
         </main>
       </div>
-    </>
+    </div>
   );
 }

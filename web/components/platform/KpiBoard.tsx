@@ -15,11 +15,11 @@ type StatusFilter = MatrixStatus | "all";
 type Grouping = "component" | "status" | "phase" | "none";
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string; dot: string }[] = [
-  { value: "all", label: "All", dot: "bg-zinc-400" },
-  { value: "green", label: "Met", dot: "bg-emerald-500" },
-  { value: "yellow", label: "Substantively met", dot: "bg-amber-400" },
-  { value: "orange", label: "Weak", dot: "bg-orange-500" },
-  { value: "red", label: "Deferred", dot: "bg-rose-500" },
+  { value: "all", label: "All", dot: "bg-suite-ink-3" },
+  { value: "green", label: "Met", dot: "bg-suite-good" },
+  { value: "yellow", label: "Substantively met", dot: "bg-suite-warn" },
+  { value: "orange", label: "Weak", dot: "bg-suite-amber" },
+  { value: "red", label: "Deferred", dot: "bg-suite-dang" },
 ];
 
 const GROUPING_OPTIONS: { value: Grouping; label: string }[] = [
@@ -67,24 +67,24 @@ export function KpiBoard({ kpis }: Props) {
   return (
     <div className="space-y-5">
       {/* Filter bar */}
-      <div className="bg-white border border-zinc-200 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-suite-line rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            className="size-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2"
+            className="size-3.5 text-suite-ink-3 absolute left-3 top-1/2 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by KPI code, title, or text…"
-            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-zinc-50 border border-zinc-200 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400"
+            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-suite-card-soft border border-suite-line rounded-md placeholder:text-suite-ink-3 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-suite-ink-3 hover:text-suite-ink"
               aria-label="Clear search"
             >
               <X className="size-3.5" strokeWidth={2} />
@@ -103,16 +103,16 @@ export function KpiBoard({ kpis }: Props) {
                 className={cn(
                   "h-7 px-2.5 inline-flex items-center gap-1.5 rounded-full text-[11.5px] font-medium transition-colors",
                   active
-                    ? "bg-zinc-900 text-white ring-1 ring-zinc-900"
-                    : "bg-white text-zinc-600 ring-1 ring-zinc-200 hover:text-zinc-900 hover:ring-zinc-300",
+                    ? "bg-suite-navy text-white ring-1 ring-suite-navy"
+                    : "bg-white text-suite-ink-2 ring-1 ring-suite-line hover:text-suite-ink hover:ring-suite-line-2",
                 )}
               >
                 <span className={cn("size-1.5 rounded-full", opt.dot)} />
                 {opt.label}
                 <span
                   className={cn(
-                    "tabular-nums text-[10.5px] ml-0.5",
-                    active ? "text-zinc-300" : "text-zinc-400",
+                    "suite-num text-[10.5px] ml-0.5",
+                    active ? "text-white/60" : "text-suite-ink-3",
                   )}
                 >
                   {counts[opt.value]}
@@ -123,8 +123,8 @@ export function KpiBoard({ kpis }: Props) {
         </div>
 
         {/* Grouping toggle */}
-        <div className="ml-auto flex items-center gap-1 bg-zinc-100 rounded-md p-0.5">
-          <span className="inline-flex items-center pl-2 pr-1 text-[10.5px] text-zinc-500">
+        <div className="ml-auto flex items-center gap-1 bg-suite-card-soft border border-suite-line rounded-md p-0.5">
+          <span className="inline-flex items-center pl-2 pr-1 text-[10.5px] text-suite-ink-2">
             <ListFilter className="size-3 mr-1" strokeWidth={1.75} /> Group
           </span>
           {GROUPING_OPTIONS.map((opt) => {
@@ -136,8 +136,8 @@ export function KpiBoard({ kpis }: Props) {
                 className={cn(
                   "h-7 px-2.5 text-[11.5px] font-medium rounded transition-colors",
                   active
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-600 hover:text-zinc-900",
+                    ? "bg-white text-suite-ink shadow-sm"
+                    : "text-suite-ink-2 hover:text-suite-ink",
                 )}
               >
                 {opt.label}
@@ -149,12 +149,12 @@ export function KpiBoard({ kpis }: Props) {
 
       {/* Results */}
       {filtered.length === 0 ? (
-        <div className="bg-white border border-dashed border-zinc-200 rounded-2xl px-6 py-12 text-center">
-          <div className="size-10 mx-auto rounded-xl bg-zinc-100 inline-flex items-center justify-center text-zinc-500">
+        <div className="bg-white border border-dashed border-suite-line rounded-2xl px-6 py-12 text-center">
+          <div className="size-10 mx-auto rounded-xl bg-suite-card-soft inline-flex items-center justify-center text-suite-ink-2">
             <LayoutGrid className="size-4" strokeWidth={1.75} />
           </div>
-          <h3 className="mt-3 text-[13px] font-semibold text-zinc-900">No KPIs match these filters</h3>
-          <p className="mt-1 text-[11.5px] text-zinc-500">
+          <h3 className="mt-3 text-[13px] font-semibold text-suite-ink">No KPIs match these filters</h3>
+          <p className="mt-1 text-[11.5px] text-suite-ink-2">
             Try clearing the search or switching the status filter to "All".
           </p>
         </div>
@@ -163,13 +163,13 @@ export function KpiBoard({ kpis }: Props) {
           {groups.map((g) => (
             <section key={g.title}>
               <header className="flex items-baseline justify-between mb-2.5 px-1">
-                <h2 className="text-[12.5px] font-semibold text-zinc-900">
+                <h2 className="text-[12.5px] font-semibold text-suite-ink">
                   {g.title}
-                  <span className="ml-2 text-[11px] font-normal text-zinc-500">
+                  <span className="ml-2 text-[11px] font-normal text-suite-ink-2">
                     {g.items.length} {g.items.length === 1 ? "KPI" : "KPIs"}
                   </span>
                 </h2>
-                {g.hint && <span className="text-[10.5px] text-zinc-400">{g.hint}</span>}
+                {g.hint && <span className="text-[10.5px] text-suite-ink-3">{g.hint}</span>}
               </header>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {g.items.map((k) => (

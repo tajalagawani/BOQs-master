@@ -30,32 +30,32 @@ export function MarkdownView({ content, className }: Props) {
   return (
     <article
       className={cn(
-        "max-w-3xl text-zinc-700 leading-relaxed",
+        "max-w-3xl text-suite-ink-2 leading-relaxed",
         // Headings
-        "[&_h1]:text-[24px] [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-zinc-900 [&_h1]:mt-0 [&_h1]:mb-4",
+        "[&_h1]:text-[24px] [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-suite-ink [&_h1]:mt-0 [&_h1]:mb-4",
         // Paragraph + list spacing
         "[&_p]:my-3 [&_p]:text-[13.5px] [&_p]:leading-7",
         "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1",
         "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1",
         "[&_li]:text-[13.5px] [&_li]:leading-7 [&_li>p]:my-1",
         // Links
-        "[&_a]:text-zinc-900 [&_a]:underline [&_a]:underline-offset-[3px] [&_a]:decoration-zinc-300 hover:[&_a]:decoration-zinc-700",
+        "[&_a]:text-suite-ink [&_a]:underline [&_a]:underline-offset-[3px] [&_a]:decoration-suite-line-2 hover:[&_a]:decoration-suite-ink-2",
         // Inline code
-        "[&_:not(pre)>code]:text-[12px] [&_:not(pre)>code]:bg-zinc-100 [&_:not(pre)>code]:text-zinc-800 [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:before:content-none [&_:not(pre)>code]:after:content-none",
+        "[&_:not(pre)>code]:text-[12px] [&_:not(pre)>code]:bg-suite-card-soft [&_:not(pre)>code]:text-suite-ink [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:before:content-none [&_:not(pre)>code]:after:content-none",
         // Tables
         "[&_table]:w-full [&_table]:text-[12.5px] [&_table]:my-5 [&_table]:border-collapse",
-        "[&_thead]:bg-zinc-50",
-        "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-zinc-700 [&_th]:border-b [&_th]:border-zinc-200",
-        "[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:border-b [&_td]:border-zinc-100",
-        "[&_tbody_tr:hover]:bg-zinc-50/60",
+        "[&_thead]:bg-suite-card-soft",
+        "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-suite-ink-2 [&_th]:border-b [&_th]:border-suite-line",
+        "[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:border-b [&_td]:border-suite-line-soft",
+        "[&_tbody_tr:hover]:bg-suite-card-soft",
         // Horizontal rule
-        "[&_hr]:my-8 [&_hr]:border-zinc-200",
+        "[&_hr]:my-8 [&_hr]:border-suite-line",
         // Blockquote (non-alert)
-        "[&_blockquote]:my-4 [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-zinc-300 [&_blockquote]:text-zinc-600 [&_blockquote]:italic",
+        "[&_blockquote]:my-4 [&_blockquote]:pl-4 [&_blockquote]:border-l-2 [&_blockquote]:border-suite-line-2 [&_blockquote]:text-suite-ink-2 [&_blockquote]:italic",
         // Task lists
-        "[&_input[type=checkbox]]:mr-2 [&_input[type=checkbox]]:accent-zinc-900",
+        "[&_input[type=checkbox]]:mr-2 [&_input[type=checkbox]]:accent-suite-navy",
         // Strong / em
-        "[&_strong]:text-zinc-900 [&_strong]:font-semibold",
+        "[&_strong]:text-suite-ink [&_strong]:font-semibold",
         className,
       )}
     >
@@ -77,7 +77,7 @@ const mdComponents: Components = {
     return (
       <h2
         id={id}
-        className="group mt-10 mb-3 pt-6 border-t border-zinc-200 text-[18px] font-semibold tracking-tight text-zinc-900 scroll-mt-24"
+        className="group mt-10 mb-3 pt-6 border-t border-suite-line text-[18px] font-semibold tracking-tight text-suite-ink scroll-mt-24"
         {...props}
       >
         <a
@@ -87,7 +87,7 @@ const mdComponents: Components = {
         >
           {children}
           <LinkIcon
-            className="size-3 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="size-3 text-suite-ink-4 opacity-0 group-hover:opacity-100 transition-opacity"
             strokeWidth={2}
           />
         </a>
@@ -100,7 +100,7 @@ const mdComponents: Components = {
     return (
       <h3
         id={id}
-        className="group mt-7 mb-2 text-[14.5px] font-semibold text-zinc-900 scroll-mt-24"
+        className="group mt-7 mb-2 text-[14.5px] font-semibold text-suite-ink scroll-mt-24"
         {...props}
       >
         <a
@@ -110,7 +110,7 @@ const mdComponents: Components = {
         >
           {children}
           <LinkIcon
-            className="size-3 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="size-3 text-suite-ink-4 opacity-0 group-hover:opacity-100 transition-opacity"
             strokeWidth={2}
           />
         </a>
@@ -118,7 +118,7 @@ const mdComponents: Components = {
     );
   },
   h4: ({ children }) => (
-    <h4 className="mt-5 mb-1.5 text-[13px] font-semibold uppercase tracking-wide text-zinc-500">
+    <h4 className="mt-5 mb-1.5 text-[13px] font-semibold uppercase tracking-wide text-suite-ink-3">
       {children}
     </h4>
   ),

@@ -34,7 +34,7 @@ export function JobAccordion({ jobs }: Props) {
   }
 
   return (
-    <ol className="bg-white border border-zinc-200 rounded-2xl divide-y divide-zinc-100 overflow-hidden">
+    <ol className="bg-white border border-suite-line rounded-2xl divide-y divide-suite-line-soft overflow-hidden">
       {jobs.map((job) => {
         const isOpen = open.has(job.id);
         return (
@@ -42,28 +42,28 @@ export function JobAccordion({ jobs }: Props) {
             <button
               type="button"
               onClick={() => toggle(job.id)}
-              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-50/60 transition-colors text-left"
+              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-suite-card-soft transition-colors text-left"
             >
               <StatusIcon status={job.status} conclusion={job.conclusion} />
               <div className="min-w-0 flex-1">
-                <div className="text-[12.5px] font-semibold text-zinc-900 truncate">{job.name}</div>
-                <div className="mt-0.5 flex items-center gap-3 text-[11px] text-zinc-500 flex-wrap">
+                <div className="text-[12.5px] font-semibold text-suite-ink truncate">{job.name}</div>
+                <div className="mt-0.5 flex items-center gap-3 text-[11px] text-suite-ink-3 flex-wrap">
                   {job.durationSec != null && (
-                    <span className="inline-flex items-center gap-1 tabular-nums">
+                    <span className="inline-flex items-center gap-1 tabular-nums suite-num">
                       <Clock className="size-2.5" strokeWidth={2} />
                       {formatDuration(job.durationSec)}
                     </span>
                   )}
                   <span>{job.steps.length} steps</span>
                   {job.runnerName && (
-                    <span className="text-zinc-400 truncate">runner: {job.runnerName}</span>
+                    <span className="text-suite-ink-4 truncate">runner: {job.runnerName}</span>
                   )}
                   <a
                     href={job.htmlUrl}
                     target="_blank"
                     rel="noreferrer noopener"
                     onClick={(e) => e.stopPropagation()}
-                    className="ml-auto inline-flex items-center gap-1 text-zinc-600 hover:text-zinc-900"
+                    className="ml-auto inline-flex items-center gap-1 text-suite-ink-2 hover:text-suite-ink"
                   >
                     Logs <ExternalLink className="size-2.5" strokeWidth={2} />
                   </a>
@@ -71,14 +71,14 @@ export function JobAccordion({ jobs }: Props) {
               </div>
               <ChevronRight
                 className={cn(
-                  "size-3.5 text-zinc-400 transition-transform shrink-0",
+                  "size-3.5 text-suite-ink-4 transition-transform shrink-0",
                   isOpen && "rotate-90",
                 )}
                 strokeWidth={2}
               />
             </button>
             {isOpen && (
-              <div className="px-4 pb-3 bg-zinc-50/40 border-t border-zinc-100">
+              <div className="px-4 pb-3 bg-suite-card-soft border-t border-suite-line-soft">
                 <ol className="pt-2 space-y-0.5">
                   {job.steps.map((s) => (
                     <StepRow key={s.number} step={s} />
@@ -99,7 +99,7 @@ function StepRow({ step }: { step: CiStep }) {
     <li
       className={cn(
         "flex items-center gap-2.5 py-1.5 px-2 rounded text-[12px]",
-        failed && "bg-rose-50/50",
+        failed && "bg-suite-dang-bg/60",
       )}
     >
       <StatusIcon
@@ -107,14 +107,14 @@ function StepRow({ step }: { step: CiStep }) {
         conclusion={step.conclusion}
         compact
       />
-      <span className="text-zinc-400 font-mono text-[10.5px] tabular-nums w-6 text-right shrink-0">
+      <span className="text-suite-ink-4 font-mono text-[10.5px] tabular-nums suite-num w-6 text-right shrink-0">
         {step.number}
       </span>
-      <span className={cn("flex-1 truncate", failed ? "text-rose-900 font-medium" : "text-zinc-800")}>
+      <span className={cn("flex-1 truncate", failed ? "text-suite-dang font-medium" : "text-suite-ink-2")}>
         {step.name}
       </span>
       {step.durationSec != null && (
-        <span className="text-[10.5px] text-zinc-500 tabular-nums shrink-0">
+        <span className="text-[10.5px] text-suite-ink-3 tabular-nums suite-num shrink-0">
           {formatDuration(step.durationSec)}
         </span>
       )}
@@ -139,10 +139,10 @@ function StatusIcon({
   if (status !== "completed") {
     return (
       <span
-        className={cn(sz, base, !ringless && "bg-sky-50 ring-sky-200 text-sky-700")}
+        className={cn(sz, base, !ringless && "bg-suite-blue-soft ring-suite-blue-soft text-suite-blue")}
       >
         <Loader2
-          className={cn(compact ? "size-3" : "size-3.5", "animate-spin", compact && "text-sky-600")}
+          className={cn(compact ? "size-3" : "size-3.5", "animate-spin", compact && "text-suite-blue")}
           strokeWidth={2}
         />
       </span>
@@ -151,10 +151,10 @@ function StatusIcon({
   if (conclusion === "success") {
     return (
       <span
-        className={cn(sz, base, !ringless && "bg-emerald-50 ring-emerald-200 text-emerald-700")}
+        className={cn(sz, base, !ringless && "bg-suite-good-bg ring-suite-good-bg text-suite-good")}
       >
         <CheckCircle2
-          className={cn(compact ? "size-3" : "size-3.5", compact && "text-emerald-600")}
+          className={cn(compact ? "size-3" : "size-3.5", compact && "text-suite-good")}
           strokeWidth={2}
         />
       </span>
@@ -163,10 +163,10 @@ function StatusIcon({
   if (conclusion === "failure" || conclusion === "timed_out") {
     return (
       <span
-        className={cn(sz, base, !ringless && "bg-rose-50 ring-rose-200 text-rose-700")}
+        className={cn(sz, base, !ringless && "bg-suite-dang-bg ring-suite-dang-bg text-suite-dang")}
       >
         <XCircle
-          className={cn(compact ? "size-3" : "size-3.5", compact && "text-rose-600")}
+          className={cn(compact ? "size-3" : "size-3.5", compact && "text-suite-dang")}
           strokeWidth={2}
         />
       </span>
@@ -174,10 +174,10 @@ function StatusIcon({
   }
   return (
     <span
-      className={cn(sz, base, !ringless && "bg-zinc-100 ring-zinc-200 text-zinc-500")}
+      className={cn(sz, base, !ringless && "bg-suite-neut-bg ring-suite-line text-suite-neut")}
     >
       <CircleDashed
-        className={cn(compact ? "size-3" : "size-3.5", compact && "text-zinc-400")}
+        className={cn(compact ? "size-3" : "size-3.5", compact && "text-suite-ink-4")}
         strokeWidth={2}
       />
     </span>

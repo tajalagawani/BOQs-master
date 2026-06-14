@@ -9,30 +9,30 @@ interface Props {
 export function SyslogList({ entries }: Props) {
   if (entries.length === 0) {
     return (
-      <div className="bg-emerald-50/40 border border-emerald-100 rounded-md px-4 py-6 text-center">
-        <div className="size-9 mx-auto rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center">
+      <div className="bg-suite-good-bg border border-suite-line rounded-md px-4 py-6 text-center">
+        <div className="size-9 mx-auto rounded-full bg-suite-good-bg text-suite-good inline-flex items-center justify-center">
           <ServerCrash className="size-4" strokeWidth={1.75} />
         </div>
-        <p className="mt-2 text-[12px] text-emerald-900 font-medium">
+        <p className="mt-2 text-[12px] text-suite-good font-medium">
           No errors logged in this window
         </p>
       </div>
     );
   }
   return (
-    <ul className="divide-y divide-zinc-100 border border-zinc-200 rounded-md overflow-hidden bg-white">
+    <ul className="divide-y divide-suite-line-soft border border-suite-line rounded-md overflow-hidden bg-white">
       {entries.map((e, i) => (
-        <li key={i} className="px-3.5 py-2.5 hover:bg-zinc-50/60">
+        <li key={i} className="px-3.5 py-2.5 hover:bg-suite-card-soft">
           <div className="flex items-center gap-2 flex-wrap text-[11px]">
             <SeverityPill level={e.severityLevel} />
-            <span className="text-zinc-500">{e.facility}</span>
-            <span className="text-zinc-400">·</span>
-            <span className="text-zinc-500 truncate">{e.hostName}</span>
-            <time className="ml-auto text-[10.5px] text-zinc-400 tabular-nums">
+            <span className="text-suite-ink-3">{e.facility}</span>
+            <span className="text-suite-ink-4">·</span>
+            <span className="text-suite-ink-3 truncate">{e.hostName}</span>
+            <time className="ml-auto text-[10.5px] text-suite-ink-4 suite-num">
               {fmt(e.ts)}
             </time>
           </div>
-          <div className="mt-1 text-[12px] text-zinc-700 leading-snug font-mono break-words">
+          <div className="mt-1 text-[12px] text-suite-ink-2 leading-snug font-mono break-words">
             {e.syslogMessage}
           </div>
         </li>
@@ -45,28 +45,28 @@ function SeverityPill({ level }: { level: string }) {
   const map: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
     err: {
       label: "Error",
-      cls: "bg-rose-50 ring-rose-200 text-rose-700",
+      cls: "bg-suite-dang-bg ring-suite-dang/30 text-suite-dang",
       icon: <AlertOctagon className="size-2.5" strokeWidth={2} />,
     },
     crit: {
       label: "Critical",
-      cls: "bg-rose-100 ring-rose-300 text-rose-800",
+      cls: "bg-suite-dang-bg ring-suite-dang/40 text-suite-dang",
       icon: <AlertOctagon className="size-2.5" strokeWidth={2} />,
     },
     alert: {
       label: "Alert",
-      cls: "bg-rose-100 ring-rose-300 text-rose-800",
+      cls: "bg-suite-dang-bg ring-suite-dang/40 text-suite-dang",
       icon: <AlertOctagon className="size-2.5" strokeWidth={2} />,
     },
     emerg: {
       label: "Emergency",
-      cls: "bg-rose-200 ring-rose-400 text-rose-900",
+      cls: "bg-suite-dang-bg ring-suite-dang/50 text-suite-dang",
       icon: <AlertOctagon className="size-2.5" strokeWidth={2} />,
     },
   };
   const it = map[level] ?? {
     label: level,
-    cls: "bg-amber-50 ring-amber-200 text-amber-700",
+    cls: "bg-suite-warn-bg ring-suite-warn/30 text-suite-warn",
     icon: <AlertTriangle className="size-2.5" strokeWidth={2} />,
   };
   return (

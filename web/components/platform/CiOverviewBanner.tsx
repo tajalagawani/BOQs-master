@@ -22,21 +22,21 @@ export function CiOverviewBanner({ runs, deployFreshness }: Props) {
   if (active.length > 0) {
     const a = active[0];
     return (
-      <div className="bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-        <span className="size-9 rounded-xl bg-sky-100 ring-1 ring-sky-200 text-sky-700 inline-flex items-center justify-center shrink-0">
+      <div className="bg-suite-blue-soft border border-suite-blue-soft rounded-2xl px-4 py-3 flex items-center gap-3">
+        <span className="size-9 rounded-xl bg-suite-blue-soft ring-1 ring-suite-blue/20 text-suite-blue inline-flex items-center justify-center shrink-0">
           <Loader2 className="size-4 animate-spin" strokeWidth={2} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-semibold text-sky-900">
+          <div className="text-[12.5px] font-semibold text-suite-ink">
             {active.length === 1 ? "Build in progress" : `${active.length} builds in progress`}
           </div>
-          <div className="text-[11.5px] text-sky-700 truncate">
+          <div className="text-[11.5px] text-suite-blue truncate">
             {a.name} · {a.branch} · {a.commitMessage.split("\n")[0]}
           </div>
         </div>
         <Link
           href={`/platform/cicd/runs/${a.id}`}
-          className="text-[12px] font-medium text-sky-800 hover:text-sky-900 inline-flex items-center gap-0.5"
+          className="text-[12px] font-medium text-suite-blue hover:text-suite-ink inline-flex items-center gap-0.5"
         >
           View run <ChevronRight className="size-3.5" strokeWidth={2} />
         </Link>
@@ -46,7 +46,7 @@ export function CiOverviewBanner({ runs, deployFreshness }: Props) {
 
   if (!last) {
     return (
-      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl px-4 py-3 text-[12px] text-zinc-500">
+      <div className="bg-suite-card-soft border border-suite-line rounded-2xl px-4 py-3 text-[12px] text-suite-ink-3">
         No runs yet
       </div>
     );
@@ -54,11 +54,11 @@ export function CiOverviewBanner({ runs, deployFreshness }: Props) {
 
   const failed = last.conclusion !== "success";
   const tone = failed
-    ? "bg-rose-50 border-rose-200 text-rose-900"
-    : "bg-emerald-50 border-emerald-200 text-emerald-900";
+    ? "bg-suite-dang-bg border-suite-dang-bg text-suite-dang"
+    : "bg-suite-good-bg border-suite-good-bg text-suite-good";
   const iconCls = failed
-    ? "bg-rose-100 ring-rose-200 text-rose-700"
-    : "bg-emerald-100 ring-emerald-200 text-emerald-700";
+    ? "bg-suite-dang-bg ring-suite-dang/20 text-suite-dang"
+    : "bg-suite-good-bg ring-suite-good/20 text-suite-good";
 
   return (
     <div className={cn("border rounded-2xl px-4 py-3 flex items-center gap-3", tone)}>
@@ -80,7 +80,7 @@ export function CiOverviewBanner({ runs, deployFreshness }: Props) {
           {deployFreshness?.commitsBehind != null && (
             <span className="opacity-70">
               · Deployed{" "}
-              <code className="text-[10.5px] bg-white/60 rounded px-1">
+              <code className="text-[10.5px] bg-white/60 rounded px-1 suite-num">
                 {(deployFreshness.deployedSha ?? "").slice(0, 7) || "—"}
               </code>{" "}
               {deployFreshness.commitsBehind > 0

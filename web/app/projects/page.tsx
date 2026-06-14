@@ -1,13 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
 import { getSession } from "@/lib/session";
 import { getMasterplans } from "@/lib/queries/masterplans";
 import { getBenchmarkProjects } from "@/lib/queries/benchmarking";
 import { getProjectsPulse } from "@/lib/pulse/projects";
-import ProjectsClient, {
+import {
+  ProjectsSuiteWorkspace,
   type ProjectListEntry,
-} from "@/components/projects/ProjectsClient";
+} from "@/components/projects/ProjectsSuiteWorkspace";
 
 export default async function ProjectsPage() {
   const { user } = await getSession();
@@ -49,23 +49,8 @@ export default async function ProjectsPage() {
   ];
 
   return (
-    <>
-      {/* Same fixed bg as the home page, so the two screens read as a set. */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
-        style={{
-          backgroundImage: "url(/iox-bg.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center center",
-        }}
-      />
-
-      <Header />
-
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <ProjectsClient projects={projects} pulse={pulse} />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <ProjectsSuiteWorkspace projects={projects} pulse={pulse} />
+    </main>
   );
 }

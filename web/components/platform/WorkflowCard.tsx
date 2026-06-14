@@ -9,27 +9,27 @@ interface Props {
 export function WorkflowCard({ workflow: wf }: Props) {
   const rateTone =
     wf.successRate >= 90
-      ? "text-emerald-700"
+      ? "text-suite-good"
       : wf.successRate >= 70
-        ? "text-amber-700"
-        : "text-rose-700";
+        ? "text-suite-warn"
+        : "text-suite-dang";
   return (
     <a
       href={wf.htmlUrl}
       target="_blank"
       rel="noreferrer noopener"
-      className="bg-white border border-zinc-200 rounded-2xl p-4 hover:border-zinc-300 hover:shadow-[0_8px_30px_-12px_rgba(24,24,27,0.18)] transition-all block"
+      className="bg-white border border-suite-line rounded-2xl p-4 hover:border-suite-line-2 hover:shadow-[0_8px_30px_-12px_rgba(24,24,27,0.18)] transition-all block"
     >
       <header className="flex items-start gap-2.5">
-        <span className="size-8 rounded-lg bg-zinc-100 text-zinc-600 inline-flex items-center justify-center shrink-0">
+        <span className="size-8 rounded-lg bg-suite-card-soft text-suite-ink-2 inline-flex items-center justify-center shrink-0">
           <FileCode2 className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[12.5px] font-semibold text-zinc-900 truncate">{wf.name}</h3>
-          <p className="text-[10.5px] text-zinc-500 truncate">{wf.path}</p>
+          <h3 className="text-[12.5px] font-semibold text-suite-ink truncate">{wf.name}</h3>
+          <p className="text-[10.5px] text-suite-ink-3 truncate">{wf.path}</p>
         </div>
         {wf.state !== "active" && (
-          <span className="text-[10.5px] font-medium text-zinc-500 bg-zinc-100 rounded px-1.5 py-0.5 shrink-0 capitalize">
+          <span className="text-[10.5px] font-medium text-suite-ink-3 bg-suite-card-soft rounded px-1.5 py-0.5 shrink-0 capitalize">
             {wf.state.replace(/_/g, " ")}
           </span>
         )}
@@ -37,21 +37,21 @@ export function WorkflowCard({ workflow: wf }: Props) {
 
       <div className="mt-4 grid grid-cols-3 gap-3">
         <div>
-          <div className="text-[9.5px] uppercase tracking-wide text-zinc-400 font-medium">Success</div>
-          <div className={cn("text-[15px] font-semibold tabular-nums", rateTone)}>
+          <div className="text-[9.5px] uppercase tracking-wide text-suite-ink-4 font-medium">Success</div>
+          <div className={cn("text-[15px] font-semibold tabular-nums suite-num", rateTone)}>
             {wf.recent.length === 0 ? "—" : `${wf.successRate}%`}
           </div>
         </div>
         <div>
-          <div className="text-[9.5px] uppercase tracking-wide text-zinc-400 font-medium">Avg</div>
-          <div className="text-[15px] font-semibold tabular-nums text-zinc-900 inline-flex items-center gap-1">
-            <Clock className="size-2.5 text-zinc-400" strokeWidth={2} />
+          <div className="text-[9.5px] uppercase tracking-wide text-suite-ink-4 font-medium">Avg</div>
+          <div className="text-[15px] font-semibold tabular-nums suite-num text-suite-ink inline-flex items-center gap-1">
+            <Clock className="size-2.5 text-suite-ink-4" strokeWidth={2} />
             {wf.avgDurationSec > 0 ? formatDuration(wf.avgDurationSec) : "—"}
           </div>
         </div>
         <div>
-          <div className="text-[9.5px] uppercase tracking-wide text-zinc-400 font-medium">Runs</div>
-          <div className="text-[15px] font-semibold tabular-nums text-zinc-900">{wf.recent.length}</div>
+          <div className="text-[9.5px] uppercase tracking-wide text-suite-ink-4 font-medium">Runs</div>
+          <div className="text-[15px] font-semibold tabular-nums suite-num text-suite-ink">{wf.recent.length}</div>
         </div>
       </div>
 
@@ -84,18 +84,18 @@ export function WorkflowCard({ workflow: wf }: Props) {
       </div>
 
       {wf.lastRun && (
-        <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-2 text-[11px]">
+        <div className="mt-3 pt-3 border-t border-suite-line-soft flex items-center gap-2 text-[11px]">
           {wf.lastRun.status !== "completed" ? (
-            <Loader2 className="size-3 text-sky-600 animate-spin" strokeWidth={2} />
+            <Loader2 className="size-3 text-suite-blue animate-spin" strokeWidth={2} />
           ) : wf.lastRun.conclusion === "success" ? (
-            <CheckCircle2 className="size-3 text-emerald-600" strokeWidth={2} />
+            <CheckCircle2 className="size-3 text-suite-good" strokeWidth={2} />
           ) : (
-            <XCircle className="size-3 text-rose-600" strokeWidth={2} />
+            <XCircle className="size-3 text-suite-dang" strokeWidth={2} />
           )}
-          <span className="truncate text-zinc-700">
+          <span className="truncate text-suite-ink-2">
             {wf.lastRun.commitMessage.split("\n")[0]}
           </span>
-          <span className="ml-auto text-zinc-400 tabular-nums shrink-0">
+          <span className="ml-auto text-suite-ink-4 tabular-nums suite-num shrink-0">
             {timeAgo(wf.lastRun.createdAt)}
           </span>
         </div>

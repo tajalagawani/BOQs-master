@@ -35,7 +35,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-const SECTIONS: NavSection[] = [
+export const PLATFORM_SECTIONS: NavSection[] = [
   {
     title: "Workspace",
     items: [
@@ -98,7 +98,7 @@ export function PlatformSidebar() {
       </div>
 
       <nav className="flex-1 px-2 py-3 space-y-4">
-        {SECTIONS.map((section) => (
+        {PLATFORM_SECTIONS.map((section) => (
           <div key={section.title}>
             <div className="px-2 mb-1 text-[9.5px] uppercase tracking-[0.12em] text-zinc-400 font-semibold">
               {section.title}

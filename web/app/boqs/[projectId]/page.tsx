@@ -1,4 +1,3 @@
-import { Header } from "@/components/Header";
 import { type WorkspaceData } from "@/components/BoqWorkspace";
 import { BoqResultsTable } from "@/components/boqs/BoqResultsTable";
 import { demoProjects } from "@/lib/demoProjects";
@@ -113,12 +112,9 @@ export default async function ProjectDashboard({
       data = buildFromDemo();
     }
     return (
-      <>
-        <Header />
-        <main className="flex-1 min-h-0 overflow-hidden">
-          <BoqResultsTable projectId={projectId} projectName={stored.name} data={data} />
-        </main>
-      </>
+      <main className="flex-1 min-h-0 overflow-hidden">
+        <BoqResultsTable projectId={projectId} projectName={stored.name} data={data} />
+      </main>
     );
   }
 
@@ -139,11 +135,8 @@ export default async function ProjectDashboard({
   }
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <BoqResultsTable projectId={project.id} projectName={project.name} data={data} />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <BoqResultsTable projectId={project.id} projectName={project.name} data={data} />
+    </main>
   );
 }

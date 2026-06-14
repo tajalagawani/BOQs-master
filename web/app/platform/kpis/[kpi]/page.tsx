@@ -31,29 +31,29 @@ export default async function KpiDetailPage({ params }: PageProps) {
     <div className="mx-auto max-w-4xl px-6 py-6 space-y-5">
       <Link
         href="/platform/kpis"
-        className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500 hover:text-zinc-900"
+        className="inline-flex items-center gap-1.5 text-[12px] text-suite-ink-2 hover:text-suite-ink"
       >
         <ArrowLeft className="size-3.5" strokeWidth={2} /> Back to KPI board
       </Link>
 
       {/* Hero */}
-      <section className="bg-white border border-zinc-200 rounded-2xl p-6 relative overflow-hidden">
+      <section className="bg-white border border-suite-line rounded-2xl p-6 relative overflow-hidden">
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${tone.bar}`} />
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-mono font-semibold tracking-wide text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded">
+          <span className="suite-num text-[11px] font-semibold tracking-wide text-suite-ink-2 bg-suite-card-soft border border-suite-line px-2 py-0.5 rounded">
             {kpi.kpi}
           </span>
           <StatusPill status={kpi.status} size="md" />
           {kpi.phase > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-500 bg-zinc-50 ring-1 ring-zinc-200 rounded-full px-2 py-0.5">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-suite-ink-2 bg-suite-card-soft ring-1 ring-suite-line rounded-full px-2 py-0.5">
               <Layers className="size-2.5" strokeWidth={2} /> Phase {kpi.phase}
             </span>
           )}
-          <span className="text-[11px] text-zinc-500 ml-1">
+          <span className="text-[11px] text-suite-ink-2 ml-1">
             {kpi.componentRef}. {kpi.component}
           </span>
         </div>
-        <h1 className="mt-3 text-[22px] font-semibold text-zinc-900 leading-tight">
+        <h1 className="mt-3 text-[22px] font-semibold text-suite-ink leading-tight">
           {kpi.subComponent}
         </h1>
       </section>
@@ -66,9 +66,9 @@ export default async function KpiDetailPage({ params }: PageProps) {
           title="What we have"
         >
           {kpi.weHave ? (
-            <p className="text-[12.5px] text-zinc-700 leading-relaxed">{kpi.weHave}</p>
+            <p className="text-[12.5px] text-suite-ink-2 leading-relaxed">{kpi.weHave}</p>
           ) : (
-            <p className="text-[12px] text-zinc-400 italic">
+            <p className="text-[12px] text-suite-ink-3 italic">
               Not annotated in BACKLOG.md
             </p>
           )}
@@ -79,9 +79,9 @@ export default async function KpiDetailPage({ params }: PageProps) {
           title={kpi.status === "green" ? "Notes" : "What's missing"}
         >
           {kpi.missing ? (
-            <p className="text-[12.5px] text-zinc-700 leading-relaxed">{kpi.missing}</p>
+            <p className="text-[12.5px] text-suite-ink-2 leading-relaxed">{kpi.missing}</p>
           ) : (
-            <p className="text-[12px] text-zinc-400 italic">
+            <p className="text-[12px] text-suite-ink-3 italic">
               {kpi.status === "green" ? "No outstanding action." : "Not annotated."}
             </p>
           )}
@@ -89,33 +89,33 @@ export default async function KpiDetailPage({ params }: PageProps) {
       </div>
 
       {/* Evidence */}
-      <section className="bg-white border border-zinc-200 rounded-2xl p-5">
+      <section className="bg-white border border-suite-line rounded-2xl p-5">
         <header className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-[13px] font-semibold text-zinc-900">Evidence</h2>
-            <p className="text-[11px] text-zinc-500">
+            <h2 className="text-[13px] font-semibold text-suite-ink">Evidence</h2>
+            <p className="text-[11px] text-suite-ink-2">
               From the assessor sign-off matrix.
             </p>
           </div>
-          <span className="text-[11px] text-zinc-500 tabular-nums">
+          <span className="suite-num text-[11px] text-suite-ink-2">
             {kpi.evidencePaths.length}{" "}
             {kpi.evidencePaths.length === 1 ? "link" : "links"}
           </span>
         </header>
         {kpi.evidence ? (
-          <p className="text-[12.5px] text-zinc-700 leading-relaxed mb-3">
+          <p className="text-[12.5px] text-suite-ink-2 leading-relaxed mb-3">
             {kpi.evidence
               .replace(/`([^`]+)`/g, "$1")
               .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")}
           </p>
         ) : null}
         {kpi.evidencePaths.length > 0 && (
-          <ul className="divide-y divide-zinc-100">
+          <ul className="divide-y divide-suite-line-soft">
             {kpi.evidencePaths.map((p) => (
               <li key={p} className="py-2 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-2 min-w-0 text-[12.5px] text-zinc-800">
-                  <FileText className="size-3.5 text-zinc-400 shrink-0" strokeWidth={1.75} />
-                  <code className="truncate text-[11.5px] bg-zinc-50 px-1.5 py-0.5 rounded">
+                <span className="inline-flex items-center gap-2 min-w-0 text-[12.5px] text-suite-ink">
+                  <FileText className="size-3.5 text-suite-ink-3 shrink-0" strokeWidth={1.75} />
+                  <code className="suite-num truncate text-[11.5px] bg-suite-card-soft border border-suite-line px-1.5 py-0.5 rounded">
                     {p}
                   </code>
                 </span>
@@ -142,19 +142,19 @@ function Block({
 }) {
   const toneCls =
     tone === "emerald"
-      ? "ring-emerald-200 bg-emerald-50 text-emerald-700"
+      ? "ring-suite-good/30 bg-suite-good-bg text-suite-good"
       : tone === "amber"
-        ? "ring-amber-200 bg-amber-50 text-amber-700"
-        : "ring-zinc-200 bg-zinc-100 text-zinc-700";
+        ? "ring-suite-warn/30 bg-suite-warn-bg text-suite-warn"
+        : "ring-suite-line bg-suite-card-soft text-suite-ink-2";
   return (
-    <div className="bg-white border border-zinc-200 rounded-2xl p-5">
+    <div className="bg-white border border-suite-line rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-2">
         <span
           className={`size-6 rounded-md inline-flex items-center justify-center ring-1 ${toneCls}`}
         >
           {icon}
         </span>
-        <h3 className="text-[12.5px] font-semibold text-zinc-900">{title}</h3>
+        <h3 className="text-[12.5px] font-semibold text-suite-ink">{title}</h3>
       </div>
       {children}
     </div>
@@ -168,7 +168,7 @@ function linkFor(p: string) {
     return (
       <Link
         href={`/platform/docs/${slug}`}
-        className="text-[11.5px] font-medium text-zinc-700 hover:text-zinc-900 inline-flex items-center gap-1 shrink-0"
+        className="text-[11.5px] font-medium text-suite-ink-2 hover:text-suite-ink inline-flex items-center gap-1 shrink-0"
       >
         Open <ExternalLink className="size-3" strokeWidth={1.75} />
       </Link>
@@ -176,8 +176,8 @@ function linkFor(p: string) {
   }
   if (p.startsWith("docs/api/") && p.endsWith(".yaml")) {
     return (
-      <span className="text-[11px] text-zinc-400 shrink-0">YAML spec</span>
+      <span className="text-[11px] text-suite-ink-3 shrink-0">YAML spec</span>
     );
   }
-  return <span className="text-[11px] text-zinc-400 shrink-0">file</span>;
+  return <span className="text-[11px] text-suite-ink-3 shrink-0">file</span>;
 }

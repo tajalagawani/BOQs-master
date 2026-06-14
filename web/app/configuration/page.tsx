@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
 import {
   getCostModelEntries,
   getAllConfigurations,
@@ -30,16 +29,13 @@ export default async function ConfigurationPage() {
   >[0]["costFactors"];
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 min-h-0 overflow-auto">
-        <ConfigurationClient
-          costModelEntries={costModelEntries}
-          configurations={configurations}
-          parametricMatrixEntries={parametricMatrixEntries}
-          costFactors={costFactors}
-        />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <ConfigurationClient
+        costModelEntries={costModelEntries}
+        configurations={configurations}
+        parametricMatrixEntries={parametricMatrixEntries}
+        costFactors={costFactors}
+      />
+    </main>
   );
 }

@@ -2,9 +2,13 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import { GitBranch } from "lucide-react";
+import {
+  SuiteInnerShell,
+  SuiteInnerHeader,
+  SuiteButton,
+} from "@/components/suite";
 import ConfigTabs from "@/components/configuration/ConfigTabs";
 import AssetHierarchyTree from "@/components/configuration/AssetHierarchyTree";
 import CostModellingPanel from "@/components/configuration/CostModellingPanel";
@@ -42,6 +46,7 @@ export default function ConfigurationClient({
   costFactors = [],
 }: ConfigurationClientProps) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<ConfigTab>("cost-modelling");
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const [selectedParametricNode, setSelectedParametricNode] = useState<ParametricTreeNode | null>(null);
@@ -214,40 +219,38 @@ export default function ConfigurationClient({
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-100 overflow-hidden">
-      {/* Page Header */}
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-800">Configuration</h1>
-            <p className="text-sm text-gray-500">
-              Manage your asset hierarchy and cost models
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/asset-hierarchy"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-900 bg-white border border-zinc-900 hover:bg-zinc-900/5 rounded-3xl transition-colors"
-            >
-              <GitBranch className="w-4 h-4" />
-              Flow View
-            </Link>
-            <button
-              onClick={handleSave}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-3xl transition-colors"
-            >
-              {getSaveButtonText()}
-            </button>
-          </div>
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">Configuration</span>}
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Search configuration…"
+      header={
+        <SuiteInnerHeader
+          title="Configuration"
+          subtitle="Manage your asset hierarchy and cost models"
+          actions={
+            <>
+              <SuiteButton href="/asset-hierarchy">
+                <GitBranch className="size-4" strokeWidth={2} />
+                Flow View
+              </SuiteButton>
+              <SuiteButton onClick={handleSave} variant="dark">
+                {getSaveButtonText()}
+              </SuiteButton>
+            </>
+          }
+        />
+      }
+    >
+      <div className="flex h-full flex-col rounded-[10px] border border-suite-line bg-white">
+        {/* Tabs */}
+        <div className="shrink-0 border-b border-suite-line px-2">
+          <ConfigTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
 
-        {/* Tabs */}
-        <ConfigTabs activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 p-6 overflow-hidden">
-        {activeTab === "cost-modelling" && (
+        {/* Content */}
+        <div className="min-h-0 flex-1 overflow-hidden p-4">
+          {activeTab === "cost-modelling" && (
           <div className="flex gap-6 h-full">
             {/* Left Panel - Asset Hierarchy */}
             <div className="w-[350px] flex-shrink-0">
@@ -350,7 +353,8 @@ export default function ConfigurationClient({
             />
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </SuiteInnerShell>
   );
 }

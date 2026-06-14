@@ -7,7 +7,6 @@
 // client-side, so every filter option can show a live count (and disable the
 // empties). The whole body below the IOX header is owned by <ElementalWorkspace>.
 
-import { Header } from "@/components/Header";
 import { fetchElementalByProject } from "@/modules/rates/lib/db/queries";
 import {
   ElementalWorkspace,
@@ -64,16 +63,8 @@ export default async function ElementalByProjectPage({
   };
 
   return (
-    <>
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
-        style={{ backgroundImage: "url(/iox-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }}
-      />
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <ElementalWorkspace projects={projects} params={params} />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <ElementalWorkspace projects={projects} params={params} />
+    </main>
   );
 }

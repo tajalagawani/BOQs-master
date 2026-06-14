@@ -21,33 +21,33 @@ const CONFIG: Record<
 > = {
   note: {
     label: "Note",
-    cls: "border-sky-200 bg-sky-50/60",
-    icon: <Info className="size-3.5 text-sky-700" strokeWidth={2} />,
+    cls: "border-suite-line bg-suite-neut-bg",
+    icon: <Info className="size-3.5 text-suite-neut" strokeWidth={2} />,
   },
   tip: {
     label: "Tip",
-    cls: "border-emerald-200 bg-emerald-50/60",
-    icon: <Lightbulb className="size-3.5 text-emerald-700" strokeWidth={2} />,
+    cls: "border-suite-good/30 bg-suite-good-bg",
+    icon: <Lightbulb className="size-3.5 text-suite-good" strokeWidth={2} />,
   },
   important: {
     label: "Important",
-    cls: "border-violet-200 bg-violet-50/60",
-    icon: <Megaphone className="size-3.5 text-violet-700" strokeWidth={2} />,
+    cls: "border-suite-line-2 bg-suite-card",
+    icon: <Megaphone className="size-3.5 text-suite-ink-2" strokeWidth={2} />,
   },
   warning: {
     label: "Warning",
-    cls: "border-amber-200 bg-amber-50/60",
-    icon: <AlertTriangle className="size-3.5 text-amber-700" strokeWidth={2} />,
+    cls: "border-suite-warn/30 bg-suite-warn-bg",
+    icon: <AlertTriangle className="size-3.5 text-suite-warn" strokeWidth={2} />,
   },
   caution: {
     label: "Caution",
-    cls: "border-rose-200 bg-rose-50/60",
-    icon: <AlertOctagon className="size-3.5 text-rose-700" strokeWidth={2} />,
+    cls: "border-suite-dang/30 bg-suite-dang-bg",
+    icon: <AlertOctagon className="size-3.5 text-suite-dang" strokeWidth={2} />,
   },
   success: {
     label: "Success",
-    cls: "border-emerald-200 bg-emerald-50/60",
-    icon: <CheckCircle2 className="size-3.5 text-emerald-700" strokeWidth={2} />,
+    cls: "border-suite-good/30 bg-suite-good-bg",
+    icon: <CheckCircle2 className="size-3.5 text-suite-good" strokeWidth={2} />,
   },
 };
 
@@ -60,11 +60,11 @@ export function Callout({ kind, children }: Props) {
         c.cls,
       )}
     >
-      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] uppercase tracking-wide font-semibold text-zinc-800">
+      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] uppercase tracking-wide font-semibold text-suite-ink">
         {c.icon}
         {c.label}
       </div>
-      <div className="text-zinc-700">{children}</div>
+      <div className="text-suite-ink-2">{children}</div>
     </aside>
   );
 }

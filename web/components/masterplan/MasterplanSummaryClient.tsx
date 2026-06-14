@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { X as CloseIcon } from "lucide-react";
+import {
+  SuiteInnerShell,
+  SuiteInnerHeader,
+  SuiteButton,
+} from "@/components/suite";
 import type { HighLevelMetricsData } from "./summary/HighLevelMetrics";
 import CapexBreakdownSummary, { CapexBreakdownData } from "./summary/CapexBreakdownSummary";
 import { CostTrendChart } from "@/components/charts/AreaLineChart";
@@ -68,6 +72,9 @@ export default function MasterplanSummaryClient({
   phaseTimeline = [],
   scurveSettings,
 }: MasterplanSummaryClientProps) {
+  // Local-only top-nav search state (no page-level search on this route).
+  const [navSearch, setNavSearch] = useState("");
+
   // Ensure arrays exist with defaults
   const buildingAssets = version?.buildingAssets || [];
   const carParking = version?.carParking || [];
@@ -344,26 +351,26 @@ export default function MasterplanSummaryClient({
   }, [highLevelMetrics]);
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">
-            Masterplan Summary - {masterplan.masterplanName}
-          </h1>
-          <Link
-            href={`/costx/${masterplan.id}`}
-            className="p-2 rounded hover:bg-zinc-50 transition-colors"
-            title="Close"
-          >
-            <CloseIcon className="w-5 h-5 text-gray-500" />
-          </Link>
-        </div>
-      </div>
-
+    <SuiteInnerShell
+      crumb={<span className="font-semibold text-[#cdd6e6]">CostX</span>}
+      search={navSearch}
+      onSearch={setNavSearch}
+      searchPlaceholder="Search masterplans, reports…"
+      header={
+        <SuiteInnerHeader
+          title={<>Masterplan Summary - {masterplan.masterplanName}</>}
+          actions={
+            <SuiteButton variant="dark" href={`/costx/${masterplan.id}`}>
+              <CloseIcon className="size-4" strokeWidth={2} />
+              Close
+            </SuiteButton>
+          }
+        />
+      }
+    >
       {/* Content */}
-      <div className="mx-auto max-w-7xl px-6 py-6 space-y-8">
-        {/* Section 1: Masterplan High Level Metrics */}
+      <div className="space-y-8 p-4">
+          {/* Section 1: Masterplan High Level Metrics */}
         <div className="space-y-4">
           <SectionHeader
             title={SUMMARY_PAGE_CONTENT.sections.masterplanHighLevel.title}
@@ -600,6 +607,6 @@ export default function MasterplanSummaryClient({
           />
         </Accordion>
       </div>
-    </div>
+    </SuiteInnerShell>
   );
 }

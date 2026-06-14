@@ -1,4 +1,3 @@
-import { Header } from "@/components/Header";
 import {
   ProcurexWorkspace,
   type ProcurexGridEntry,
@@ -48,23 +47,8 @@ export default async function ProcurexHome() {
   });
 
   return (
-    <>
-      {/* Same fixed bg as the home page. */}
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 -z-10 bg-no-repeat pointer-events-none"
-        style={{
-          backgroundImage: "url(/iox-bg.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center center",
-        }}
-      />
-
-      <Header />
-
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <ProcurexWorkspace projects={entries} pulse={pulse} />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-y-auto">
+      <ProcurexWorkspace projects={entries} pulse={pulse} />
+    </main>
   );
 }

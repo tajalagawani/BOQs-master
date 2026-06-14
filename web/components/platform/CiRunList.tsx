@@ -20,25 +20,25 @@ interface Props {
 export function CiRunList({ runs }: Props) {
   if (runs.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-zinc-200 rounded-2xl px-6 py-12 text-center">
+      <div className="bg-white border border-dashed border-suite-line rounded-2xl px-6 py-12 text-center">
         <CircleDashed
-          className="size-5 mx-auto text-zinc-400"
+          className="size-5 mx-auto text-suite-ink-4"
           strokeWidth={1.75}
         />
-        <h3 className="mt-3 text-[13px] font-semibold text-zinc-900">
+        <h3 className="mt-3 text-[13px] font-semibold text-suite-ink">
           No workflow runs returned
         </h3>
-        <p className="mt-1 text-[11.5px] text-zinc-500">
+        <p className="mt-1 text-[11.5px] text-suite-ink-3">
           The repository has no CI history yet, or the token lacks{" "}
-          <code className="text-[10.5px] bg-zinc-100 px-1 py-0.5 rounded">actions:read</code>.
+          <code className="text-[10.5px] bg-suite-card-soft px-1 py-0.5 rounded suite-num">actions:read</code>.
         </p>
       </div>
     );
   }
   return (
-    <ol className="bg-white border border-zinc-200 rounded-2xl divide-y divide-zinc-100 overflow-hidden">
+    <ol className="bg-white border border-suite-line rounded-2xl divide-y divide-suite-line-soft overflow-hidden">
       {runs.map((r) => (
-        <li key={r.id} className="px-4 py-3 hover:bg-zinc-50/60 transition-colors">
+        <li key={r.id} className="px-4 py-3 hover:bg-suite-card-soft transition-colors">
           <a
             href={r.htmlUrl}
             target="_blank"
@@ -48,32 +48,32 @@ export function CiRunList({ runs }: Props) {
             <StatusIcon run={r} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-[12.5px] font-semibold text-zinc-900 truncate">
+                <span className="text-[12.5px] font-semibold text-suite-ink truncate">
                   {r.name}
                 </span>
-                <span className="text-[10.5px] font-medium text-zinc-500 bg-zinc-100 rounded px-1.5 py-0.5 capitalize">
+                <span className="text-[10.5px] font-medium text-suite-ink-3 bg-suite-card-soft rounded px-1.5 py-0.5 capitalize">
                   {r.event}
                 </span>
                 {r.attempt > 1 && (
-                  <span className="text-[10.5px] font-medium text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded px-1.5 py-0.5">
+                  <span className="text-[10.5px] font-medium text-suite-warn bg-suite-warn-bg ring-1 ring-suite-warn-bg rounded px-1.5 py-0.5">
                     Re-run #{r.attempt}
                   </span>
                 )}
               </div>
-              <div className="mt-0.5 text-[12px] text-zinc-700 line-clamp-1">
+              <div className="mt-0.5 text-[12px] text-suite-ink-2 line-clamp-1">
                 {r.commitMessage.split("\n")[0]}
               </div>
-              <div className="mt-1 flex items-center gap-3 text-[11px] text-zinc-500 flex-wrap">
+              <div className="mt-1 flex items-center gap-3 text-[11px] text-suite-ink-3 flex-wrap">
                 <span className="inline-flex items-center gap-1">
                   <GitBranch className="size-2.5" strokeWidth={2} />
                   {r.branch}
                 </span>
-                <span className="inline-flex items-center gap-1 font-mono text-[10.5px]">
+                <span className="inline-flex items-center gap-1 font-mono text-[10.5px] suite-num">
                   <GitCommit className="size-2.5" strokeWidth={2} />
                   {r.commitSha.slice(0, 7)}
                 </span>
                 {r.durationSec != null && (
-                  <span className="inline-flex items-center gap-1 tabular-nums">
+                  <span className="inline-flex items-center gap-1 tabular-nums suite-num">
                     <Clock className="size-2.5" strokeWidth={2} />
                     {formatDuration(r.durationSec)}
                   </span>
@@ -93,13 +93,13 @@ export function CiRunList({ runs }: Props) {
                     {r.authorLogin}
                   </span>
                 )}
-                <time className="tabular-nums text-zinc-400" dateTime={r.createdAt}>
+                <time className="tabular-nums text-suite-ink-4 suite-num" dateTime={r.createdAt}>
                   {timeAgo(r.createdAt)}
                 </time>
               </div>
             </div>
             <ExternalLink
-              className="size-3.5 text-zinc-300 shrink-0 mt-1"
+              className="size-3.5 text-suite-ink-4 shrink-0 mt-1"
               strokeWidth={1.75}
             />
           </a>
@@ -113,34 +113,34 @@ function StatusIcon({ run }: { run: CiRun }) {
   const base = "size-7 rounded-full inline-flex items-center justify-center ring-1 shrink-0 mt-0.5";
   if (run.status !== "completed") {
     return (
-      <span className={cn(base, "bg-amber-50 ring-amber-200 text-amber-700")}>
+      <span className={cn(base, "bg-suite-warn-bg ring-suite-warn-bg text-suite-warn")}>
         <Loader2 className="size-3.5 animate-spin" strokeWidth={2} />
       </span>
     );
   }
   if (run.conclusion === "success") {
     return (
-      <span className={cn(base, "bg-emerald-50 ring-emerald-200 text-emerald-700")}>
+      <span className={cn(base, "bg-suite-good-bg ring-suite-good-bg text-suite-good")}>
         <CheckCircle2 className="size-3.5" strokeWidth={2} />
       </span>
     );
   }
   if (run.conclusion === "failure" || run.conclusion === "timed_out") {
     return (
-      <span className={cn(base, "bg-rose-50 ring-rose-200 text-rose-700")}>
+      <span className={cn(base, "bg-suite-dang-bg ring-suite-dang-bg text-suite-dang")}>
         <XCircle className="size-3.5" strokeWidth={2} />
       </span>
     );
   }
   if (run.conclusion === "cancelled" || run.conclusion === "skipped") {
     return (
-      <span className={cn(base, "bg-zinc-100 ring-zinc-200 text-zinc-500")}>
+      <span className={cn(base, "bg-suite-neut-bg ring-suite-line text-suite-neut")}>
         <CircleDashed className="size-3.5" strokeWidth={2} />
       </span>
     );
   }
   return (
-    <span className={cn(base, "bg-zinc-100 ring-zinc-200 text-zinc-500")}>
+    <span className={cn(base, "bg-suite-neut-bg ring-suite-line text-suite-neut")}>
       <AlertCircle className="size-3.5" strokeWidth={2} />
     </span>
   );

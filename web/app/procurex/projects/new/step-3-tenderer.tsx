@@ -7,7 +7,6 @@ import { uploadFileLocally } from "@/components/procurex/docs/upload-client"
 import { requestDocumentUpload } from "@/modules/documents/actions"
 import { discardTendererUpload } from "@/modules/procurex/tenderers/submission-actions"
 import {
-  Users,
   UserPlus,
   CloudUpload,
   Download,
@@ -19,6 +18,25 @@ import {
   ChevronDown,
   X,
 } from "lucide-react"
+
+import {
+  CodeBadge,
+  MiniStat,
+  RosterWho,
+  SecBar,
+  SuiteAINote,
+  SuiteBand,
+  SuiteButton,
+  SuiteChip,
+  SuiteDocStrip,
+  SuiteMiss,
+  SuitePanel,
+  SuiteTable,
+  SuiteTiles,
+  SuiteTotals,
+  type MiniStatPart,
+  type SuiteDoc,
+} from "@/components/suite"
 
 import {
   addTenderer as addTendererAction,
@@ -34,14 +52,20 @@ interface Tenderer {
   companyName: string
   contactEmail: string
   contactName: string
+  country: string | null
+  city: string | null
   invited: boolean            // true iff status ∈ {invited, opened, submitted} OR qs_upload
   qsUpload: boolean
   status: TendererRow["status"] | "draft"
+  submittedAt: Date | null
   isDraft: boolean
   /** Latest PTC document for this tenderer (if any) — drives the
    *  initial ptcStage of the DocumentUploadPanel so a refresh restores
    *  whatever state the user left it in. */
   ptcSlot: TendererRow["bidderDocs"]["boq-priceset"] | null
+  /** Latest cover-letter + form-of-tender slots — drive the intake docstrip. */
+  coverSlot: TendererRow["bidderDocs"]["cover-letter"] | null
+  fotSlot: TendererRow["bidderDocs"]["fot"] | null
 }
 
 type Tab = "excel" | "manual"
@@ -55,11 +79,16 @@ function makeDraft(): Tenderer {
     companyName: "",
     contactEmail: "",
     contactName: "",
+    country: null,
+    city: null,
     invited: false,
     qsUpload: false,
     status: "draft",
+    submittedAt: null,
     isDraft: true,
     ptcSlot: null,
+    coverSlot: null,
+    fotSlot: null,
   }
 }
 
@@ -70,6 +99,8 @@ function fromServer(t: TendererRow): Tenderer {
     companyName: t.company.name,
     contactEmail: t.contactEmail,
     contactName: t.contactName,
+    country: t.company.country,
+    city: t.company.city,
     invited:
       t.qsUpload ||
       t.status === "invited" ||
@@ -77,19 +108,44 @@ function fromServer(t: TendererRow): Tenderer {
       t.status === "submitted",
     qsUpload: t.qsUpload,
     status: t.status,
+    submittedAt: t.submittedAt,
     isDraft: false,
     ptcSlot: t.bidderDocs["boq-priceset"],
+    coverSlot: t.bidderDocs["cover-letter"],
+    fotSlot: t.bidderDocs.fot,
   }
 }
 
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="bg-[#e9e9e9] flex h-[24px] items-center px-[8px] rounded-[8px]">
-      <span className="font-normal text-[#434343] text-[12px] leading-[16px] whitespace-nowrap">
-        {children}
-      </span>
-    </span>
-  )
+// ── small presentational / formatting helpers ─────────────────────────────
+function fmtMoney(cents: string | number): string {
+  return (Number(cents) / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+function fmtInt(n: number): string {
+  return n.toLocaleString()
+}
+function fmtDay(d: Date | null): string {
+  if (!d) return "—"
+  return d.toLocaleDateString(undefined, { day: "2-digit", month: "short" })
+}
+/** Maps a tenderer status to the roster status chip tone + label. */
+function statusChip(t: Tenderer): { tone: "good" | "warn" | "neut"; label: string } {
+  switch (t.status) {
+    case "submitted":
+      return { tone: "good", label: "Submitted" }
+    case "opened":
+      return { tone: "warn", label: t.qsUpload ? "QS upload" : "Opened" }
+    case "invited":
+      return { tone: "neut", label: "Invited" }
+    case "pending":
+      return { tone: "neut", label: "Pending" }
+    case "draft":
+      return { tone: "neut", label: "Draft" }
+    default:
+      return { tone: "neut", label: String(t.status) }
+  }
 }
 
 function PillTabs({
@@ -557,7 +613,7 @@ function TendererCard({
             className="font-medium text-white text-[12px] leading-[16px]"
             style={{ fontFamily: "Roboto, sans-serif" }}
           >
-            {tenderer.code}
+            {tenderer.code || "New"}
           </span>
         </div>
         {tenderer.invited && (
@@ -677,6 +733,171 @@ function TendererCard({
   )
 }
 
+/* ── Submission intake — the per-tenderer detail panel ───────────────────────
+   Renders the selected tenderer's document strip, the applied priced-BOQ
+   totals/tiles (bound to its real appliedSubmission), and the existing
+   DocumentUploadPanel (PTC upload → review → apply flow, preserved). */
+function SubmissionIntake({
+  tenderer,
+  workspaceId,
+  projectId,
+}: {
+  tenderer: Tenderer
+  workspaceId: string
+  projectId: string
+}) {
+  const ptc = tenderer.ptcSlot
+  const applied = ptc?.appliedSubmission ?? null
+  const priced = applied?.pricedItems ?? null
+  const unpriced = applied?.unpricedItems ?? null
+  const matched = applied ? applied.pricedItems + applied.unpricedItems : null
+
+  // Document strip — bound to the three real bidder-return slots.
+  const docState = (
+    slot: Tenderer["ptcSlot"] | Tenderer["coverSlot"] | Tenderer["fotSlot"],
+    appliedSlot = false,
+  ): SuiteDoc["state"] => {
+    if (!slot) return "off"
+    if (appliedSlot && ptc?.appliedSubmission) return "on"
+    return "rev"
+  }
+  const docs: SuiteDoc[] = [
+    {
+      code: "BOQ",
+      label: ptc
+        ? ptc.appliedSubmission
+          ? "Priced BOQ — parsed"
+          : "Priced BOQ — review"
+        : "Priced BOQ — not provided",
+      state: docState(ptc, true),
+    },
+    {
+      code: "FOT",
+      label: tenderer.fotSlot
+        ? "Form of Tender — extracted · review"
+        : "Form of Tender — not provided",
+      state: docState(tenderer.fotSlot),
+    },
+    {
+      code: "CL",
+      label: tenderer.coverSlot
+        ? "Cover letter — extracted · review"
+        : "Cover letter — not provided",
+      state: docState(tenderer.coverSlot),
+    },
+  ]
+
+  return (
+    <SuitePanel>
+      <SecBar title="Submission intake" count="round: Initial" />
+
+      {/* intake-head */}
+      <div className="mb-3.5 flex items-center gap-3">
+        <CodeBadge>{tenderer.code}</CodeBadge>
+        <span className="text-[15px] font-semibold text-suite-ink">
+          {tenderer.companyName || tenderer.code}
+        </span>
+        <span className="text-[12px] text-suite-ink-3">
+          {ptc
+            ? "document received · re-parsed / extracted server-side"
+            : "no documents received yet"}
+        </span>
+        <span className="flex-1" />
+      </div>
+
+      <SuiteDocStrip docs={docs} />
+
+      {/* PRICED BOQ band */}
+      <SuiteBand
+        code="BOQ"
+        title="Priced Bill of Quantities"
+        file={ptc?.filename}
+        status={
+          ptc ? (
+            applied ? (
+              <SuiteChip tone="good">Parsed</SuiteChip>
+            ) : (
+              <SuiteChip tone="warn">Ready to review</SuiteChip>
+            )
+          ) : (
+            <SuiteChip tone="neut">Awaiting upload</SuiteChip>
+          )
+        }
+      />
+
+      {applied ? (
+        <>
+          <SuiteTotals
+            items={[
+              {
+                k: "Tender sum",
+                v: fmtMoney(applied.tenderSumCents),
+                vs: "sum of priced amounts",
+              },
+              {
+                k: "Matched items",
+                v: fmtInt(matched ?? 0),
+                vs: `${fmtInt(priced ?? 0)} priced · ${fmtInt(unpriced ?? 0)} unpriced`,
+              },
+              {
+                k: "Unpriced items",
+                v: fmtInt(unpriced ?? 0),
+                vs: "treatment set in Analysis Config",
+                vsTone: (unpriced ?? 0) > 0 ? "dn" : "flat",
+              },
+            ]}
+          />
+          <SuiteTiles
+            cols={4}
+            items={[
+              { k: "Priced", v: fmtInt(priced ?? 0), dot: "bg-suite-green" },
+              { k: "Unpriced", v: fmtInt(unpriced ?? 0), dot: "bg-suite-amber" },
+              { k: "Matched", v: fmtInt(matched ?? 0), dot: "bg-suite-blue" },
+              {
+                k: "Source",
+                v: <span className="text-[11px] font-semibold text-suite-ink-3">{ptc?.filename ?? "—"}</span>,
+              },
+            ]}
+          />
+        </>
+      ) : (
+        <SuiteAINote>
+          {ptc ? (
+            <>
+              <b>Awaiting review.</b> The priced BOQ has been uploaded — open it
+              from the roster (Review) to parse and apply the tender sum,
+              matched items and unpriced items.
+            </>
+          ) : (
+            <>
+              <b>No priced BOQ yet.</b> Upload the tenderer&apos;s priced BOQ
+              below to extract the tender sum, matched items and unpriced items.
+            </>
+          )}
+        </SuiteAINote>
+      )}
+
+      {/* Document upload — preserves the full PTC upload → review → apply flow. */}
+      {tenderer.invited ? (
+        <div className="mt-4">
+          <DocumentUploadPanel
+            workspaceId={workspaceId}
+            projectId={projectId}
+            tendererId={tenderer.id}
+            tendererName={tenderer.companyName || tenderer.code}
+            initialPtcSlot={tenderer.ptcSlot}
+          />
+        </div>
+      ) : (
+        <div className="mt-4 text-[12px] text-suite-ink-3">
+          Invite this tenderer (or flag it for QS upload) to intake their return
+          documents.
+        </div>
+      )}
+    </SuitePanel>
+  )
+}
+
 export function Step3Tenderer({
   workspaceId,
   projectId,
@@ -693,6 +914,7 @@ export function Step3Tenderer({
   const [draft, setDraft] = useState<Tenderer | null>(null)
   const [loading, setLoading] = useState<boolean>(Boolean(projectId))
   const [error, setError] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [_isPending, startTransition] = useTransition()
 
   // Initial load — pulls all tenderers (with company + invite + bidder docs) in one round-trip.
@@ -728,6 +950,18 @@ export function Step3Tenderer({
   useEffect(() => {
     onCountChange(tendererCount)
   }, [tendererCount, onCountChange])
+
+  // Keep the intake selection valid — default to the first tenderer, and drop
+  // a selection that points at a removed row.
+  useEffect(() => {
+    if (tenderers.length === 0) {
+      if (selectedId !== null) setSelectedId(null)
+      return
+    }
+    if (!selectedId || !tenderers.some((t) => t.id === selectedId)) {
+      setSelectedId(tenderers[0]!.id)
+    }
+  }, [tenderers, selectedId])
 
   const switchToManual = () => {
     setTab("manual")
@@ -806,93 +1040,225 @@ export function Step3Tenderer({
   const showAdd = tab === "excel" && tendererCount === 0
   const addLabel = showAdd ? "Add" : "Add another tenderer"
 
+  const invitedCount = tenderers.filter((t) => t.invited).length
+  const submittedCount = tenderers.filter((t) => t.status === "submitted").length
+  const selected = tenderers.find((t) => t.id === selectedId) ?? null
+
   return (
-    <div className="bg-white flex flex-col gap-[32px] items-center justify-center p-[40px] rounded-[16px] w-[1360px] mx-auto">
-      <div className="flex flex-col gap-[16px] items-start w-full">
-        <div className="flex flex-col gap-[8px] items-start w-full">
-          <div className="flex gap-[8px] items-center w-full">
-            <Users className="size-[24px] text-black" />
-            <h2 className="flex-1 font-semibold text-black text-[18px] leading-[24px]">
-              Tenderer
-            </h2>
-            <Pill>
-              {tendererCount} tenderer{tendererCount === 1 ? "" : "s"}
-            </Pill>
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={tab === "manual" && draft !== null}
-              className={`flex gap-[8px] h-[32px] items-center justify-center px-[16px] py-[8px] rounded-[16px] ${
-                tab === "manual" && draft !== null
-                  ? "border border-[#d9d9d9] bg-[#f5f5f7] text-[#a3a3a3] cursor-not-allowed"
-                  : showAdd
-                    ? "bg-[#142845] text-white"
-                    : "border border-[#d9d9d9] bg-white text-[#262626]"
-              }`}
-            >
-              <UserPlus className="size-[16px]" />
-              <span className="font-normal text-[12px] leading-[16px] whitespace-nowrap">
+    <div className="flex flex-col">
+      {/* ── ROSTER ─────────────────────────────────────────────────────────── */}
+      <SuitePanel first>
+        <SecBar
+          title="Tenderer roster"
+          count={
+            tendererCount > 0
+              ? `${invitedCount} invited · ${submittedCount} submitted`
+              : "no tenderers yet"
+          }
+          actions={
+            <>
+              <SuiteButton
+                onClick={handleAdd}
+                {...(tab === "manual" && draft !== null
+                  ? { className: "opacity-50 pointer-events-none" }
+                  : {})}
+              >
+                <UserPlus className="size-3.5" />
                 {addLabel}
-              </span>
-            </button>
+              </SuiteButton>
+            </>
+          }
+        />
+
+        <p className="mb-4 max-w-[680px] text-[12px] text-suite-ink-3">
+          Add the companies invited to this tender. Here you will find all their
+          tender return documents like PTC, Form of Tender and Cover Letter.
+        </p>
+
+        <div className="mb-4">
+          <PillTabs active={tab} onChange={setTab} />
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800">
+            {error}
           </div>
-          <p className="font-normal text-[#555] text-[12px] leading-[16px] w-[680px]">
-            Add the companies invited to this tender. Here you will find all
-            their tender return documents like PTC, Form of Tender and Cover
-            Letter.
-          </p>
-        </div>
-        <PillTabs active={tab} onChange={setTab} />
-      </div>
+        )}
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 text-[12px] rounded-[8px] px-[12px] py-[8px] w-full">
-          {error}
-        </div>
-      )}
+        {loading && (
+          <div className="py-6 text-[12px] text-suite-ink-3">
+            Loading tenderers…
+          </div>
+        )}
 
-      {loading && (
-        <div className="text-[#555] text-[12px] py-[24px]">Loading tenderers…</div>
-      )}
+        {!loading && tab === "excel" && tendererCount === 0 && (
+          <ExcelUploadPanel />
+        )}
 
-      {!loading && tab === "excel" && tendererCount === 0 && <ExcelUploadPanel />}
+        {!loading && tendererCount > 0 && (
+          <SuiteTable>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: "24%" }}>Tenderer</th>
+                  <th style={{ width: "12%" }}>Status</th>
+                  <th style={{ width: "10%" }}>Submitted</th>
+                  <th>Intake</th>
+                  <th className="r" style={{ width: "16%" }}>
+                    Tender sum
+                  </th>
+                  <th className="r" style={{ width: "13%" }}>
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenderers.map((t) => {
+                  const sc = statusChip(t)
+                  const applied = t.ptcSlot?.appliedSubmission ?? null
+                  const matched = applied
+                    ? applied.pricedItems + applied.unpricedItems
+                    : null
+                  const isSel = t.id === selectedId
+                  const intakeParts: MiniStatPart[] | null = applied
+                    ? [
+                        { n: fmtInt(matched ?? 0), label: "matched" },
+                        { n: fmtInt(applied.pricedItems), label: "priced" },
+                        {
+                          n: fmtInt(applied.unpricedItems),
+                          label: "unpriced",
+                          tone: applied.unpricedItems > 0 ? "warn" : undefined,
+                        },
+                      ]
+                    : null
+                  // Has an uploaded-but-not-yet-applied priced BOQ?
+                  const awaitingReview = Boolean(t.ptcSlot) && !applied
+                  return (
+                    <tr
+                      key={t.id}
+                      className={isSel ? "bg-suite-blue-soft" : undefined}
+                    >
+                      <td>
+                        <RosterWho
+                          code={t.code}
+                          name={t.companyName || "—"}
+                          meta={
+                            [t.country, t.city].filter(Boolean).join(" · ") ||
+                            undefined
+                          }
+                        />
+                      </td>
+                      <td>
+                        <SuiteChip tone={sc.tone}>{sc.label}</SuiteChip>
+                      </td>
+                      <td
+                        className="suite-num"
+                        style={{ color: "var(--color-suite-ink-2)", fontSize: 11.5 }}
+                      >
+                        {fmtDay(t.submittedAt)}
+                      </td>
+                      <td>
+                        {intakeParts ? (
+                          <MiniStat parts={intakeParts} />
+                        ) : awaitingReview ? (
+                          <SuiteMiss>Uploaded · awaiting review</SuiteMiss>
+                        ) : t.invited ? (
+                          <SuiteMiss>Awaiting submission</SuiteMiss>
+                        ) : (
+                          <SuiteMiss>Not invited</SuiteMiss>
+                        )}
+                      </td>
+                      <td className="r">
+                        {applied ? (
+                          <span className="suite-num text-[13.5px] font-semibold text-suite-ink">
+                            {fmtMoney(applied.tenderSumCents)}
+                          </span>
+                        ) : (
+                          <span className="text-suite-ink-4">—</span>
+                        )}
+                      </td>
+                      <td className="r">
+                        <div className="flex justify-end">
+                          <SuiteButton
+                            size="sm"
+                            variant={isSel ? "dark" : "default"}
+                            onClick={() => setSelectedId(t.id)}
+                          >
+                            {isSel
+                              ? "Reviewing"
+                              : t.invited
+                                ? "Review"
+                                : "Open"}
+                          </SuiteButton>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </SuiteTable>
+        )}
 
+        {!loading && tendererCount === 0 && tab === "manual" && (
+          <div className="py-2 text-[12px] text-suite-ink-3">
+            No tenderers yet — add one below.
+          </div>
+        )}
+      </SuitePanel>
+
+      {/* ── EDITOR — manual entry / draft cards (full invite + QS-upload flow) ── */}
       {!loading && (tab === "manual" || tendererCount > 0) && (
-        <div className="flex flex-col gap-[16px] w-full">
-          {tenderers.map((t) => (
-            <TendererCard
-              key={t.id}
-              tenderer={t}
-              workspaceId={workspaceId}
-              projectId={projectId}
-              onUpdate={(patch) => updateTenderer(t.id, patch)}
-              onDelete={() => deleteTenderer(t.id)}
-              onInvite={() => {
-                // TODO Phase D — magic-link email send
-                setError("Invite emails are not wired yet (Phase D).")
-              }}
-              onQSUpload={() => {
-                // Convert an already-invited row to QS-upload? Not yet —
-                // this button only fires on the draft card below.
-              }}
-              onResendInvite={() => {
-                setError("Re-send invite is not wired yet (Phase D).")
-              }}
-            />
-          ))}
-          {draft && (
-            <TendererCard
-              tenderer={draft}
-              workspaceId={workspaceId}
-              projectId={projectId}
-              onUpdate={updateDraft}
-              onDelete={() => setDraft(null)}
-              onInvite={() => commitDraft("invite")}
-              onQSUpload={() => commitDraft("qs")}
-              onResendInvite={() => {}}
-            />
-          )}
-        </div>
+        <SuitePanel>
+          <SecBar
+            title="Tenderer"
+            count={`${tendererCount} tenderer${tendererCount === 1 ? "" : "s"}`}
+          />
+          <div className="flex flex-col gap-[16px] w-full">
+            {tenderers.map((t) => (
+              <TendererCard
+                key={t.id}
+                tenderer={t}
+                workspaceId={workspaceId}
+                projectId={projectId}
+                onUpdate={(patch) => updateTenderer(t.id, patch)}
+                onDelete={() => deleteTenderer(t.id)}
+                onInvite={() => {
+                  // TODO Phase D — magic-link email send
+                  setError("Invite emails are not wired yet (Phase D).")
+                }}
+                onQSUpload={() => {
+                  // Convert an already-invited row to QS-upload? Not yet —
+                  // this button only fires on the draft card below.
+                }}
+                onResendInvite={() => {
+                  setError("Re-send invite is not wired yet (Phase D).")
+                }}
+              />
+            ))}
+            {draft && (
+              <TendererCard
+                tenderer={draft}
+                workspaceId={workspaceId}
+                projectId={projectId}
+                onUpdate={updateDraft}
+                onDelete={() => setDraft(null)}
+                onInvite={() => commitDraft("invite")}
+                onQSUpload={() => commitDraft("qs")}
+                onResendInvite={() => {}}
+              />
+            )}
+          </div>
+        </SuitePanel>
+      )}
+
+      {/* ── SUBMISSION INTAKE — selected tenderer's documents + parsed totals ── */}
+      {!loading && selected && (
+        <SubmissionIntake
+          tenderer={selected}
+          workspaceId={workspaceId}
+          projectId={projectId}
+        />
       )}
     </div>
   )

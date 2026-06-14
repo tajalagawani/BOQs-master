@@ -34,19 +34,19 @@ export default async function AiExperimentPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-white px-6 py-8">
+    <div className="p-4 sm:p-6">
       <div className="mx-auto max-w-6xl">
         <header className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-zinc-900">AI Experiment</h1>
-            <p className="mt-1 text-[13px] text-zinc-500">
+            <h1 className="text-xl font-semibold text-suite-ink">AI Experiment</h1>
+            <p className="mt-1 text-[13px] text-suite-ink-2">
               Every RatesX AI message is logged — volume, tokens, per-user activity,
               tool hit-rate, and feedback (including messages with none).
             </p>
           </div>
           <a
             href="/api/platform/ai-experiment/export"
-            className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-[12.5px] font-medium text-zinc-700 hover:bg-zinc-50"
+            className="shrink-0 rounded-md border border-suite-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-suite-ink-2 hover:bg-suite-card-soft hover:text-suite-ink"
           >
             Export CSV
           </a>
@@ -55,33 +55,33 @@ export default async function AiExperimentPage() {
         {/* KPI cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {kpis.map((k) => (
-            <div key={k.label} className="rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-3">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <div key={k.label} className="rounded-xl border border-suite-line bg-white px-3.5 py-3">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-suite-ink-3">
                 {k.label}
               </div>
-              <div className="mt-1 text-xl font-semibold tabular-nums text-zinc-900">{k.value}</div>
-              {k.sub ? <div className="mt-0.5 text-[11px] text-zinc-400">{k.sub}</div> : null}
+              <div className="mt-1 text-xl font-semibold suite-num text-suite-ink">{k.value}</div>
+              {k.sub ? <div className="mt-0.5 text-[11px] text-suite-ink-3">{k.sub}</div> : null}
             </div>
           ))}
         </div>
 
         {/* Activity over time */}
         <section className="mb-6">
-          <h2 className="mb-2 text-[13px] font-semibold text-zinc-800">Messages / day (last 30 days)</h2>
+          <h2 className="mb-2 text-[13px] font-semibold text-suite-ink">Messages / day (last 30 days)</h2>
           {d.timeseries.length === 0 ? (
-            <p className="rounded-lg border border-zinc-200 px-3 py-6 text-center text-[13px] text-zinc-400">
+            <p className="rounded-lg border border-suite-line bg-white px-3 py-6 text-center text-[13px] text-suite-ink-3">
               No activity yet.
             </p>
           ) : (
-            <div className="flex h-32 items-end gap-1 rounded-xl border border-zinc-200 p-3">
+            <div className="flex h-32 items-end gap-1 rounded-xl border border-suite-line bg-white p-3">
               {d.timeseries.map((t) => (
                 <div key={t.day} className="group relative flex flex-1 flex-col items-center justify-end">
                   <div
-                    className="w-full rounded-t bg-zinc-800/85 transition-colors group-hover:bg-zinc-900"
+                    className="w-full rounded-t bg-suite-navy/85 transition-colors group-hover:bg-suite-navy"
                     style={{ height: `${Math.max(4, (t.messages / maxDay) * 100)}%` }}
                     title={`${t.day}: ${t.messages} msgs · ${fmt(t.tokens)} tokens`}
                   />
-                  <span className="mt-1 hidden text-[9px] text-zinc-400 lg:block">{t.day.slice(5)}</span>
+                  <span className="mt-1 hidden text-[9px] text-suite-ink-3 lg:block">{t.day.slice(5)}</span>
                 </div>
               ))}
             </div>
@@ -90,43 +90,43 @@ export default async function AiExperimentPage() {
 
         {/* Per-user */}
         <section className="mb-6">
-          <h2 className="mb-2 text-[13px] font-semibold text-zinc-800">By user</h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <h2 className="mb-2 text-[13px] font-semibold text-suite-ink">By user</h2>
+          <div className="suite-tbl bg-white">
             <table className="w-full border-collapse text-left text-[13px]">
               <thead>
-                <tr className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
-                  <th className="px-3 py-2.5 font-medium">User</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Messages</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Tokens</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Avg latency</th>
-                  <th className="px-3 py-2.5 text-right font-medium">👍 / 👎</th>
-                  <th className="px-3 py-2.5 text-right font-medium">No feedback</th>
-                  <th className="px-3 py-2.5 font-medium">Last active</th>
+                <tr>
+                  <th className="font-medium">User</th>
+                  <th className="r font-medium">Messages</th>
+                  <th className="r font-medium">Tokens</th>
+                  <th className="r font-medium">Avg latency</th>
+                  <th className="r font-medium">👍 / 👎</th>
+                  <th className="r font-medium">No feedback</th>
+                  <th className="font-medium">Last active</th>
                 </tr>
               </thead>
               <tbody>
                 {d.perUser.map((u) => (
-                  <tr key={u.email} className="border-t border-zinc-100">
-                    <td className="px-3 py-2.5 text-zinc-700">{u.email}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{fmt(u.messages)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-500">
+                  <tr key={u.email}>
+                    <td className="text-suite-ink-2">{u.email}</td>
+                    <td className="r suite-num text-suite-ink">{fmt(u.messages)}</td>
+                    <td className="r suite-num text-suite-ink-3">
                       {fmt(u.tokensIn + u.tokensOut)}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-500">
+                    <td className="r suite-num text-suite-ink-3">
                       {(u.avgLatency / 1000).toFixed(1)}s
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">
-                      <span className="text-emerald-600">{u.up}</span>
-                      <span className="text-zinc-300"> / </span>
-                      <span className="text-red-600">{u.down}</span>
+                    <td className="r suite-num">
+                      <span className="text-suite-good">{u.up}</span>
+                      <span className="text-suite-ink-4"> / </span>
+                      <span className="text-suite-dang">{u.down}</span>
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-amber-600">{u.noFeedback}</td>
-                    <td className="px-3 py-2.5 text-[12px] text-zinc-500">{u.lastActive}</td>
+                    <td className="r suite-num text-suite-warn">{u.noFeedback}</td>
+                    <td className="text-[12px] text-suite-ink-3">{u.lastActive}</td>
                   </tr>
                 ))}
                 {d.perUser.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-zinc-400">No users yet.</td>
+                    <td colSpan={7} className="py-8 text-center text-suite-ink-3">No users yet.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -136,27 +136,27 @@ export default async function AiExperimentPage() {
 
         {/* Tool usage */}
         <section className="mb-6">
-          <h2 className="mb-2 text-[13px] font-semibold text-zinc-800">
-            Tool usage <span className="font-normal text-zinc-400">— high no-data % = data gaps to fill</span>
+          <h2 className="mb-2 text-[13px] font-semibold text-suite-ink">
+            Tool usage <span className="font-normal text-suite-ink-3">— high no-data % = data gaps to fill</span>
           </h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <div className="suite-tbl bg-white">
             <table className="w-full border-collapse text-left text-[13px]">
               <thead>
-                <tr className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
-                  <th className="px-3 py-2.5 font-medium">Tool</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Calls</th>
-                  <th className="px-3 py-2.5 text-right font-medium">No-data</th>
-                  <th className="px-3 py-2.5 text-right font-medium">No-data %</th>
+                <tr>
+                  <th className="font-medium">Tool</th>
+                  <th className="r font-medium">Calls</th>
+                  <th className="r font-medium">No-data</th>
+                  <th className="r font-medium">No-data %</th>
                 </tr>
               </thead>
               <tbody>
                 {d.tools.map((t) => (
-                  <tr key={t.name} className="border-t border-zinc-100">
-                    <td className="px-3 py-2.5 font-mono text-[12px] text-zinc-700">{t.name}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{fmt(t.calls)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-500">{fmt(t.noData)}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">
-                      <span className={t.calls && t.noData / t.calls > 0.4 ? "text-red-600" : "text-zinc-500"}>
+                  <tr key={t.name}>
+                    <td className="suite-num text-[12px] text-suite-ink-2">{t.name}</td>
+                    <td className="r suite-num text-suite-ink">{fmt(t.calls)}</td>
+                    <td className="r suite-num text-suite-ink-3">{fmt(t.noData)}</td>
+                    <td className="r suite-num">
+                      <span className={t.calls && t.noData / t.calls > 0.4 ? "text-suite-dang" : "text-suite-ink-3"}>
                         {t.calls ? Math.round((t.noData / t.calls) * 100) : 0}%
                       </span>
                     </td>
@@ -164,7 +164,7 @@ export default async function AiExperimentPage() {
                 ))}
                 {d.tools.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-zinc-400">No tool calls yet.</td>
+                    <td colSpan={4} className="py-8 text-center text-suite-ink-3">No tool calls yet.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -174,50 +174,50 @@ export default async function AiExperimentPage() {
 
         {/* Recent activity */}
         <section>
-          <h2 className="mb-2 text-[13px] font-semibold text-zinc-800">Recent messages</h2>
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <h2 className="mb-2 text-[13px] font-semibold text-suite-ink">Recent messages</h2>
+          <div className="suite-tbl bg-white">
             <table className="w-full border-collapse text-left align-top text-[13px]">
               <thead>
-                <tr className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
-                  <th className="px-3 py-2.5 font-medium">When</th>
-                  <th className="px-3 py-2.5 font-medium">User</th>
-                  <th className="px-3 py-2.5 font-medium">Question</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Tokens</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Latency</th>
-                  <th className="px-3 py-2.5 font-medium">Feedback</th>
+                <tr>
+                  <th className="font-medium">When</th>
+                  <th className="font-medium">User</th>
+                  <th className="font-medium">Question</th>
+                  <th className="r font-medium">Tokens</th>
+                  <th className="r font-medium">Latency</th>
+                  <th className="font-medium">Feedback</th>
                 </tr>
               </thead>
               <tbody>
                 {d.recent.map((m) => (
-                  <tr key={m.id} className="border-t border-zinc-100 align-top">
-                    <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-zinc-500">{m.createdAt}</td>
-                    <td className="px-3 py-2.5 text-[12px] text-zinc-600">{m.email ?? "—"}</td>
-                    <td className="px-3 py-2.5 text-zinc-800">
+                  <tr key={m.id} className="align-top">
+                    <td className="whitespace-nowrap text-[12px] text-suite-ink-3">{m.createdAt}</td>
+                    <td className="text-[12px] text-suite-ink-2">{m.email ?? "—"}</td>
+                    <td className="text-suite-ink">
                       <span className="line-clamp-2">{m.question}</span>
-                      {m.error ? <span className="ml-1 text-[11px] text-red-600">(error)</span> : null}
+                      {m.error ? <span className="ml-1 text-[11px] text-suite-dang">(error)</span> : null}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-500">
+                    <td className="r suite-num text-suite-ink-3">
                       {fmt(m.tokensIn + m.tokensOut)}
                     </td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-500">
+                    <td className="r suite-num text-suite-ink-3">
                       {(m.latencyMs / 1000).toFixed(1)}s
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td>
                       {m.vote === "up" ? (
-                        <span className="text-emerald-600">👍</span>
+                        <span className="text-suite-good">👍</span>
                       ) : m.vote === "down" ? (
-                        <span className="text-red-600" title={m.reason ?? ""}>
-                          👎 {m.reason ? <span className="text-[11px] text-red-700">{m.reason}</span> : null}
+                        <span className="text-suite-dang" title={m.reason ?? ""}>
+                          👎 {m.reason ? <span className="text-[11px] text-suite-dang">{m.reason}</span> : null}
                         </span>
                       ) : (
-                        <span className="text-zinc-300">—</span>
+                        <span className="text-suite-ink-4">—</span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {d.recent.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-zinc-400">No messages yet.</td>
+                    <td colSpan={6} className="py-8 text-center text-suite-ink-3">No messages yet.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -225,6 +225,6 @@ export default async function AiExperimentPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

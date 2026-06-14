@@ -4,7 +4,6 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import { Header } from "@/components/Header";
 import { getMasterplanWithCosts } from "@/lib/queries/masterplans";
 import {
   getCostModelEntries,
@@ -39,16 +38,13 @@ export default async function MasterplanDetailPage({
   ) as unknown as Parameters<typeof MasterplanDetailClient>[0]["costModelEntries"];
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <MasterplanDetailClient
-          masterplan={masterplan}
-          costModelEntries={costModelEntriesConverted}
-          savedVersion={savedVersion}
-          configurations={configurations}
-        />
-      </main>
-    </>
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <MasterplanDetailClient
+        masterplan={masterplan}
+        costModelEntries={costModelEntriesConverted}
+        savedVersion={savedVersion}
+        configurations={configurations}
+      />
+    </main>
   );
 }

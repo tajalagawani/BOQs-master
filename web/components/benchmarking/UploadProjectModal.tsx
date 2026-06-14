@@ -104,14 +104,14 @@ export default function UploadProjectModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+    <div className="suite fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="suite-shadow bg-suite-panel rounded-[18px] p-6 max-w-lg w-full">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Upload Benchmark Data</h2>
+          <h2 className="text-[18px] font-semibold text-suite-ink">Upload Benchmark Data</h2>
           <button
             onClick={handleClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-suite-card-soft rounded-full text-suite-ink-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,7 +119,7 @@ export default function UploadProjectModal({
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center gap-2">
+          <div className="bg-suite-dang-bg border border-suite-line text-suite-dang px-4 py-3 rounded-[10px] mb-4 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -127,7 +127,7 @@ export default function UploadProjectModal({
 
         {/* Success Message */}
         {result?.success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4 flex items-center gap-2">
+          <div className="bg-suite-good-bg border border-suite-line text-suite-good px-4 py-3 rounded-[10px] mb-4 flex items-center gap-2">
             <Check className="w-5 h-5 flex-shrink-0" />
             <span>{result.message} {result.projectsImported && `(${result.projectsImported} projects imported)`}</span>
           </div>
@@ -138,10 +138,10 @@ export default function UploadProjectModal({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-[12px] p-8 text-center cursor-pointer transition-colors ${
             file
-              ? "border-zinc-900 bg-zinc-900/5"
-              : "border-gray-300 hover:border-zinc-900 hover:bg-gray-50"
+              ? "border-suite-navy bg-suite-card-soft"
+              : "border-suite-line-2 hover:border-suite-navy hover:bg-suite-card-soft"
           }`}
         >
           <input
@@ -154,10 +154,10 @@ export default function UploadProjectModal({
 
           {file ? (
             <div className="flex flex-col items-center gap-3">
-              <FileSpreadsheet className="w-12 h-12 text-zinc-900" />
+              <FileSpreadsheet className="w-12 h-12 text-suite-navy" />
               <div>
-                <p className="font-medium text-gray-900">{file.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-suite-ink">{file.name}</p>
+                <p className="text-sm text-suite-ink-3">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
@@ -166,19 +166,19 @@ export default function UploadProjectModal({
                   e.stopPropagation();
                   setFile(null);
                 }}
-                className="text-sm text-red-600 hover:text-red-700"
+                className="text-sm text-suite-dang hover:opacity-80"
               >
                 Remove file
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <Upload className="w-12 h-12 text-gray-400" />
+              <Upload className="w-12 h-12 text-suite-ink-4" />
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-suite-ink">
                   Drop your Excel file here
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-suite-ink-3">
                   or click to browse (.xlsx, .xls, .csv)
                 </p>
               </div>
@@ -187,9 +187,9 @@ export default function UploadProjectModal({
         </div>
 
         {/* Expected Format Info */}
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-          <p className="text-sm text-blue-700 font-medium mb-1">Expected Format:</p>
-          <ul className="text-xs text-blue-600 list-disc list-inside space-y-1">
+        <div className="mt-4 bg-suite-blue-soft border border-suite-line rounded-[10px] p-3">
+          <p className="text-sm text-suite-blue font-medium mb-1">Expected Format:</p>
+          <ul className="text-xs text-suite-blue list-disc list-inside space-y-1">
             <li>Columns: Project names (e.g., "PROJECT 1 Low Rise")</li>
             <li>Rows: NRM categories (Substructure, Superstructure, etc.)</li>
             <li>Values: Cost per GFA rates</li>
@@ -201,14 +201,14 @@ export default function UploadProjectModal({
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+            className="px-[15px] h-9 text-[12.5px] font-semibold text-suite-ink-2 bg-white border border-suite-line-2 hover:border-suite-ink-4 rounded-full inline-flex items-center"
           >
             Cancel
           </button>
           <button
             onClick={handleUpload}
             disabled={!file || isUploading}
-            className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-[15px] h-9 text-[12.5px] font-semibold text-white bg-suite-btn border border-suite-btn hover:bg-suite-navy-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isUploading ? (
               <>

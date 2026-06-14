@@ -122,11 +122,11 @@ function Section({
   }
 
   return (
-    <section className="bg-white border border-zinc-200 rounded-2xl p-5">
+    <section className="bg-white border border-suite-line rounded-2xl p-5">
       <header className="flex items-start justify-between gap-3 mb-4">
         <div className="min-w-0">
-          <h2 className="text-[14px] font-semibold text-zinc-900">{section.title}</h2>
-          <p className="mt-0.5 text-[12px] text-zinc-500 leading-relaxed max-w-3xl">
+          <h2 className="text-[14px] font-semibold text-suite-ink">{section.title}</h2>
+          <p className="mt-0.5 text-[12px] text-suite-ink-2 leading-relaxed max-w-3xl">
             {section.description}
           </p>
         </div>
@@ -134,7 +134,7 @@ function Section({
           type="button"
           onClick={onTest}
           disabled={testing}
-          className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white text-[11.5px] font-medium text-zinc-700 hover:border-zinc-300 hover:text-zinc-900 disabled:opacity-50 shrink-0"
+          className="h-8 px-3 inline-flex items-center gap-1.5 rounded-full border border-suite-line bg-white text-[11.5px] font-medium text-suite-ink-2 hover:border-suite-line-2 hover:text-suite-ink disabled:opacity-50 shrink-0"
         >
           {testing ? (
             <Loader2 className="size-3 animate-spin" strokeWidth={2} />
@@ -150,8 +150,8 @@ function Section({
           className={cn(
             "mb-4 px-3 py-2 rounded-md border text-[12px] flex items-start gap-2",
             testResult.ok
-              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-              : "bg-rose-50 border-rose-200 text-rose-900",
+              ? "bg-suite-good-bg border-suite-line text-suite-good"
+              : "bg-suite-dang-bg border-suite-line text-suite-dang",
           )}
         >
           {testResult.ok ? (
@@ -176,11 +176,11 @@ function Section({
           return (
             <div key={f.key} className="grid grid-cols-1 md:grid-cols-[180px,1fr] gap-2 md:gap-4 items-start">
               <div className="md:pt-2">
-                <label htmlFor={f.key} className="text-[12px] font-medium text-zinc-800">
+                <label htmlFor={f.key} className="text-[12px] font-medium text-suite-ink">
                   {f.label}
                 </label>
                 {f.hint && (
-                  <p className="text-[10.5px] text-zinc-500 mt-0.5 leading-snug">{f.hint}</p>
+                  <p className="text-[10.5px] text-suite-ink-2 mt-0.5 leading-snug">{f.hint}</p>
                 )}
               </div>
               <div className="relative">
@@ -193,8 +193,8 @@ function Section({
                   autoComplete="off"
                   spellCheck={false}
                   className={cn(
-                    "w-full h-9 px-3 text-[12.5px] bg-zinc-50 border border-zinc-200 rounded-md",
-                    "placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400",
+                    "w-full h-9 px-3 text-[12.5px] bg-suite-card-soft border border-suite-line rounded-md",
+                    "placeholder:text-suite-ink-3 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2",
                     isSecret && "font-mono",
                   )}
                 />
@@ -202,7 +202,7 @@ function Section({
                   <button
                     type="button"
                     onClick={() => setRevealed((p) => ({ ...p, [f.key]: !p[f.key] }))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 size-6 inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 size-6 inline-flex items-center justify-center text-suite-ink-3 hover:text-suite-ink"
                     aria-label={revealed[f.key] ? "Hide" : "Reveal"}
                   >
                     {revealed[f.key] ? (
@@ -215,7 +215,7 @@ function Section({
                 <div className="mt-1 flex items-center gap-2 text-[10.5px]">
                   <StatusBadge row={row} />
                   {row?.updatedAt && (
-                    <span className="text-zinc-400">
+                    <span className="text-suite-ink-3">
                       Updated {new Date(row.updatedAt).toLocaleString()}
                       {row.updatedBy ? ` · by ${row.updatedBy}` : ""}
                     </span>
@@ -226,11 +226,11 @@ function Section({
           );
         })}
 
-        <div className="flex items-center gap-3 pt-2 border-t border-zinc-100">
+        <div className="flex items-center gap-3 pt-2 border-t border-suite-line-soft">
           <button
             type="submit"
             disabled={saving}
-            className="h-9 px-4 inline-flex items-center gap-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-[12.5px] font-medium disabled:opacity-50"
+            className="h-9 px-4 inline-flex items-center gap-1.5 rounded-full bg-suite-navy hover:bg-suite-navy-2 text-white text-[12.5px] font-medium disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="size-3 animate-spin" strokeWidth={2} />
@@ -243,7 +243,7 @@ function Section({
             <div
               className={cn(
                 "text-[11.5px]",
-                result.ok ? "text-emerald-700" : "text-rose-700",
+                result.ok ? "text-suite-good" : "text-suite-dang",
               )}
             >
               {result.ok
@@ -251,7 +251,7 @@ function Section({
                 : result.errors.join(", ")}
             </div>
           )}
-          <p className="ml-auto text-[10.5px] text-zinc-400">
+          <p className="ml-auto text-[10.5px] text-suite-ink-3">
             Empty field → clears the override (env / default re-takes effect)
           </p>
         </div>
@@ -263,13 +263,13 @@ function Section({
 function StatusBadge({ row }: { row?: SettingRow }) {
   if (!row || !row.isSet) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 ring-1 ring-zinc-200 text-zinc-600 px-1.5 h-4.5 font-medium">
+      <span className="inline-flex items-center gap-1 rounded-full bg-suite-neut-bg ring-1 ring-suite-line text-suite-neut px-1.5 h-4.5 font-medium">
         empty
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 px-1.5 h-4.5 font-medium">
+    <span className="inline-flex items-center gap-1 rounded-full bg-suite-good-bg ring-1 ring-suite-line text-suite-good px-1.5 h-4.5 font-medium">
       set
     </span>
   );

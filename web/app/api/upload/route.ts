@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ensureRunDir, inputPath } from "@/lib/paths";
 import { writeMeta } from "@/lib/runMeta";
 import { createProject, projectNameFromFile } from "@/lib/projectStore";
+import { xlsxRejectionReason } from "@/lib/xlsxGuard";
 
 export const runtime = "nodejs";
 
@@ -21,9 +22,18 @@ export async function POST(req: Request) {
     );
   }
 
+  const buf = Buffer.from(await file.arrayBuffer());
+
+  // A .xlsx name proves nothing — validate the actual bytes are an OOXML (zip)
+  // workbook before we persist a run, so placeholders / renamed files / legacy
+  // .xls never reach the review + coding pipeline.
+  const reason = xlsxRejectionReason(buf);
+  if (reason) {
+    return NextResponse.json({ error: reason }, { status: 400 });
+  }
+
   const runId = uuidv4().slice(0, 8);
   await ensureRunDir(runId);
-  const buf = Buffer.from(await file.arrayBuffer());
   await fs.writeFile(inputPath(runId), buf);
 
   await writeMeta(runId, {

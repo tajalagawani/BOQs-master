@@ -3,31 +3,32 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  Fragment,
   useState,
   useTransition,
   type ReactNode,
 } from "react"
 import {
-  LayoutGrid,
-  Bell,
-  Search,
-  User,
-  Info,
   ChevronDown,
-  Home,
-  Settings,
-  Globe,
   Briefcase,
   Folder,
   Users,
   Calendar,
   UserPlus,
   X,
-  Check,
-  FileSpreadsheet,
 } from "lucide-react"
 import { Label, ListBox, Select } from "@heroui/react"
+
+import { ProcurexWizardShell, PROCUREX_STEPS, SuiteButton } from "@/components/suite"
+
+/** The product's own step labels (preserved verbatim) shown in the suite rail. */
+const STEP_LABELS = [
+  "Project Information",
+  "Tender Documents & PTE",
+  "Tenderer Upload",
+  "Configure",
+  "Results Overview",
+  "Reports",
+]
 
 import type { Project } from "@/modules/procurex/projects"
 import { updateProject } from "@/modules/procurex/projects/actions"
@@ -43,181 +44,39 @@ import {
 import { Step5ResultsOverview } from "./step-5-results-overview"
 import { Step6Reports } from "./step-6-reports"
 
-const STEPS = [
-  "Project Information",
-  "Tender Documents & PTE",
-  "Tenderer Upload",
-  "Configure",
-  "Results Overview",
-  "Reports",
+/** Per-step hero copy. The 6 step labels live in PROCUREX_STEPS (the rail). */
+const STEP_HERO: { title: string; subtitle: string }[] = [
+  {
+    title: "Project & Contract",
+    subtitle:
+      "Define the project context, contract basis and the people who own this tender.",
+  },
+  {
+    title: "Tender Documents",
+    subtitle:
+      "Assemble the issued tender set — the priced-spine BOQ and the documents bidders price against.",
+  },
+  {
+    title: "Tenderers & Submissions",
+    subtitle:
+      "Register each bidder and intake their full return — priced BOQ, Form of Tender, and cover letter. Ranking follows after analysis.",
+  },
+  {
+    title: "Analysis Config",
+    subtitle:
+      "Set the rules the comparison runs under — adjustments, treatment of unpriced items and the compliance baseline.",
+  },
+  {
+    title: "Tender Review",
+    subtitle:
+      "Compare the submissions side by side and resolve the findings the analysis surfaced.",
+  },
+  {
+    title: "Report & PTC",
+    subtitle:
+      "Generate the tender report and the post-tender clarifications pack.",
+  },
 ]
-
-function GlobalNav({ projectId }: { projectId?: string }) {
-  return (
-    <div className="flex gap-[24px] h-[80px] items-start w-full">
-      <div className="flex flex-col items-start w-[96px]">
-        <div className="bg-white flex flex-col gap-[16px] items-center p-[16px] rounded-br-[8px] w-[96px]">
-          <div className="flex flex-col items-center justify-center px-[16px] py-[8px] rounded-[8px] w-[48px]">
-            <div className="flex flex-col items-center justify-center rounded-[8px] size-[32px]">
-              <LayoutGrid className="size-[16px] text-black" />
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center">
-            <div className="flex gap-[16px] items-center pb-[8px]">
-              <p
-                className="font-medium text-[#142845] text-[16px] tracking-[-1.12px] leading-[21px]"
-                style={{ fontFamily: "Poppins, sans-serif" }}
-              >
-                ProcureX
-              </p>
-            </div>
-            <div className="flex flex-col gap-[16px] items-start">
-              <div className="bg-white flex flex-col items-center justify-center rounded-[5.333px] size-[32px]">
-                <Home className="size-[16px] text-[#142845]" />
-              </div>
-              <div className="bg-[#e2edf7] flex flex-col items-center justify-center rounded-[5.333px] size-[32px]">
-                <Settings className="size-[16px] text-[#142845]" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col h-full items-start justify-end px-[24px]">
-        <div className="bg-[#e2edf7] flex h-[24px] items-center justify-center px-[8px] rounded-[8px] gap-[8px]">
-          <div className="flex gap-[4px] items-center w-[139px]">
-            <User className="size-[16px] text-black" />
-            <p className="font-normal text-[12px] text-black leading-[16px]">
-              QS Workspace View
-            </p>
-          </div>
-          <Info className="size-[16px] text-black" />
-          <ChevronDown className="size-[16px] text-black" />
-        </div>
-      </div>
-
-      <div className="grid flex-1 grid-cols-3 items-center px-[24px] py-[16px]">
-        <div />
-        <div className="flex justify-center">
-          <div className="bg-white border border-[#e9e9e9] flex h-[48px] items-center justify-between px-[16px] rounded-[16px] w-[400px]">
-            <p className="italic text-[#555] text-[14px] leading-[24px]">
-              Search for anything tender related
-            </p>
-            <Search className="size-[16px] text-[#555]" />
-          </div>
-        </div>
-
-        <div className="flex gap-[8px] items-center justify-end">
-          {projectId ? (
-            <Link
-              href={`/procurex/projects/${projectId}/boq`}
-              className="bg-white flex flex-col items-center justify-center rounded-[8px] size-[40px] hover:bg-[#f3f4f5]"
-              title="View imported BoQ"
-            >
-              <FileSpreadsheet className="size-[16px] text-black" />
-            </Link>
-          ) : null}
-          <div className="bg-white flex flex-col items-center justify-center rounded-[8px] size-[40px] relative">
-            <Bell className="size-[16px] text-black" />
-            <div className="absolute bg-[#f8ccd7] flex h-[12px] items-center justify-center left-[22px] px-[6px] rounded-[12px] top-[2px]">
-              <p className="font-semibold text-[8px] text-black leading-[8px]">1</p>
-            </div>
-          </div>
-
-          <div className="bg-white relative rounded-[8px] size-[40px]">
-            <div className="absolute inset-[10%] flex items-center justify-center">
-              <div className="rounded-full size-[32px] bg-gradient-to-br from-[#e2edf7] to-[#c9d8ea] flex items-center justify-center">
-                <p className="font-normal text-[#142845] text-[12px] leading-[16px]">
-                  DM
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white flex flex-col items-center justify-center rounded-[8px] size-[40px]">
-            <Globe className="size-[19.2px] text-black" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StepperBar({
-  current,
-  onChange,
-}: {
-  current: number
-  onChange: (n: number) => void
-}) {
-  return (
-    <div className="flex h-[128px] items-center px-[48px] py-[24px] w-full gap-[24px]">
-      <div className="flex flex-col gap-[8px] items-start w-[144px] shrink-0">
-        <h1 className="font-semibold text-[#141414] text-[16px] leading-[24px]">
-          Tender Setup
-        </h1>
-        <p className="italic font-normal text-[#343434] text-[12px] leading-[18px] opacity-90">
-          Define project context &amp; tender parameters
-        </p>
-      </div>
-      <div className="flex flex-1 items-start px-[40px]">
-        {STEPS.map((label, idx) => {
-          const n = idx + 1
-          const active = n === current
-          const done = n < current
-          return (
-            <Fragment key={label}>
-              <button
-                type="button"
-                onClick={() => onChange(n)}
-                className="flex flex-col items-center gap-[8px] shrink-0 cursor-pointer focus:outline-none group"
-              >
-                <div
-                  className={`size-[24px] rounded-full flex items-center justify-center border transition-colors ${
-                    active
-                      ? "bg-[#142845] border-[#142845]"
-                      : done
-                        ? "bg-emerald-500 border-emerald-500"
-                        : "bg-white border-[#d9d9d9] group-hover:border-[#142845]"
-                  }`}
-                >
-                  {done ? (
-                    <Check className="size-[14px] text-white" strokeWidth={3} />
-                  ) : (
-                    <span
-                      className={`font-medium text-[14px] leading-[21px] ${
-                        active ? "text-white" : "text-[#142845]"
-                      }`}
-                      style={{ fontFamily: "Roboto, sans-serif" }}
-                    >
-                      {n}
-                    </span>
-                  )}
-                </div>
-                <p
-                  className={`text-[#142845] text-[12px] text-center whitespace-nowrap ${
-                    active
-                      ? "font-medium leading-[16px]"
-                      : "font-normal leading-[18px]"
-                  }`}
-                >
-                  {label}
-                </p>
-              </button>
-              {idx < STEPS.length - 1 && (
-                <div
-                  className={`h-[2px] rounded-[16px] flex-1 min-w-[24px] mt-[11px] mx-[12px] ${
-                    done ? "bg-emerald-500" : "bg-[#d9d9d9]"
-                  }`}
-                />
-              )}
-            </Fragment>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
 interface FormInputProps {
   label: string
@@ -516,15 +375,33 @@ export function TenderSetup({ project, initialStep = 1 }: TenderSetupProps = {})
   }
 
 
-  return (
-    <div className="bg-[#f8f8f8] min-h-screen relative pb-[120px]">
-      <div className="w-full sticky top-0 z-50 bg-[#f8f8f8]">
-        <GlobalNav projectId={project?.id} />
-      </div>
+  const heroName =
+    project?.name && project.name !== "Untitled tender"
+      ? project.name
+      : projectName.trim() || "New tender"
+  const hero = STEP_HERO[step - 1] ?? STEP_HERO[0]
+  const pillMeta = [currency || null, project?.status ?? null]
+    .filter((s): s is string => Boolean(s))
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(" · ")
 
-      <div className="w-[1360px] mx-auto">
-        <StepperBar current={step} onChange={goToStep} />
-      </div>
+  return (
+    <ProcurexWizardShell
+      project={{ name: heroName, meta: pillMeta || undefined }}
+      step={step - 1}
+      steps={STEP_LABELS}
+      title={hero.title}
+      subtitle={hero.subtitle}
+      onStep={(index) => goToStep(index + 1)}
+      actions={
+        project?.id ? (
+          <SuiteButton href={`/procurex/projects/${project.id}/boq`}>
+            View imported BoQ
+          </SuiteButton>
+        ) : undefined
+      }
+    >
+      <div className="relative pb-[120px]">
 
       {step === 2 && (
         <Step2TenderDocuments
@@ -788,7 +665,7 @@ export function TenderSetup({ project, initialStep = 1 }: TenderSetupProps = {})
             if (onStep4 && step4SubStep < STEP_4_SUB_STEP_COUNT) {
               setStep4SubStep((s) => s + 1)
             } else {
-              const next = Math.min(STEPS.length, step + 1)
+              const next = Math.min(PROCUREX_STEPS.length, step + 1)
               setStep4SubStep(1)
               goToStep(next)
             }
@@ -817,6 +694,7 @@ export function TenderSetup({ project, initialStep = 1 }: TenderSetupProps = {})
         })()}
       </div>
       )}
-    </div>
+      </div>
+    </ProcurexWizardShell>
   )
 }

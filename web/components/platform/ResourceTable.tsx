@@ -82,23 +82,23 @@ export function ResourceTable({ resources }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-zinc-200 rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-suite-line rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search
-            className="size-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2"
+            className="size-3.5 text-suite-ink-4 absolute left-3 top-1/2 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, type, tag…"
-            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-zinc-50 border border-zinc-200 rounded-md placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400"
+            className="w-full h-9 pl-9 pr-9 text-[12.5px] bg-suite-card-soft border border-suite-line rounded-md placeholder:text-suite-ink-4 focus:outline-none focus:ring-2 focus:ring-suite-navy/10 focus:border-suite-line-2"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-zinc-400 hover:text-zinc-700"
+              className="absolute right-2 top-1/2 -translate-y-1/2 size-5 inline-flex items-center justify-center text-suite-ink-4 hover:text-suite-ink-2"
               aria-label="Clear search"
             >
               <X className="size-3.5" strokeWidth={2} />
@@ -107,13 +107,13 @@ export function ResourceTable({ resources }: Props) {
         </div>
 
         <div className="inline-flex items-center gap-1.5">
-          <span className="text-[10.5px] uppercase tracking-wide text-zinc-500 font-medium">
+          <span className="text-[10.5px] uppercase tracking-wide text-suite-ink-3 font-medium">
             <Layers className="inline size-3 mr-1" strokeWidth={1.75} /> Type
           </span>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="h-7 px-2 text-[11.5px] bg-zinc-100 rounded-md border-0 focus:ring-2 focus:ring-zinc-900/10 max-w-[220px]"
+            className="h-7 px-2 text-[11.5px] bg-suite-card-soft rounded-md border-0 focus:ring-2 focus:ring-suite-navy/10 max-w-[220px]"
           >
             {types.map((t) => (
               <option key={t} value={t}>
@@ -123,14 +123,14 @@ export function ResourceTable({ resources }: Props) {
           </select>
         </div>
 
-        <div className="ml-auto text-[11.5px] text-zinc-500 tabular-nums">
+        <div className="ml-auto text-[11.5px] text-suite-ink-3 suite-num">
           {filtered.length} of {resources.length}
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+      <div className="suite-tbl bg-white">
         <table className="w-full text-[12.5px]">
-          <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 text-[11px] uppercase tracking-wide">
+          <thead className="bg-suite-card-soft border-b border-suite-line text-suite-ink-3 text-[11px] uppercase tracking-wide">
             <tr>
               <Th sortable onClick={() => toggleSort("typeLabel")} active={sortKey === "typeLabel"} dir={sortDir}>
                 Type
@@ -146,42 +146,42 @@ export function ResourceTable({ resources }: Props) {
               <Th>Portal</Th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100">
+          <tbody className="divide-y divide-suite-line-soft">
             {filtered.map((r) => (
-              <tr key={r.id} className="hover:bg-zinc-50/60">
+              <tr key={r.id} className="hover:bg-suite-card-soft">
                 <td className="px-3 py-2.5 whitespace-nowrap">
-                  <span className="inline-flex items-center gap-2 text-zinc-700">
-                    <span className="size-7 rounded-lg bg-zinc-100 inline-flex items-center justify-center text-zinc-600">
+                  <span className="inline-flex items-center gap-2 text-suite-ink-2">
+                    <span className="size-7 rounded-lg bg-suite-card-soft inline-flex items-center justify-center text-suite-ink-2">
                       {ICONS[r.typeLabel] ?? <Layers className="size-3.5" strokeWidth={1.75} />}
                     </span>
                     {r.typeLabel}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-medium text-zinc-900 max-w-[280px]">
+                <td className="px-3 py-2.5 font-medium text-suite-ink max-w-[280px]">
                   <div className="truncate" title={r.name}>
                     {r.name}
                   </div>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-zinc-600">{r.location}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap text-suite-ink-2">{r.location}</td>
                 <td className="px-3 py-2.5">
                   <div className="flex flex-wrap items-center gap-1 max-w-[260px]">
                     {Object.entries(r.tags).length === 0 ? (
-                      <span className="text-[10.5px] text-zinc-400">—</span>
+                      <span className="text-[10.5px] text-suite-ink-4">—</span>
                     ) : (
                       Object.entries(r.tags).map(([k, v]) => (
                         <span
                           key={k}
-                          className="inline-flex items-center gap-1 text-[10.5px] bg-zinc-100 rounded px-1.5 py-0.5"
+                          className="inline-flex items-center gap-1 text-[10.5px] bg-suite-neut-bg rounded px-1.5 py-0.5"
                           title={`${k}=${v}`}
                         >
-                          <span className="text-zinc-500">{k}</span>
-                          <span className="text-zinc-900 font-medium">{v}</span>
+                          <span className="text-suite-ink-3">{k}</span>
+                          <span className="text-suite-ink font-medium">{v}</span>
                         </span>
                       ))
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap text-zinc-600 text-[11.5px]">
+                <td className="px-3 py-2.5 whitespace-nowrap text-suite-ink-2 text-[11.5px] suite-num">
                   {r.sku ?? "—"}
                 </td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
@@ -189,7 +189,7 @@ export function ResourceTable({ resources }: Props) {
                     href={r.portalUrl}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="inline-flex items-center gap-1 text-[11.5px] font-medium text-zinc-700 hover:text-zinc-900"
+                    className="inline-flex items-center gap-1 text-[11.5px] font-medium text-suite-ink-2 hover:text-suite-ink"
                   >
                     Open <ExternalLink className="size-2.5" strokeWidth={2} />
                   </a>
@@ -223,8 +223,8 @@ function Th({
         type="button"
         onClick={onClick}
         className={cn(
-          "inline-flex items-center gap-1 hover:text-zinc-900",
-          active && "text-zinc-900",
+          "inline-flex items-center gap-1 hover:text-suite-ink",
+          active && "text-suite-ink",
         )}
       >
         {children}
