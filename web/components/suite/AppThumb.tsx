@@ -1,7 +1,7 @@
 /**
  * 10X Suite — launcher card mini-previews.
  * Faithful ports of the `.mini` thumbnails in 10x-suite-launcher.html
- * (ProcureX rows + tender card, ParametriX massing, ControlX dashboard,
+ * (ioProcure rows + tender card, ParametriX massing, ControlX dashboard,
  * IntelleX map), generalised into reusable variants keyed by SuitePreview.
  *
  * Purely decorative chrome with a few real values threaded through `data`.
@@ -35,7 +35,7 @@ export function AppThumb({
   }
 }
 
-/* ── ProcureX — tender review + bidder card ─────────────────────────────── */
+/* ── ioProcure — tender review + bidder card ─────────────────────────────── */
 function TendersThumb({ data }: { data: ThumbData }) {
   return (
     <div className="absolute inset-0">
@@ -78,7 +78,7 @@ function TendersThumb({ data }: { data: ThumbData }) {
   );
 }
 
-/* ── BOQsX — priced spreadsheet ─────────────────────────────────────────── */
+/* ── ioTranslate — priced spreadsheet ─────────────────────────────────────────── */
 function BoqsThumb() {
   return (
     <div className="absolute inset-0">
@@ -124,7 +124,7 @@ function BoqsThumb() {
   );
 }
 
-/* ── CostX — parametric massing ─────────────────────────────────────────── */
+/* ── ioMaster — parametric massing ─────────────────────────────────────────── */
 function CostThumb({ data }: { data: ThumbData }) {
   return (
     <div className="absolute inset-0">
@@ -157,7 +157,7 @@ function CostThumb({ data }: { data: ThumbData }) {
   );
 }
 
-/* ── RatesX — benchmark dashboard ───────────────────────────────────────── */
+/* ── ioInsight — benchmark dashboard ───────────────────────────────────────── */
 function RatesThumb() {
   return (
     <div className="absolute inset-0">

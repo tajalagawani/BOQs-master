@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * RatesX → Library — the searchable rates catalogue, rehoused in the 10X Suite
+ * ioInsight → Library — the searchable rates catalogue, rehoused in the 10X Suite
  * shell. Navy topnav + hero, then a white suite panel that hosts the existing
  * full-height Omnium table workspace (sidebar + data table) UNCHANGED.
  *
@@ -42,7 +42,7 @@ export function RatesLibrarySuiteWorkspace({
         search={navSearch}
         onSearch={setNavSearch}
         searchPlaceholder="Search rates, projects, materials…"
-        crumb={<span className="font-semibold text-[#cdd6e6]">RatesX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioInsight</span>}
         notifications={1}
       />
 

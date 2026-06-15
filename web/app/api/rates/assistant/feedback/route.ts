@@ -1,5 +1,5 @@
 // POST /api/rates/assistant/feedback — record a thumbs up/down (with an
-// optional reason for downvotes) on a RatesX AI answer. Any signed-in user who
+// optional reason for downvotes) on a ioInsight AI answer. Any signed-in user who
 // can reach the chat may submit; superadmins review at /platform/feedback.
 import { canUseRatesAssistant, getCurrentUser } from "@/modules/core/authz"
 import { saveRatesFeedback } from "@/modules/rates/lib/feedback"

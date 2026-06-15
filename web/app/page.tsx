@@ -42,7 +42,7 @@ export default async function Home() {
   const apps: SuiteApp[] = [
     {
       key: "procurex",
-      title: "ProcureX",
+      title: "ioProcure",
       tag: "Tender analysis, accelerated",
       href: "/procurex",
       accent: "blue",
@@ -62,7 +62,7 @@ export default async function Home() {
     },
     {
       key: "boqsx",
-      title: "BOQsX",
+      title: "ioTranslate",
       tag: "Create, code and version BOQs",
       href: "/boqs",
       accent: "olive",
@@ -72,7 +72,7 @@ export default async function Home() {
     },
     {
       key: "costx",
-      title: "CostX",
+      title: "ioMaster",
       tag: "Parametric masterplan cost modelling",
       href: "/costx",
       accent: "amber",
@@ -86,7 +86,7 @@ export default async function Home() {
     },
     {
       key: "ratesx",
-      title: "RatesX",
+      title: "ioInsight",
       tag: "Construction rates intelligence",
       href: "/rates",
       accent: "green",
@@ -113,47 +113,7 @@ export default async function Home() {
         meta: pulse.hero.subtitle ?? "Portfolio",
       },
     },
-    // ── Coming soon ──
-    {
-      key: "planx",
-      title: "PlanX",
-      tag: "Intelligent cost models from live rates",
-      accent: "blue",
-      preview: "soon",
-      features: ["Live-rate cost models", "Scenario parameters"],
-    },
-    {
-      key: "benchmarking",
-      title: "Benchmarking",
-      tag: "Reference projects with NRM breakdowns",
-      accent: "green",
-      preview: "soon",
-      features: ["Calibrate new estimates", "NRM cost breakdowns"],
-    },
-    {
-      key: "rate-analysis",
-      title: "Rate Analysis",
-      tag: "The full cost-model library",
-      accent: "olive",
-      preview: "soon",
-      features: ["Every NRM line", "Every asset typology"],
-    },
-    {
-      key: "change-orders",
-      title: "Change Orders",
-      tag: "Scope changes, approvals and impacts",
-      accent: "amber",
-      preview: "soon",
-      features: ["Approval workflow", "Cost-impact tracking"],
-    },
-    {
-      key: "reports",
-      title: "Reports & Analytics",
-      tag: "Real-time insights and dashboards",
-      accent: "red",
-      preview: "soon",
-      features: ["Programme-wide reporting", "Live dashboards"],
-    },
+    // Coming-soon apps are intentionally hidden from the launcher.
   ];
 
   return (

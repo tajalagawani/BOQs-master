@@ -1,5 +1,5 @@
 /**
- * 10X Suite — ProcureX primitives.
+ * 10X Suite — ioProcure primitives.
  * Pixel-faithful ports of procurex-step3-10x-style.html, expressed in suite
  * tokens. These compose the tender-intelligence workspace (roster, intake,
  * extraction, deviations). Use the shared `.suite-tbl` for table chrome.

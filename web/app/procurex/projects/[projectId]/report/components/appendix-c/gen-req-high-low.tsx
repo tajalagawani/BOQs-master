@@ -108,7 +108,7 @@ export function GenReqHighLowBlock({
       id={id}
       title="General Requirements — High / Low rates"
       hint={`High/low flags on BoQ sections with \`pricing_mode='general_req'\` (Prelims, OH&P, contingencies). Threshold: ±${thresholdPct}%.`}
-      icon={<Activity className="size-[16px] text-[#142845]" />}
+      icon={<Activity className="size-[16px] text-suite-navy" />}
       rowCount={rowCount}
       emptyLabel={emptyLabel}
       toolbar={

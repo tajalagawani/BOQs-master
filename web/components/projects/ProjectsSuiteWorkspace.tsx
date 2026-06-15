@@ -4,7 +4,7 @@
  * Projects module home — rebuilt on the 10X Suite design system.
  * Navy topnav + hero, then a white roster panel: portfolio pulse tiles over a
  * searchable table of every project (Masterplans + Benchmarks). Faithful to the
- * BOQsX suite workspace; preserves the original kind / asset-class filters,
+ * ioTranslate suite workspace; preserves the original kind / asset-class filters,
  * the 10-row cap, the "showing N of M" note and every per-row datum + href.
  */
 import { useMemo, useState } from "react";
@@ -27,7 +27,7 @@ import {
 } from "@/components/suite";
 import type { ProjectPulseData } from "@/lib/pulse/types";
 
-// Same card textures as the CostX cards view, so projects read as siblings.
+// Same card textures as the ioMaster cards view, so projects read as siblings.
 const cardBackgrounds = [
   "/card-cost-planning.png",
   "/card-estimates.png",
@@ -129,7 +129,7 @@ export function ProjectsSuiteWorkspace({
           <>
             {filtered.length} of {projects.length} project
             {projects.length === 1 ? "" : "s"} — open a row to jump straight into
-            CostX or the benchmarking workspace.
+            ioMaster or the benchmarking workspace.
           </>
         }
         right={

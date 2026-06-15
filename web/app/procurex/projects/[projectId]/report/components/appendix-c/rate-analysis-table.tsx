@@ -1,5 +1,6 @@
 "use client"
 
+import { Delta } from "@/components/suite"
 import type { BoqRateAnalysisRow } from "@/modules/procurex/review/types"
 
 import { BodyTd, HeaderTh, TenderCell } from "./cross-bidder-table"
@@ -9,6 +10,10 @@ import { BodyTd, HeaderTh, TenderCell } from "./cross-bidder-table"
  * High / GR Low sub-blocks. Each row carries its own Tenderer column
  * — only rendered on the first row of each bidder group so the
  * column reads like a row-span.
+ *
+ * Restyled to the 10X suite tokens — variance reads through <Delta>
+ * (up=red / down=green) exactly like the App C rate tables in
+ * procurex-step6-10x-style.
  */
 
 export interface CrossBidderRateRow extends BoqRateAnalysisRow {
@@ -29,8 +34,8 @@ export function CrossBidderRateTable({
 }) {
   return (
     <table className="w-full text-[12px] border-collapse">
-      <thead className="sticky top-0 z-20 bg-[rgba(226,237,247,0.95)] backdrop-blur-sm print:static">
-        <tr className="bg-[rgba(226,237,247,0.5)]">
+      <thead className="sticky top-0 z-20 bg-suite-card-soft print:static">
+        <tr>
           <HeaderTh sticky width={200}>Tenderer</HeaderTh>
           <HeaderTh width={80}>Item ID</HeaderTh>
           <HeaderTh>Description</HeaderTh>
@@ -51,28 +56,30 @@ export function CrossBidderRateTable({
                 firstOfGroup={row.isFirstInGroup}
               />
             </BodyTd>
-            <BodyTd width={80} className="font-mono text-[#142845] text-[11px]" isGroupStart={row.isFirstInGroup}>
+            <BodyTd width={80} className="suite-num text-suite-ink-2 text-[11px]" isGroupStart={row.isFirstInGroup}>
               {row.itemRef}
             </BodyTd>
-            <BodyTd className="text-[#262626] text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
+            <BodyTd className="text-suite-ink text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
               <span className="line-clamp-2">{row.description}</span>
             </BodyTd>
-            <BodyTd width={70} className="text-[#555] text-[12px]" isGroupStart={row.isFirstInGroup}>
+            <BodyTd width={70} className="text-suite-ink-3 text-[12px]" isGroupStart={row.isFirstInGroup}>
               {row.unit}
             </BodyTd>
-            <BodyTd width={130} align="right" className="text-[#262626] text-[12px] tabular-nums" isGroupStart={row.isFirstInGroup}>
+            <BodyTd width={130} align="right" className="suite-num text-suite-ink text-[12px]" isGroupStart={row.isFirstInGroup}>
               {formatCents(row.rateCents)}
             </BodyTd>
-            <BodyTd width={130} align="right" className="text-[#555] text-[12px] tabular-nums" isGroupStart={row.isFirstInGroup}>
+            <BodyTd width={130} align="right" className="suite-num text-suite-ink-3 text-[12px]" isGroupStart={row.isFirstInGroup}>
               {formatCents(row.baselineCents)}
             </BodyTd>
             <BodyTd
               width={100}
               align="right"
-              className={`text-[12px] tabular-nums font-medium ${varianceToneClass(row.variancePct, variancePositiveIsBad)}`}
+              className="suite-num text-[12px]"
               isGroupStart={row.isFirstInGroup}
             >
-              {formatVariance(row.variancePct)}
+              <Delta dir={varianceDir(row.variancePct, variancePositiveIsBad)}>
+                {formatVariance(row.variancePct)}
+              </Delta>
             </BodyTd>
             <BodyTd width={100} align="right" isGroupStart={row.isFirstInGroup}>
               <PtcPill on={row.includeInPtc} />
@@ -87,14 +94,14 @@ export function CrossBidderRateTable({
 function PtcPill({ on }: { on: boolean }) {
   if (on) {
     return (
-      <span className="inline-flex items-center gap-[4px] bg-[#e8f5e9] text-[#1b5e20] text-[11px] px-[8px] py-[1px] rounded-[8px] font-medium">
-        <span className="size-[6px] rounded-full bg-[#1b5e20]" />
+      <span className="inline-flex items-center gap-[4px] bg-suite-good-bg text-suite-good text-[11px] px-[8px] py-[1px] rounded-full font-semibold">
+        <span className="size-[6px] rounded-full bg-suite-green" />
         Yes
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center bg-[#f5f5f5] text-[#666] text-[11px] px-[8px] py-[1px] rounded-[8px] font-medium">
+    <span className="inline-flex items-center bg-suite-neut-bg text-suite-neut text-[11px] px-[8px] py-[1px] rounded-full font-semibold">
       No
     </span>
   )
@@ -116,12 +123,11 @@ function formatVariance(pct: number | null): string {
   return `${sign}${pct.toFixed(1)}%`
 }
 
-function varianceToneClass(
+function varianceDir(
   pct: number | null,
   positiveIsBad: boolean,
-): string {
-  if (typeof pct !== "number") return "text-[#888]"
-  if (pct === 0) return "text-[#555]"
+): "up" | "down" | "flat" {
+  if (typeof pct !== "number" || pct === 0) return "flat"
   const isBad = positiveIsBad ? pct > 0 : pct < 0
-  return isBad ? "text-[#8b1c1c]" : "text-[#1b5e20]"
+  return isBad ? "up" : "down"
 }

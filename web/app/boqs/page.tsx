@@ -24,7 +24,7 @@ function timeAgo(iso?: string): string {
 }
 
 export default async function BoqsHome() {
-  // BOQ data is scoped by ProcureX workspace membership. Resolve the user id
+  // BOQ data is scoped by ioProcure workspace membership. Resolve the user id
   // when authenticated; fall back to the empty-state pulse otherwise so the
   // page still renders for anonymous/demo viewing.
   let userId: string | undefined;

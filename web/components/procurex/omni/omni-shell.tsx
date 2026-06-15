@@ -25,7 +25,7 @@ export function OmniShell({ children }: { children: React.ReactNode }) {
               className="text-[18px] leading-[24px] font-semibold tracking-tight"
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
-              ProcureX
+              ioProcure
             </span>
           </Link>
 

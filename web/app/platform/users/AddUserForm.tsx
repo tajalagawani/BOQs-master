@@ -129,7 +129,7 @@ export function AddUserForm() {
           className="h-4 w-4 rounded border-suite-line-2 text-suite-navy focus:ring-suite-navy"
         />
         <span className="text-[12.5px] text-suite-ink-2">
-          Enable RatesX AI assistant for this user
+          Enable ioInsight AI assistant for this user
         </span>
       </label>
 

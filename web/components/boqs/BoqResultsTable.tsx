@@ -1,7 +1,7 @@
 "use client";
 
 // BOQ results — the full-screen catalogue of every coded item, styled to match
-// the RatesX library (Omnium shell): a left sections sidebar + a dense table
+// the ioInsight library (Omnium shell): a left sections sidebar + a dense table
 // with sticky sortable headers, a per-column filter row, column show/hide, and
 // a compact pagination bar. Scoped by `.omnium-rates` so the shadcn tokens
 // (bg-card, text-foreground, accent, …) apply.
@@ -416,7 +416,7 @@ export function BoqResultsTable({
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search items…"
-        crumb={<span className="font-semibold text-[#cdd6e6]">BOQsX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioTranslate</span>}
         notifications={1}
       />
 

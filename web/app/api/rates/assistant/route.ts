@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   }
   if (!canUseRatesAssistant(me)) {
     return Response.json(
-      { error: "The RatesX AI assistant is in limited testing. Ask a super admin for access." },
+      { error: "The ioInsight AI assistant is in limited testing. Ask a super admin for access." },
       { status: 403 },
     );
   }

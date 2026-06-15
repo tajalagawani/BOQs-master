@@ -40,7 +40,7 @@ export default async function AiExperimentPage() {
           <div>
             <h1 className="text-xl font-semibold text-suite-ink">AI Experiment</h1>
             <p className="mt-1 text-[13px] text-suite-ink-2">
-              Every RatesX AI message is logged — volume, tokens, per-user activity,
+              Every ioInsight AI message is logged — volume, tokens, per-user activity,
               tool hit-rate, and feedback (including messages with none).
             </p>
           </div>

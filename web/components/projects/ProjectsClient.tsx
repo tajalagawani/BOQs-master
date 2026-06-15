@@ -134,7 +134,7 @@ export default function ProjectsClient({
             <>
               {filtered.length} of {projects.length} project
               {projects.length === 1 ? "" : "s"} — open a card to jump straight
-              into CostX or the benchmarking workspace.
+              into ioMaster or the benchmarking workspace.
             </>
           }
         />

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * 10X Suite — ProcureX wizard shell.
+ * 10X Suite — ioProcure wizard shell.
  * The persistent tender-workspace frame from procurex-step3-10x-style.html:
- * navy topnav (ProcureX / {project}) → navy hero with the project pill + the
+ * navy topnav (ioProcure / {project}) → navy hero with the project pill + the
  * 6-step rail → white panels floating up over the hero. Reused by every project
  * route; the active step is set by `step` (0-based).
  */
@@ -30,6 +30,7 @@ export function ProcurexWizardShell({
   title,
   subtitle,
   actions,
+  heroControls,
   onStep,
   children,
 }: {
@@ -43,6 +44,8 @@ export function ProcurexWizardShell({
   subtitle?: ReactNode;
   /** Optional hero actions (e.g. "View imported BoQ"), beside the project pill. */
   actions?: ReactNode;
+  /** Rich hero control cluster (segment/round/export), e.g. Step 6 report. */
+  heroControls?: ReactNode;
   /** Optional step click (e.g. navigate to a completed step's route). */
   onStep?: (index: number) => void;
   children: ReactNode;
@@ -54,7 +57,7 @@ export function ProcurexWizardShell({
       <SuiteTopNav
         crumb={
           <span className="flex items-center gap-2 text-[12.5px] text-[#9aa6bd]">
-            <span className="font-semibold text-[#cdd6e6]">ProcureX</span>
+            <span className="font-semibold text-[#cdd6e6]">ioProcure</span>
             {project?.name && (
               <>
                 <span className="opacity-50">/</span>
@@ -70,7 +73,7 @@ export function ProcurexWizardShell({
         {/* Navy hero + step rail */}
         <div className="suite-hero px-6 pb-[86px] pt-6">
           <div className="mx-auto max-w-[1220px]">
-            <div className="mb-[22px] flex items-end justify-between gap-6">
+            <div className="mb-[22px] flex flex-col items-start justify-between gap-4 @container @lg:flex-row @lg:items-end">
               <div className="min-w-0">
                 <h1 className="text-[27px] font-semibold tracking-[-0.01em] text-white">
                   {title}
@@ -81,11 +84,12 @@ export function ProcurexWizardShell({
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5 @lg:justify-end">
                 {project && (
                   <SuiteProjectPill label={project.name} meta={project.meta} accent="amber" />
                 )}
                 {actions}
+                {heroControls}
               </div>
             </div>
             <SuiteSteps steps={steps} current={step} onSelect={onStep} />

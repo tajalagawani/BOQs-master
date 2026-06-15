@@ -29,6 +29,41 @@ export {
   MiniStat,
 } from "./procurex";
 export type { SuiteTotalBox, SuiteDoc, DocState, MiniStatPart } from "./procurex";
+
+/* ioProcure report & PTC library (Step 6 + appendices) */
+export {
+  CodeInline,
+  InternalBadge,
+  Delta,
+  Rank,
+  Sum,
+  Adj,
+  HCard,
+  GBox,
+  PtcRoundCard,
+  SegControl,
+  SelPill,
+  HeroGhostBtn,
+  SourceTag,
+  PtcCheckbox,
+  SectionTitle,
+  SubTitle,
+  HeadlineCards,
+  MetaBand,
+  SectionNav,
+  RecBox,
+  Prose,
+  QsCommentRow,
+  PtcTimeline,
+  ClarRow,
+  ReportDeviationRow,
+  ConclusionsGate,
+  Legend,
+} from "./procurex-report";
+export type { HCardProps } from "./procurex-report";
+export { DataTable, Ref } from "./procurex-tables";
+export { ProcurexReportShell } from "./ProcurexReportShell";
+export { SuiteInput, SuiteTextarea, SuiteSelect, SuiteField } from "./SuiteForm";
 export { SuitePanel, SecBar, SuiteTiles, SuiteTable } from "./SuitePanel";
 export type { SuiteTileData } from "./SuitePanel";
 export { SuiteCard, SuiteCardGrid } from "./SuiteCard";

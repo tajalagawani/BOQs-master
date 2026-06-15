@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * RatesX module home — rebuilt on the 10X Suite design system.
+ * ioInsight module home — rebuilt on the 10X Suite design system.
  * Navy topnav + hero, then a white panel: data-freshness tiles over a grid of
- * the eleven RatesX feature cards (each a navigation entry). Modeled on
+ * the eleven ioInsight feature cards (each a navigation entry). Modeled on
  * BoqsSuiteWorkspace.tsx. The original is fundamentally card/navigation based,
  * so cards are kept but rebuilt with suite tokens; the DataFreshnessPanel
  * sidebar metrics fold into <SuiteTiles>.
@@ -174,7 +174,7 @@ export function RatesSuiteWorkspace({ metrics }: { metrics: RatesHomeMetrics }) 
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search rates, projects, materials…"
-        crumb={<span className="font-semibold text-[#cdd6e6]">RatesX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioInsight</span>}
         notifications={1}
       />
 
@@ -209,7 +209,7 @@ export function RatesSuiteWorkspace({ metrics }: { metrics: RatesHomeMetrics }) 
 
       <SuitePanel first>
         <SecBar
-          title="RatesX"
+          title="ioInsight"
           count={`${grid.length} of ${cards.length}`}
         />
 
@@ -241,7 +241,7 @@ export function RatesSuiteWorkspace({ metrics }: { metrics: RatesHomeMetrics }) 
 }
 
 /**
- * One RatesX feature card, rebuilt with suite tokens (white card,
+ * One ioInsight feature card, rebuilt with suite tokens (white card,
  * border-suite-line, rounded-[14px]). Renders as a <Link> when it has an href,
  * otherwise a static panel — faithful to RateModuleCard's optional-href behaviour.
  */

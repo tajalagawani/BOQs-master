@@ -202,7 +202,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
 
   return (
     <SuiteInnerShell
-      crumb={<span className="font-semibold text-[#cdd6e6]">RatesX</span>}
+      crumb={<span className="font-semibold text-[#cdd6e6]">ioInsight</span>}
       search={query}
       onSearch={setQuery}
       searchPlaceholder="Search projects…"
@@ -223,7 +223,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
           className="inline-flex items-center gap-1.5 text-xs text-suite-ink-3 hover:text-suite-ink shrink-0"
         >
           <ArrowLeft className="size-3.5" strokeWidth={1.75} />
-          Back to RatesX
+          Back to ioInsight
         </Link>
 
         <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-suite-ink-4 font-semibold shrink-0 mt-2">
@@ -305,7 +305,7 @@ export function ElementalWorkspace({ projects, params }: Props) {
               className="lg:hidden inline-flex items-center gap-1.5 text-xs text-suite-ink-3 hover:text-suite-ink mb-2"
             >
               <ArrowLeft className="size-3.5" strokeWidth={1.75} />
-              Back to RatesX
+              Back to ioInsight
             </Link>
           </div>
 

@@ -2,6 +2,8 @@
 
 import { AlertCircle } from "lucide-react"
 
+import { CodeInline, Ref, SuiteChip } from "@/components/suite"
+
 import type { AppendixCData } from "@/modules/procurex/report/appendix-c-data"
 
 import {
@@ -16,6 +18,10 @@ import {
  * Appendix C — Arithmetical Errors. One cross-bidder table sorted
  * by tenderer code. Source: `byBidder[id].boqReview.arithmetical`
  * (`tender_flag(kind='arithmetical_error')`).
+ *
+ * 10X-suite restyle: item refs use `<Ref>`, the source document uses
+ * the blue `<CodeInline>`, and the in-PTC flag uses `<SuiteChip>`
+ * (good / neut). The grouped sticky-tenderer shell is retained.
  */
 export function ArithmeticalErrorsBlock({
   id,
@@ -68,22 +74,26 @@ export function ArithmeticalErrorsBlock({
                   firstOfGroup={row.isFirstInGroup}
                 />
               </BodyTd>
-              <BodyTd width={80} className="font-mono text-[#142845] text-[11px]" isGroupStart={row.isFirstInGroup}>
-                {row.itemRef}
+              <BodyTd width={80} isGroupStart={row.isFirstInGroup}>
+                <Ref>{row.itemRef}</Ref>
               </BodyTd>
-              <BodyTd className="text-[#262626] text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd className="text-suite-ink text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
                 <span className="line-clamp-2">{row.description}</span>
               </BodyTd>
-              <BodyTd width={120} className="text-[#555] text-[12px]" isGroupStart={row.isFirstInGroup}>
-                {row.document}
+              <BodyTd width={120} isGroupStart={row.isFirstInGroup}>
+                {row.document ? (
+                  <CodeInline>{row.document}</CodeInline>
+                ) : (
+                  <span className="text-suite-ink-4">—</span>
+                )}
               </BodyTd>
-              <BodyTd width={120} align="right" className="text-[#262626] text-[12px] tabular-nums" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={120} align="right" className="suite-num text-[12px] text-suite-ink" isGroupStart={row.isFirstInGroup}>
                 {row.expected}
               </BodyTd>
-              <BodyTd width={120} align="right" className="text-[#262626] text-[12px] tabular-nums" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={120} align="right" className="suite-num text-[12px] text-suite-ink" isGroupStart={row.isFirstInGroup}>
                 {row.found}
               </BodyTd>
-              <BodyTd width={120} align="right" className="text-[#8b1c1c] text-[12px] tabular-nums font-medium" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={120} align="right" className="suite-num text-[12px] font-semibold text-suite-dang" isGroupStart={row.isFirstInGroup}>
                 {row.difference}
               </BodyTd>
               <BodyTd width={120} align="right" isGroupStart={row.isFirstInGroup}>
@@ -99,16 +109,11 @@ export function ArithmeticalErrorsBlock({
 
 function PtcPill({ on }: { on: boolean }) {
   if (on) {
-    return (
-      <span className="inline-flex items-center gap-[4px] bg-[#e8f5e9] text-[#1b5e20] text-[11px] px-[8px] py-[1px] rounded-[8px] font-medium">
-        <span className="size-[6px] rounded-full bg-[#1b5e20]" />
-        Yes
-      </span>
-    )
+    return <SuiteChip tone="good">Yes</SuiteChip>
   }
   return (
-    <span className="inline-flex items-center gap-[4px] bg-[#f5f5f5] text-[#666] text-[11px] px-[8px] py-[1px] rounded-[8px] font-medium">
+    <SuiteChip tone="neut" dot={false}>
       No
-    </span>
+    </SuiteChip>
   )
 }

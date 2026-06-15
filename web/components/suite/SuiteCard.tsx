@@ -2,7 +2,7 @@
  * 10X Suite — generic module-home card + grid.
  * A pixel-exact clone of components/costx/CostxCard.tsx (same markup/classes,
  * status pill, icon meta rows, footer stats, background-image mask, hover) so
- * every module home renders cards identical to CostX. Only the data is generic.
+ * every module home renders cards identical to ioMaster. Only the data is generic.
  */
 import Link from "next/link";
 import { ArrowUpRight, type LucideIcon } from "lucide-react";
@@ -167,7 +167,7 @@ export function SuiteCard({
   );
 }
 
-/** Module-home card wall — identical grid to the CostX cards view. */
+/** Module-home card wall — identical grid to the ioMaster cards view. */
 export function SuiteCardGrid({ children }: { children: ReactNode }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

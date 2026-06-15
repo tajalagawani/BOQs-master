@@ -90,7 +90,7 @@ export function BoqLowRatesBlock({
       id={id}
       title="BOQ Low rate items"
       hint={`Items priced significantly below the PTE benchmark — may indicate scope misunderstanding or aggressive pricing. ${thresholdNote}`}
-      icon={<TrendingDown className="size-[16px] text-[#142845]" />}
+      icon={<TrendingDown className="size-[16px] text-suite-navy" />}
       rowCount={rowCount}
       emptyLabel={emptyLabel}
       toolbar={

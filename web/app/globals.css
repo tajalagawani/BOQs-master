@@ -20,7 +20,7 @@
 @import "@heroui-pro/react/css/components/line-chart.css";
 @import "@heroui-pro/react/css/components/chart-tooltip.css";
 
-/* RatesX assistant — shimmering "Thinking…" text (TextShimmer equivalent). */
+/* ioInsight assistant — shimmering "Thinking…" text (TextShimmer equivalent). */
 @keyframes iox-text-shimmer { to { background-position: -200% 0; } }
 .iox-text-shimmer {
   background: linear-gradient(90deg, #9ca3af 0%, #9ca3af 40%, #18181b 50%, #9ca3af 60%, #9ca3af 100%);
@@ -31,7 +31,7 @@
   animation: iox-text-shimmer 1.6s linear infinite;
 }
 
-/* RatesX (Omnium) theme tokens — see modules/rates/omnium-tokens.css for the
+/* ioInsight (Omnium) theme tokens — see modules/rates/omnium-tokens.css for the
    reference copy. Tokens are scoped to .omnium-rates so they never leak into
    the rest of IOX. Inlined here because Tailwind v4's PostCSS resolver only
    walks @import paths from the file root. */
@@ -182,6 +182,7 @@
   --color-suite-amber: #e0a83e;
   --color-suite-olive: #b9a93f;
   --color-suite-green: #4f9070;
+  --color-suite-green-soft: #e9f3ec;
   --color-suite-red: #c0564d;
   --color-suite-good: #357a59;
   --color-suite-good-bg: #eef4f0;
@@ -309,4 +310,21 @@ body {
 .suite-tbl th.c,
 .suite-tbl td.c {
   text-align: center;
+}
+/* Row + cell variants for comparison / appendix tables (Step 6 report). */
+.suite-tbl tbody tr.low td {
+  background: var(--color-suite-green-soft);
+}
+.suite-tbl tbody tr.total td {
+  font-weight: 700;
+  background: var(--color-suite-card-soft);
+  border-top: 1px solid var(--color-suite-line);
+}
+.suite-tbl td.up {
+  color: var(--color-suite-dang);
+  font-weight: 600;
+}
+.suite-tbl td.dn {
+  color: var(--color-suite-good);
+  font-weight: 600;
 }

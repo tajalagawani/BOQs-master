@@ -1,4 +1,4 @@
-// RatesX → AI Assistant. Plain-English Q&A over the rates warehouse, answered
+// ioInsight → AI Assistant. Plain-English Q&A over the rates warehouse, answered
 // live by a tool-calling agent (no canned responses).
 
 import { Lock } from "lucide-react";
@@ -36,7 +36,7 @@ export default async function RatesAssistantPage() {
                 AI assistant is in limited testing
               </h1>
               <p className="mt-2 text-[13px] leading-relaxed text-zinc-500">
-                The RatesX AI assistant is currently restricted to a testing
+                The ioInsight AI assistant is currently restricted to a testing
                 group. Ask a super admin to enable it for your account under
                 Platform → Users &amp; Roles.
               </p>

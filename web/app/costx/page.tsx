@@ -1,4 +1,4 @@
-// CostX masterplan-estimates list page — faithful port of
+// ioMaster masterplan-estimates list page — faithful port of
 // Ported from the source app: masterplan-estimates page, rendered inside the
 // IOX shell.
 

@@ -1,7 +1,6 @@
 "use client"
 
-import { FileSpreadsheet } from "lucide-react"
-
+import { SubTitle } from "@/components/suite"
 import type { TenderReportData } from "@/modules/procurex/report/report-data"
 
 import { SumBreakdownTable } from "../sum-breakdown-table"
@@ -21,19 +20,9 @@ export function TenderSumBreakdownBlock({
 }) {
   const { sumBreakdown, lowestBidderId } = data
   return (
-    <section
-      id={id}
-      className="flex flex-col gap-[20px] scroll-mt-[24px] print:break-inside-avoid"
-    >
-      <div className="flex gap-[12px] items-center w-full">
-        <span className="bg-[rgba(226,237,247,0.5)] flex items-center justify-center rounded-[10px] size-[40px] shrink-0">
-          <FileSpreadsheet className="size-[16px] text-[#142845]" />
-        </span>
-        <h3 className="font-semibold text-[#142845] text-[18px] leading-[24px] flex-1 min-w-0">
-          Bills of Quantities — Tender Sum Breakdown
-        </h3>
-      </div>
-      <p className="text-[#555] text-[12px] leading-[16px] font-light pl-[52px]">
+    <section id={id} className="scroll-mt-[24px] print:break-inside-avoid">
+      <SubTitle>Bills of Quantities — Tender sum breakdown</SubTitle>
+      <p className="mb-2 max-w-[78ch] text-[11.5px] leading-[1.6] text-suite-ink-3">
         Per-section totals across every tenderer. Source:
         <code className="px-[4px]">boq_item_rate</code> grouped by
         <code className="px-[4px]">boq_section</code>.
@@ -45,7 +34,7 @@ export function TenderSumBreakdownBlock({
           highlightLowestId={lowestBidderId}
         />
       ) : (
-        <div className="border border-dashed border-[#e2edf7] rounded-[12px] py-[24px] text-center text-[12px] text-[#888]">
+        <div className="rounded-[14px] border border-dashed border-suite-line-2 px-4 py-6 text-center text-[12px] text-suite-ink-4">
           BoQ template not loaded.
         </div>
       )}

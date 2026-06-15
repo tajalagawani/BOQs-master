@@ -102,7 +102,7 @@ export function BoqHighRatesBlock({
       id={id}
       title="BOQ High-rate analysis"
       hint={`Items priced significantly above the PTE benchmark. ${thresholdNote}`}
-      icon={<TrendingUp className="size-[16px] text-[#142845]" />}
+      icon={<TrendingUp className="size-[16px] text-suite-navy" />}
       rowCount={rowCount}
       emptyLabel={emptyLabel}
       toolbar={

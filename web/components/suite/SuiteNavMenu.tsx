@@ -14,10 +14,10 @@ import { cn } from "@/lib/cn";
 
 const NAV: { href: string; label: string; match: (p: string) => boolean }[] = [
   { href: "/", label: "Home", match: (p) => p === "/" },
-  { href: "/procurex", label: "ProcureX", match: (p) => p.startsWith("/procurex") },
-  { href: "/boqs", label: "BOQsX", match: (p) => p.startsWith("/boqs") },
-  { href: "/costx", label: "CostX", match: (p) => p.startsWith("/costx") },
-  { href: "/rates", label: "RatesX", match: (p) => p.startsWith("/rates") },
+  { href: "/procurex", label: "ioProcure", match: (p) => p.startsWith("/procurex") },
+  { href: "/boqs", label: "ioTranslate", match: (p) => p.startsWith("/boqs") },
+  { href: "/costx", label: "ioMaster", match: (p) => p.startsWith("/costx") },
+  { href: "/rates", label: "ioInsight", match: (p) => p.startsWith("/rates") },
   { href: "/projects", label: "Projects", match: (p) => p.startsWith("/projects") },
   { href: "/benchmarking", label: "Benchmarking", match: (p) => p.startsWith("/benchmarking") },
   {

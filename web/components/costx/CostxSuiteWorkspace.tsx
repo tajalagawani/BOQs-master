@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * CostX module home — rebuilt on the 10X Suite design system.
+ * ioMaster module home — rebuilt on the 10X Suite design system.
  * Navy topnav + hero, then a white roster panel: portfolio tiles over a
  * searchable Cards/Table view of every masterplan estimate. Faithful restyle
  * of MasterplanListClient — same data, props, hrefs, actions and behavior.
@@ -404,7 +404,7 @@ export default function CostxSuiteWorkspace({
 
   const clearProjectFilter = () => router.push("/costx");
 
-  /* ----- Portfolio tiles from the CostX pulse ----- */
+  /* ----- Portfolio tiles from the ioMaster pulse ----- */
   const tiles: SuiteTileData[] = (pulse?.metrics ?? []).map((m) => ({
     k: m.label,
     v: m.value,
@@ -522,14 +522,14 @@ export default function CostxSuiteWorkspace({
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search masterplans"
-        crumb={<span className="font-semibold text-[#cdd6e6]">CostX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioMaster</span>}
         notifications={1}
       />
 
       <SuiteHero
         title={
           <>
-            Cost<span className="text-suite-amber">X</span>
+            io<span className="text-suite-amber">Master</span>
           </>
         }
         subtitle={

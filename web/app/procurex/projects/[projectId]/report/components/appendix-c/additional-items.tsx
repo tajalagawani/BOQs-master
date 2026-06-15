@@ -20,6 +20,9 @@ import {
  * is a BoQ line the bidder marked Excluded / By client / By others
  * instead of pricing — every one needs PTC clarification before
  * contract.
+ *
+ * Restyled to the 10X suite tokens — entry pills and impact cells
+ * read from the suite palette.
  */
 export function AdditionalItemsBlock({
   id,
@@ -44,13 +47,13 @@ export function AdditionalItemsBlock({
       id={id}
       title="Additional items / Exclusions"
       hint="Lines the bidder marked Excluded / By client / By others instead of pricing — each needs PTC clarification before contract."
-      icon={<PackagePlus className="size-[16px] text-[#142845]" />}
+      icon={<PackagePlus className="size-[16px] text-suite-navy" />}
       rowCount={flat.length}
       emptyLabel="No exclusions"
     >
       <table className="w-full text-[12px] border-collapse">
-        <thead className="sticky top-0 z-20 bg-[rgba(226,237,247,0.95)] backdrop-blur-sm print:static">
-          <tr className="bg-[rgba(226,237,247,0.5)]">
+        <thead className="sticky top-0 z-20 bg-suite-card-soft print:static">
+          <tr>
             <HeaderTh sticky width={200}>Tenderer</HeaderTh>
             <HeaderTh width={80}>Item ref</HeaderTh>
             <HeaderTh>BOQ item</HeaderTh>
@@ -71,16 +74,16 @@ export function AdditionalItemsBlock({
                   firstOfGroup={row.isFirstInGroup}
                 />
               </BodyTd>
-              <BodyTd width={80} className="font-mono text-[#142845] text-[11px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={80} className="suite-num text-suite-ink-2 text-[11px]" isGroupStart={row.isFirstInGroup}>
                 {row.itemRef}
               </BodyTd>
-              <BodyTd className="text-[#262626] text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd className="text-suite-ink text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
                 <span className="line-clamp-2">{row.boqItem}</span>
               </BodyTd>
-              <BodyTd width={64} className="text-[#555] text-[12px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={64} className="text-suite-ink-3 text-[12px]" isGroupStart={row.isFirstInGroup}>
                 {row.unit}
               </BodyTd>
-              <BodyTd width={80} align="right" className="text-[#555] text-[12px] tabular-nums" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={80} align="right" className="suite-num text-suite-ink-3 text-[12px]" isGroupStart={row.isFirstInGroup}>
                 {row.quantity}
               </BodyTd>
               <BodyTd width={110} isGroupStart={row.isFirstInGroup}>
@@ -89,14 +92,14 @@ export function AdditionalItemsBlock({
               <BodyTd
                 width={140}
                 align="right"
-                className={`text-[13px] tabular-nums font-medium ${
-                  row.impactWarning ? "text-[#8b1c1c]" : "text-[#142845]"
+                className={`suite-num text-[13px] font-medium ${
+                  row.impactWarning ? "text-suite-dang" : "text-suite-ink"
                 }`}
                 isGroupStart={row.isFirstInGroup}
               >
                 {row.impactAed}
               </BodyTd>
-              <BodyTd width={150} className="text-[#555] text-[12px] italic" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={150} className="text-suite-ink-3 text-[12px] italic" isGroupStart={row.isFirstInGroup}>
                 {row.instruction ?? "—"}
               </BodyTd>
             </tr>
@@ -112,15 +115,15 @@ function EntryPill({ kind }: { kind: BoqUnpricedRow["tendererEntry"] }) {
     BoqUnpricedRow["tendererEntry"],
     { bg: string; fg: string }
   > = {
-    Included: { bg: "#e8f5e9", fg: "#1b5e20" },
-    Excluded: { bg: "#fdecea", fg: "#8b1c1c" },
-    "By others": { bg: "#fff4e0", fg: "#7a5d00" },
-    "By client": { bg: "#e2edf7", fg: "#142845" },
+    Included: { bg: "var(--color-suite-good-bg)", fg: "var(--color-suite-good)" },
+    Excluded: { bg: "var(--color-suite-dang-bg)", fg: "var(--color-suite-dang)" },
+    "By others": { bg: "var(--color-suite-warn-bg)", fg: "var(--color-suite-warn)" },
+    "By client": { bg: "var(--color-suite-blue-soft)", fg: "var(--color-suite-navy-2)" },
   }
   const { bg, fg } = styles[kind]
   return (
     <span
-      className="inline-flex items-center text-[11px] leading-[16px] px-[8px] py-[1px] rounded-[6px] font-medium"
+      className="inline-flex items-center text-[11px] leading-[16px] px-[8px] py-[1px] rounded-full font-semibold"
       style={{ background: bg, color: fg }}
     >
       {kind}

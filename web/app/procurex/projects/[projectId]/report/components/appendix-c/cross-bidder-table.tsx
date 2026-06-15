@@ -2,6 +2,8 @@
 
 import { ChevronsUpDown } from "lucide-react"
 
+import { CodeBadge, SuiteChip } from "@/components/suite"
+
 /**
  * Shared shell for cross-bidder Appendix C sub-blocks.
  *
@@ -9,6 +11,10 @@ import { ChevronsUpDown } from "lucide-react"
  * table where every row carries its own Tenderer column (code +
  * name). Tables share the same scrollable wrapper, sticky header,
  * and column-header styling as the matrix sub-blocks.
+ *
+ * Restyled to the 10X suite token system (navy/parchment) — header
+ * chrome, chips and table cells read from the suite palette. Markup
+ * mirrors the App C sub-blocks of procurex-step6-10x-style.
  */
 
 export function CrossBidderTableShell({
@@ -39,16 +45,16 @@ export function CrossBidderTableShell({
     >
       <div className="flex flex-col gap-[6px]">
         <div className="flex gap-[12px] items-center w-full">
-          <span className="bg-[rgba(226,237,247,0.5)] flex items-center justify-center rounded-[10px] size-[40px] shrink-0 shadow-[1px_1px_60px_0_rgba(0,0,0,0.04)]">
+          <span className="bg-suite-card-soft border border-suite-line flex items-center justify-center rounded-[10px] size-[40px] shrink-0 suite-shadow">
             {icon}
           </span>
-          <h3 className="font-semibold text-[#142845] text-[18px] leading-[24px] flex-1 min-w-0">
+          <h3 className="font-semibold text-suite-ink text-[18px] leading-[24px] flex-1 min-w-0 tracking-[-0.01em]">
             {title}
           </h3>
           <RowCountChip count={rowCount} emptyLabel={emptyLabel} />
         </div>
         {hint && (
-          <p className="text-[#555] text-[12px] leading-[16px] font-light pl-[52px]">
+          <p className="text-suite-ink-3 text-[12px] leading-[16px] pl-[52px]">
             {hint}
           </p>
         )}
@@ -57,11 +63,11 @@ export function CrossBidderTableShell({
       {toolbar && <div className="flex">{toolbar}</div>}
 
       {rowCount === 0 ? (
-        <div className="border border-dashed border-[#e2edf7] bg-[rgba(226,237,247,0.15)] rounded-[12px] py-[28px] text-center">
-          <p className="text-[#888] text-[12px] leading-[16px]">{emptyLabel}</p>
+        <div className="border border-dashed border-suite-line bg-suite-card-soft rounded-[14px] py-[28px] text-center">
+          <p className="text-suite-ink-4 text-[12px] leading-[16px]">{emptyLabel}</p>
         </div>
       ) : (
-        <div className="border border-[#e2edf7] rounded-[12px] overflow-auto bg-white max-h-[520px] print:max-h-none print:overflow-visible">
+        <div className="border border-suite-line rounded-[14px] overflow-auto bg-suite-panel max-h-[520px] print:max-h-none print:overflow-visible">
           {children}
         </div>
       )}
@@ -86,10 +92,8 @@ export function TenderCell({
   }
   return (
     <div className="flex items-center gap-[8px]">
-      <span className="font-mono text-[10px] text-[#888] bg-[#f5f5f5] px-[6px] py-[1px] rounded-[6px]">
-        {code}
-      </span>
-      <span className="text-[#142845] text-[12px] font-medium truncate">
+      <CodeBadge>{code}</CodeBadge>
+      <span className="text-suite-ink text-[12px] font-medium truncate">
         {name}
       </span>
     </div>
@@ -111,15 +115,15 @@ export function HeaderTh({
   return (
     <th
       style={style}
-      className={`py-[10px] px-[12px] text-[#434343] text-[11px] leading-[16px] font-semibold uppercase tracking-wider ${
+      className={`py-[11px] px-[14px] bg-suite-card-soft text-suite-ink-3 text-[10px] leading-[16px] font-semibold uppercase tracking-[0.05em] border-b border-suite-line ${
         align === "right" ? "text-right" : "text-left"
-      } ${sticky ? "sticky left-0 bg-[rgba(226,237,247,0.5)] z-30" : ""}`}
+      } ${sticky ? "sticky left-0 z-30" : ""}`}
     >
       <span
         className={`inline-flex items-center gap-[4px] ${align === "right" ? "flex-row-reverse" : ""}`}
       >
         {children}
-        <ChevronsUpDown className="size-[10px] text-[#9aa1ac]" />
+        <ChevronsUpDown className="size-[10px] text-suite-ink-4" />
       </span>
     </th>
   )
@@ -146,10 +150,10 @@ export function BodyTd({
   return (
     <td
       style={style}
-      className={`py-[10px] px-[12px] align-top ${
+      className={`py-[13px] px-[14px] align-top ${
         align === "right" ? "text-right" : "text-left"
-      } ${sticky ? "sticky left-0 bg-white z-10" : ""} ${
-        isGroupStart ? "border-t-[2px] border-[#e2edf7]" : "border-t border-[#f0f5fa]"
+      } ${sticky ? "sticky left-0 bg-suite-panel z-10" : ""} ${
+        isGroupStart ? "border-t-[2px] border-suite-line" : "border-t border-suite-line-soft"
       } ${className}`}
     >
       {children}
@@ -166,17 +170,15 @@ function RowCountChip({
 }) {
   if (count === 0) {
     return (
-      <span className="inline-flex items-center gap-[4px] bg-[#e8f5e9] text-[#1b5e20] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0">
-        <span className="size-[6px] rounded-full bg-[#1b5e20]" />
+      <SuiteChip tone="good" className="shrink-0">
         {emptyLabel}
-      </span>
+      </SuiteChip>
     )
   }
   return (
-    <span className="inline-flex items-center gap-[6px] bg-[#fdecea] text-[#8b1c1c] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0">
-      <span className="size-[6px] rounded-full bg-[#8b1c1c]" />
+    <SuiteChip tone="dang" className="shrink-0">
       {count} {count === 1 ? "row" : "rows"}
-    </span>
+    </SuiteChip>
   )
 }
 

@@ -30,7 +30,7 @@ export default async function FeedbackAdminPage() {
         <header className="mb-5">
           <h1 className="text-xl font-semibold text-suite-ink">AI Assistant Feedback</h1>
           <p className="mt-1 text-[13px] text-suite-ink-3">
-            What testers flagged in the RatesX AI chat. Down-votes capture the
+            What testers flagged in the ioInsight AI chat. Down-votes capture the
             reason the answer was wrong — use these to improve the tools and data.
           </p>
         </header>

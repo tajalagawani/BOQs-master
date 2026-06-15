@@ -3,7 +3,7 @@ import { signIn } from "@/modules/core/auth"
 import { env } from "@/modules/core/env"
 import { listDevSeedUsers } from "@/modules/identity/queries"
 
-export const metadata = { title: "Sign in · ProcureX" }
+export const metadata = { title: "Sign in · ioProcure" }
 
 const DEV_PASSWORD = "dev"
 
@@ -13,7 +13,7 @@ export default async function SignInPage({
   searchParams: Promise<{ callbackUrl?: string; error?: string }>
 }) {
   const sp = await searchParams
-  // Default to the ProcureX root (not IOX home) so successful sign-in
+  // Default to the ioProcure root (not IOX home) so successful sign-in
   // lands the user inside the module they just authenticated to.
   const callbackUrl = sp.callbackUrl ?? "/procurex"
   const error = sp.error
@@ -59,7 +59,7 @@ export default async function SignInPage({
           />
           <span className="h-6 w-px bg-suite-line" aria-hidden />
           <h1 className="text-2xl font-semibold text-suite-ink">
-            Sign in to ProcureX
+            Sign in to ioProcure
           </h1>
         </div>
         <p className="text-sm text-suite-ink-2 mb-6">

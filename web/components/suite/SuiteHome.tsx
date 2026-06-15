@@ -76,8 +76,7 @@ export function SuiteHome({
               Applications
             </h2>
             <span className="text-[12px] text-suite-ink-3">
-              {apps.filter((a) => a.href).length} active ·{" "}
-              {apps.filter((a) => !a.href).length} coming soon
+              {apps.length} application{apps.length === 1 ? "" : "s"}
             </span>
           </div>
 

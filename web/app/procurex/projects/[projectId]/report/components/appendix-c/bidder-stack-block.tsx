@@ -1,5 +1,7 @@
 "use client"
 
+import { CodeBadge, SuiteChip } from "@/components/suite"
+
 import type { AppendixCTendererHeader } from "@/modules/procurex/report/appendix-c-data"
 
 import { formatAed } from "../section-shell"
@@ -12,6 +14,11 @@ import { formatAed } from "../section-shell"
  * bidder strip (initial avatar · code · name · tender sum · count
  * chip), and the body table is offset slightly inside the card so
  * the visual hierarchy reads: section title → bidder → details.
+ *
+ * Restyled to the 10X suite token system (navy/parchment). Header
+ * chrome, bidder strip, count chips and the empty state read from the
+ * suite palette; the per-bidder body slot is untouched. Markup mirrors
+ * the App C sub-blocks of procurex-step6-10x-style.
  */
 
 export interface PerBidderItem {
@@ -51,16 +58,16 @@ export function BidderStackBlock({
       {/* Sub-block header */}
       <div className="flex flex-col gap-[6px]">
         <div className="flex gap-[12px] items-center w-full">
-          <span className="bg-[rgba(226,237,247,0.5)] flex items-center justify-center rounded-[10px] size-[40px] shrink-0 shadow-[1px_1px_60px_0_rgba(0,0,0,0.04)]">
+          <span className="bg-suite-card-soft border border-suite-line flex items-center justify-center rounded-[10px] size-[40px] shrink-0 suite-shadow">
             {icon}
           </span>
-          <h3 className="font-semibold text-[#142845] text-[18px] leading-[24px] flex-1 min-w-0">
+          <h3 className="font-semibold text-suite-ink text-[18px] leading-[24px] flex-1 min-w-0 tracking-[-0.01em]">
             {title}
           </h3>
           <BidderCountChip count={perBidder.length} />
         </div>
         {hint && (
-          <p className="text-[#555] text-[12px] leading-[16px] font-light pl-[52px]">
+          <p className="text-suite-ink-3 text-[12px] leading-[16px] pl-[52px]">
             {hint}
           </p>
         )}
@@ -99,24 +106,27 @@ function BidderCard({
     .join("")
     .toUpperCase()
   return (
-    <div className="border border-[#e2edf7] rounded-[12px] bg-white overflow-hidden">
+    <div className="border border-suite-line rounded-[14px] bg-suite-panel overflow-hidden">
       {/* Bidder strip */}
-      <div className="bg-gradient-to-r from-[rgba(226,237,247,0.55)] to-[rgba(226,237,247,0.2)] flex gap-[12px] items-center px-[16px] py-[12px]">
-        <span className="bg-[#142845] text-white flex items-center justify-center rounded-full size-[28px] shrink-0 text-[11px] font-semibold tracking-wide">
+      <div className="bg-suite-card-soft flex gap-[12px] items-center px-[16px] py-[12px]">
+        <span className="bg-suite-navy-2 text-white flex items-center justify-center rounded-full size-[28px] shrink-0 text-[11px] font-semibold tracking-wide">
           {initials || "—"}
         </span>
         <div className="flex flex-col gap-[2px] flex-1 min-w-0">
           <div className="flex items-center gap-[8px]">
-            <span className="font-mono text-[#142845] bg-white border border-[#e2edf7] text-[10px] leading-[14px] font-medium px-[6px] py-[1px] rounded-[6px]">
+            <CodeBadge className="!px-[6px] !py-px !text-[10px]">
               {item.bidder.code}
-            </span>
-            <span className="font-semibold text-[#142845] text-[14px] leading-[20px] truncate">
+            </CodeBadge>
+            <span className="font-semibold text-suite-ink text-[14px] leading-[20px] truncate">
               {item.bidder.name}
             </span>
           </div>
           {item.tenderSumCents !== undefined && (
-            <span className="tabular-nums text-[#555] text-[11px] leading-[16px]">
-              Tender sum: <span className="text-[#142845] font-medium">{formatAed(item.tenderSumCents)}</span>
+            <span className="suite-num text-suite-ink-3 text-[11px] leading-[16px]">
+              Tender sum:{" "}
+              <span className="text-suite-ink font-medium">
+                {formatAed(item.tenderSumCents)}
+              </span>
             </span>
           )}
         </div>
@@ -126,11 +136,11 @@ function BidderCard({
           severity={severity}
         />
       </div>
-      {/* Body — capped at ~400px with internal scroll on screen, full
+      {/* Body — capped at ~420px with internal scroll on screen, full
          height when printing. Sticky table headers inside the body
          keep column labels visible while scrolling. */}
       {item.body && (
-        <div className="border-t border-[#f0f5fa] px-[16px] py-[8px] max-h-[420px] overflow-auto print:max-h-none print:overflow-visible">
+        <div className="border-t border-suite-line-soft px-[16px] py-[8px] max-h-[420px] overflow-auto print:max-h-none print:overflow-visible">
           {item.body}
         </div>
       )}
@@ -149,36 +159,23 @@ function ItemCountPill({
 }) {
   if (count === 0) {
     return (
-      <span className="inline-flex items-center gap-[4px] bg-[#e8f5e9] text-[#1b5e20] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0">
-        <span className="size-[6px] rounded-full bg-[#1b5e20]" />
+      <SuiteChip tone="good" className="shrink-0">
         {emptyLabel}
-      </span>
+      </SuiteChip>
     )
   }
-  const styles = {
-    danger: "bg-[#fdecea] text-[#8b1c1c] dot-[#8b1c1c]",
-    warning: "bg-[#fff4e0] text-[#7a5d00] dot-[#7a5d00]",
-    info: "bg-[#e2edf7] text-[#142845] dot-[#142845]",
-  }[severity]
-  const dotColor =
-    severity === "danger"
-      ? "#8b1c1c"
-      : severity === "warning"
-        ? "#7a5d00"
-        : "#142845"
+  const tone =
+    severity === "danger" ? "dang" : severity === "warning" ? "warn" : "neut"
   return (
-    <span
-      className={`inline-flex items-center gap-[6px] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0 ${styles}`}
-    >
-      <span className="size-[6px] rounded-full" style={{ background: dotColor }} />
+    <SuiteChip tone={tone} className="shrink-0">
       {count} {count === 1 ? "item" : "items"}
-    </span>
+    </SuiteChip>
   )
 }
 
 function BidderCountChip({ count }: { count: number }) {
   return (
-    <span className="inline-flex items-center bg-[#142845] text-white text-[11px] leading-[16px] font-medium px-[10px] py-[3px] rounded-[12px] shrink-0">
+    <span className="inline-flex items-center bg-suite-navy-2 text-white text-[11px] leading-[16px] font-medium px-2.5 py-[5px] rounded-full shrink-0">
       {count} {count === 1 ? "tenderer" : "tenderers"}
     </span>
   )
@@ -186,8 +183,8 @@ function BidderCountChip({ count }: { count: number }) {
 
 function EmptyShell() {
   return (
-    <div className="border border-dashed border-[#e2edf7] bg-[rgba(226,237,247,0.15)] rounded-[12px] py-[28px] text-center">
-      <p className="text-[#888] text-[12px] leading-[16px]">
+    <div className="border border-dashed border-suite-line bg-suite-card-soft rounded-[14px] py-[28px] text-center">
+      <p className="text-suite-ink-4 text-[12px] leading-[16px]">
         No tenderers on this project yet.
       </p>
     </div>

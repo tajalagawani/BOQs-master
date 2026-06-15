@@ -1,23 +1,26 @@
 "use client"
 
-import { ChevronUp } from "lucide-react"
+import { SectionTitle, HeadlineCards, Prose, SuiteChip } from "@/components/suite"
 
 import type { TenderReportData } from "@/modules/procurex/report/report-data"
 
 import { formatAed } from "./section-shell"
 
 /**
- * 01. Executive Summary — Figma 1295:86680 "Executive Overview Accordion".
+ * 01. Executive Summary — restyled to the 10X suite (procurex-step6-10x-style).
  *
- * Card layout:
- *  - Header row: "01" pill + "Executive Summary" + chevron
- *  - Subtitle: "This is a commercial evaluation summary..."
- *  - PTE callout box (light blue) with 3 sentence rows using real
- *    template values:
- *      {Lowest} is the lowest tenderer at {Sum}, which is {V}% {above|below} the PTE.
- *      {Most commercially compliant} is the most compliant commercial by {%}.
- *      {Most technically compliant} is the most compliant technical by {%}.
- *  - QS Recommendation textarea
+ * Layout (pixel-faithful to the reference's section 01):
+ *  - <SectionTitle no="01"> "Executive Summary"
+ *  - <HeadlineCards> — 4 cards, lead (green) = lowest adjusted tender:
+ *      Lowest tender (adjusted) · Most commercially compliant ·
+ *      Most technically compliant · Award-eligible
+ *  - <Prose> narrative carrying the same sentences as the prior PTE
+ *    callout (lowest vs PTE, most commercial, most technical).
+ *
+ * Every value stays bound to the component's existing real exec data
+ * (rankings / sumBreakdown.variancePctVsPte / bidder flag counts /
+ * compliance cells). The PTE drives this internal report and is never
+ * disclosed to bidders.
  */
 export function ExecutiveSummarySection({
   id,
@@ -26,9 +29,10 @@ export function ExecutiveSummarySection({
   id: string
   data: TenderReportData
 }) {
-  const { rankings, lowestBidderId, bidders, sumBreakdown } = data
+  const { rankings, lowestBidderId, bidders, sumBreakdown, compliance } = data
   const lowest = rankings.find((r) => r.bidderId === lowestBidderId)
   const lowestName = lowest?.name ?? "—"
+  const lowestCode = lowest?.code ?? "—"
   const lowestSum = formatAed(
     lowest?.adjustedSumCents ?? lowest?.tenderSumCents ?? null,
   )
@@ -63,94 +67,93 @@ export function ExecutiveSummarySection({
       if (av !== bv) return av - bv
       return a.code.localeCompare(b.code, undefined, { numeric: true })
     })[0]
-  const mostCommercial = sortByLowest("commercial")?.name ?? "—"
+  const commercialLeader = sortByLowest("commercial")
+  const mostCommercial = commercialLeader?.name ?? "—"
+  const commercialCode = commercialLeader?.code ?? "—"
   const commercialPct =
     bidders.length > 0
-      ? `${((1 - (sortByLowest("commercial")?.counts.commercial ?? 0) / Math.max(1, Math.max(...bidders.map((b) => b.counts.commercial)))) * 100).toFixed(0)}%`
+      ? `${((1 - (commercialLeader?.counts.commercial ?? 0) / Math.max(1, Math.max(...bidders.map((b) => b.counts.commercial)))) * 100).toFixed(0)}%`
       : "—"
-  const mostTechnical = sortByLowest("technical")?.name ?? "—"
+  const technicalLeader = sortByLowest("technical")
+  const mostTechnical = technicalLeader?.name ?? "—"
+  const technicalCode = technicalLeader?.code ?? "—"
   const technicalPct =
     bidders.length > 0
-      ? `${((1 - (sortByLowest("technical")?.counts.technical ?? 0) / Math.max(1, Math.max(...bidders.map((b) => b.counts.technical)))) * 100).toFixed(0)}%`
+      ? `${((1 - (technicalLeader?.counts.technical ?? 0) / Math.max(1, Math.max(...bidders.map((b) => b.counts.technical)))) * 100).toFixed(0)}%`
       : "—"
+
+  // Award-eligible — a bidder passes the gate when all five compliance
+  // cells are compliant (same cells the Compliance Requirements section
+  // renders). Real count, no hardcoded reference numbers.
+  const totalBidders = compliance.length
+  const eligibleCount = compliance.filter((row) =>
+    Object.values(row.cells).every((c) => c === "compliant"),
+  ).length
+  const allEligible = totalBidders > 0 && eligibleCount === totalBidders
 
   return (
     <section id={id} className="print:break-before-page scroll-mt-[24px]">
-      <div className="bg-white flex flex-col gap-[32px] rounded-[16px] p-[24px] w-full">
-        {/* Header */}
-        <div className="flex flex-col gap-[8px] w-full">
-          <div className="flex gap-[32px] h-[32px] items-center w-full">
-            <div className="flex flex-1 gap-[8px] items-center min-w-px">
-              <span className="bg-[#142845] flex h-[24px] items-center justify-center px-[16px] rounded-[30px] w-[40px] text-white text-[12px] leading-[16px] font-medium">
-                01
-              </span>
-              <h2 className="text-[#142845] text-[18px] leading-[24px] font-semibold">
-                Executive Summary
-              </h2>
-            </div>
-            <button
-              type="button"
-              aria-label="Collapse"
-              className="flex items-center justify-center rounded-[8px] size-[32px] hover:bg-[rgba(226,237,247,0.5)]"
-            >
-              <ChevronUp className="size-[16px] text-[#142845]" />
-            </button>
-          </div>
-          <p className="text-[#142845] text-[12px] leading-[16px] font-light w-[680px]">
-            This is a commercial evaluation summary and should be read
-            alongside technical and contractual review.
-          </p>
-        </div>
+      <div className="suite">
+        <SectionTitle no="01" title="Executive Summary" />
 
-        {/* With PTE callout */}
-        <div className="bg-[rgba(226,237,247,0.5)] border border-[rgba(226,237,247,0.5)] rounded-[8px] p-[16px] w-full">
-          <div className="flex flex-col gap-[16px]">
-            <p className="flex flex-wrap gap-[4px] items-center text-[14px] leading-[24px]">
-              <span className="text-[#142845] font-semibold">
-                {lowestName}
-              </span>
-              <span className="text-black font-light">
-                is the lowest tenderer at
-              </span>
-              <span className="text-[#142845] font-semibold">{lowestSum}</span>
-              <span className="text-black font-light">, which is</span>
-              <span className="text-[#142845] font-semibold">
-                {varianceVsPte}% {direction}
-              </span>
-              <span className="text-black font-light">the PTE.</span>
-            </p>
-            <p className="flex flex-wrap gap-[4px] items-center text-[14px] leading-[24px]">
-              <span className="text-[#142845] font-semibold">
-                {mostCommercial}
-              </span>
-              <span className="text-black font-light">
-                is the most compliant commercial by
-              </span>
-              <span className="text-[#142845] font-semibold">
-                {commercialPct}.
-              </span>
-            </p>
-            <p className="flex flex-wrap gap-[4px] items-center text-[14px] leading-[24px]">
-              <span className="text-[#142845] font-semibold">
-                {mostTechnical}
-              </span>
-              <span className="text-black font-light">
-                is the most compliant technical by
-              </span>
-              <span className="text-[#142845] font-semibold">
-                {technicalPct}.
-              </span>
-            </p>
-          </div>
-        </div>
+        <Prose size={12} muted>
+          This is a commercial evaluation summary and should be read alongside
+          technical and contractual review.
+        </Prose>
+
+        <HeadlineCards
+          cards={[
+            {
+              k: "Lowest tender (adjusted)",
+              who: { code: lowestCode, name: lowestName },
+              v: lowestSum,
+              vs: `${varianceVsPte} ${direction} PTE`,
+              lead: true,
+            },
+            {
+              k: "Most commercially compliant",
+              who: { code: commercialCode, name: mostCommercial },
+              vs: `most compliant by ${commercialPct}`,
+            },
+            {
+              k: "Most technically compliant",
+              who: { code: technicalCode, name: mostTechnical },
+              vs: `most compliant by ${technicalPct}`,
+            },
+            {
+              k: "Award-eligible",
+              v:
+                totalBidders > 0 ? (
+                  <SuiteChip tone={allEligible ? "good" : "warn"}>
+                    {eligibleCount} of {totalBidders} pass
+                  </SuiteChip>
+                ) : (
+                  <SuiteChip tone="neut" dot={false}>
+                    No data
+                  </SuiteChip>
+                ),
+              vs: "all five criteria satisfied",
+            },
+          ]}
+        />
+
+        <Prose>
+          <b>{lowestName}</b> is the lowest tenderer at <b>{lowestSum}</b>, which
+          is <b>{varianceVsPte} {direction}</b> the PTE.
+        </Prose>
+        <Prose>
+          <b>{mostCommercial}</b> is the most compliant commercial by{" "}
+          <b>{commercialPct}</b>. <b>{mostTechnical}</b> is the most compliant
+          technical by <b>{technicalPct}</b>.
+        </Prose>
 
         {/* QS Recommendation input */}
-        <div className="flex flex-col gap-[8px] w-full">
-          <label className="text-[#434343] text-[12px] leading-[16px] font-normal">
+        <div className="mt-2 flex flex-col gap-[8px] w-full">
+          <label className="text-suite-ink-3 text-[12px] leading-[16px] font-medium">
             QS Recommendation
           </label>
-          <div className="bg-white border border-[#d9d9d9] rounded-[16px] px-[16px] py-[8px] min-h-[64px] flex items-center w-full">
-            <span className="text-[#555] text-[14px] leading-[24px] italic">
+          <div className="bg-white border border-suite-line-2 rounded-[14px] px-[16px] py-[10px] min-h-[64px] flex items-center w-full">
+            <span className="text-suite-ink-4 text-[13px] leading-[1.6] italic">
               Add any context for the employer (e.g. pricing strategy, known
               exclusions, key risks)
             </span>

@@ -2,6 +2,7 @@
 
 import { ChevronUp } from "lucide-react"
 
+import { SectionTitle } from "@/components/suite"
 import type { AppendixCData } from "@/modules/procurex/report/appendix-c-data"
 import type { TenderReportData } from "@/modules/procurex/report/report-data"
 
@@ -55,19 +56,19 @@ export function AppendixCSection({
     <section id={id} className="print:break-before-page scroll-mt-[24px]">
       <div className="bg-white flex flex-col gap-[32px] rounded-[16px] p-[24px] w-full">
         {/* Header */}
-        <div className="flex gap-[32px] items-center w-full">
-          <h2 className="flex-1 text-[18px] leading-[24px] font-semibold">
-            <span className="text-[#c32a4f]">APPENDIX C - </span>
-            <span className="text-[#142845]">Detailed Tender Analysis</span>
-          </h2>
-          <button
-            type="button"
-            aria-label="Collapse"
-            className="flex items-center justify-center rounded-[8px] size-[32px] hover:bg-[rgba(226,237,247,0.5)]"
-          >
-            <ChevronUp className="size-[16px] text-[#142845]" />
-          </button>
-        </div>
+        <SectionTitle
+          no="App C"
+          title="Detailed Tender Analysis"
+          right={
+            <button
+              type="button"
+              aria-label="Collapse"
+              className="flex items-center justify-center rounded-[8px] size-[32px] hover:bg-[rgba(226,237,247,0.5)]"
+            >
+              <ChevronUp className="size-[16px] text-[#142845]" />
+            </button>
+          }
+        />
 
         {/* Live sub-blocks — all DB-backed, in print/report order */}
         <IttComplianceBlock

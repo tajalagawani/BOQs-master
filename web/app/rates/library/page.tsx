@@ -1,4 +1,4 @@
-// RatesX → Library (the searchable catalogue of every uploaded rate).
+// ioInsight → Library (the searchable catalogue of every uploaded rate).
 // This was previously at /rates; the home screen now lives there and this
 // route holds the table workspace.
 

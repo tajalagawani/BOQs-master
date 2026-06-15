@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 const items = [
   { href: "/", label: "Home", match: (p: string) => p === "/" },
   { href: "/boqs", label: "BOQs", match: (p: string) => p.startsWith("/boqs") },
-  { href: "/costx", label: "CostX", match: (p: string) => p.startsWith("/costx") },
+  { href: "/costx", label: "ioMaster", match: (p: string) => p.startsWith("/costx") },
   { href: "/projects", label: "Projects", match: (p: string) => p.startsWith("/projects") },
   { href: "/benchmarking", label: "Benchmarking", match: (p: string) => p.startsWith("/benchmarking") },
   {

@@ -1,47 +1,38 @@
 "use client"
 
+import { SectionTitle } from "@/components/suite"
+
 /**
- * Shared shell for a top-level report section. Renders the numbered
- * title + subtitle and a white card body. Page-break-before on print
- * so each section starts on its own page.
+ * Shared shell for a top-level report section. Restyled to the 10X suite
+ * library: the numbered title renders through `<SectionTitle>` (mono number
+ * + blue underline), with an optional right slot, and the body sits directly
+ * beneath inside the report panel (no nested white card — the panel is the
+ * surface). Page-break-before on print so each section starts on its own page.
  */
 export function SectionShell({
   id,
   number,
   title,
   subtitle,
+  right,
   children,
 }: {
   id: string
   number: string
   title: string
   subtitle?: string
+  right?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
-    <section
-      id={id}
-      className="flex flex-col gap-[16px] scroll-mt-[24px] print:break-before-page"
-    >
-      <div className="flex flex-col gap-[4px]">
-        <span className="font-medium text-[#142845] text-[12px] leading-[16px] uppercase tracking-wider">
-          {number}
-        </span>
-        <h2
-          className="font-bold text-[#142845] text-[24px] leading-[32px]"
-          style={{ fontFamily: "Poppins, sans-serif" }}
-        >
-          {title}
-        </h2>
-        {subtitle && (
-          <p className="font-light text-[#555] text-[13px] leading-[20px]">
-            {subtitle}
-          </p>
-        )}
-      </div>
-      <div className="bg-white border border-[rgba(226,237,247,0.5)] rounded-[16px] p-[24px] print:border-none print:p-0">
-        {children}
-      </div>
+    <section id={id} className="scroll-mt-[24px] print:break-before-page">
+      <SectionTitle no={number} title={title} right={right} />
+      {subtitle && (
+        <p className="mb-3.5 max-w-[78ch] text-[12px] leading-[18px] text-suite-ink-3">
+          {subtitle}
+        </p>
+      )}
+      <div>{children}</div>
     </section>
   )
 }
@@ -49,11 +40,11 @@ export function SectionShell({
 /** Empty-state body for sections whose backing data isn't wired yet. */
 export function NotImplementedBody({ hint }: { hint: string }) {
   return (
-    <div className="flex flex-col gap-[8px] py-[12px]">
-      <span className="font-semibold text-[#888] text-[12px] leading-[16px] uppercase tracking-wider">
+    <div className="flex flex-col gap-2 py-3">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-suite-ink-4">
         Not implemented
       </span>
-      <p className="font-light text-[#555] text-[13px] leading-[20px]">
+      <p className="max-w-[78ch] text-[13px] leading-[1.6] text-suite-ink-2">
         {hint}
       </p>
     </div>

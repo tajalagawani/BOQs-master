@@ -1,6 +1,6 @@
 "use client";
 
-// RatesX AI Assistant — streaming chat over the tool-calling agent
+// ioInsight AI Assistant — streaming chat over the tool-calling agent
 // (/api/rates/assistant). Runs warehouse queries live; every answer is grounded.
 //
 // UI mirrors the HeroUI Pro PromptInput (status-driven send/stop) and

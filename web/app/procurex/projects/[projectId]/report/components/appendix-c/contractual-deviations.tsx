@@ -2,12 +2,11 @@
 
 import { FileText } from "lucide-react"
 
+import { Prose, SubTitle } from "@/components/suite"
+
 import type { AppendixCData } from "@/modules/procurex/report/appendix-c-data"
 
-import {
-  CrossBidderTableShell,
-  tagGroups,
-} from "./cross-bidder-table"
+import { tagGroups } from "./cross-bidder-table"
 import {
   CrossBidderDeviationTable,
   type CrossBidderDeviationRow,
@@ -35,15 +34,30 @@ export function ContractualDeviationsBlock({
   const tagged = tagGroups(flat)
 
   return (
-    <CrossBidderTableShell
-      id={id}
-      title="Contractual Deviations"
-      hint="Bidder qualifications affecting the contract — programme, LDs, indemnities, warranties, dispute resolution, etc."
-      icon={<FileText className="size-[16px] text-[#142845]" />}
-      rowCount={flat.length}
-      emptyLabel="No contractual deviations"
-    >
-      <CrossBidderDeviationTable rows={tagged} />
-    </CrossBidderTableShell>
+    <section id={id} className="scroll-mt-[24px] print:break-inside-avoid">
+      <SubTitle
+        count={
+          flat.length === 0
+            ? "No contractual deviations"
+            : `${flat.length} ${flat.length === 1 ? "row" : "rows"}`
+        }
+      >
+        <FileText className="size-[16px] text-suite-navy-2" />
+        Contractual Deviations
+      </SubTitle>
+      <Prose size={12} muted>
+        Bidder qualifications affecting the contract — programme, LDs,
+        indemnities, warranties, dispute resolution, etc.
+      </Prose>
+      {flat.length === 0 ? (
+        <div className="rounded-[14px] border border-dashed border-suite-line bg-suite-card-soft py-7 text-center text-[12px] text-suite-ink-4">
+          No contractual deviations
+        </div>
+      ) : (
+        <div className="rounded-[14px] border border-suite-line bg-suite-panel">
+          <CrossBidderDeviationTable rows={tagged} />
+        </div>
+      )}
+    </section>
   )
 }

@@ -1,4 +1,4 @@
-// RatesX — home screen. Same IOX shell as /, /projects, /boqs, /costx,
+// ioInsight — home screen. Same IOX shell as /, /projects, /boqs, /costx,
 // /procurex. The legacy table view lives at /rates/library.
 
 import { RatesSuiteWorkspace } from "@/components/rates-home/RatesSuiteWorkspace";

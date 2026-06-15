@@ -1,5 +1,6 @@
 "use client"
 
+import { Delta, InternalBadge } from "@/components/suite"
 import type { TenderSumBreakdown } from "@/modules/procurex/report/sum-breakdown"
 
 import {
@@ -147,8 +148,8 @@ export function CrossBidderSectionRateTable({
   const tagged = tagGroups(rows)
   return (
     <table className="w-full text-[12px] border-collapse">
-      <thead className="sticky top-0 z-20 bg-[rgba(226,237,247,0.95)] backdrop-blur-sm print:static">
-        <tr className="bg-[rgba(226,237,247,0.5)]">
+      <thead className="sticky top-0 z-20 bg-suite-card-soft print:static">
+        <tr>
           <HeaderTh sticky width={200}>Tenderer</HeaderTh>
           <HeaderTh width={80}>Sec. ref</HeaderTh>
           <HeaderTh>Section</HeaderTh>
@@ -171,16 +172,16 @@ export function CrossBidderSectionRateTable({
                   firstOfGroup={row.isFirstInGroup}
                 />
               </BodyTd>
-              <BodyTd width={80} className="font-mono text-[#142845] text-[11px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd width={80} className="suite-num text-suite-ink-2 text-[11px]" isGroupStart={row.isFirstInGroup}>
                 {row.sectionRef}
               </BodyTd>
-              <BodyTd className="text-[#262626] text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
+              <BodyTd className="text-suite-ink text-[13px] leading-[18px]" isGroupStart={row.isFirstInGroup}>
                 <span className="line-clamp-2">{row.sectionLabel}</span>
               </BodyTd>
               <BodyTd
                 width={150}
                 align="right"
-                className="text-[#262626] text-[12px] tabular-nums"
+                className="suite-num text-suite-ink text-[12px]"
                 isGroupStart={row.isFirstInGroup}
               >
                 {formatAed(row.amountCents)}
@@ -192,7 +193,7 @@ export function CrossBidderSectionRateTable({
               >
                 <span className="inline-flex items-center gap-[6px] justify-end">
                   <BaselineBadge source={row.baselineSource} />
-                  <span className="text-[#555] text-[12px] tabular-nums">
+                  <span className="suite-num text-suite-ink-3 text-[12px]">
                     {formatAed(row.pteAmountCents)}
                   </span>
                 </span>
@@ -200,24 +201,22 @@ export function CrossBidderSectionRateTable({
               <BodyTd
                 width={150}
                 align="right"
-                className={`text-[12px] tabular-nums font-medium ${signedToneClass(
-                  Number(delta),
-                  variancePositiveIsBad,
-                )}`}
+                className="suite-num text-[12px]"
                 isGroupStart={row.isFirstInGroup}
               >
-                {formatSignedAed(delta)}
+                <Delta dir={signedDir(Number(delta), variancePositiveIsBad)}>
+                  {formatSignedAed(delta)}
+                </Delta>
               </BodyTd>
               <BodyTd
                 width={120}
                 align="right"
-                className={`text-[12px] tabular-nums font-semibold ${signedToneClass(
-                  row.variancePct,
-                  variancePositiveIsBad,
-                )}`}
+                className="suite-num text-[12px]"
                 isGroupStart={row.isFirstInGroup}
               >
-                {formatVariance(row.variancePct)}
+                <Delta dir={signedDir(row.variancePct, variancePositiveIsBad)}>
+                  {formatVariance(row.variancePct)}
+                </Delta>
               </BodyTd>
             </tr>
           )
@@ -229,15 +228,11 @@ export function CrossBidderSectionRateTable({
 
 function BaselineBadge({ source }: { source: "pte" | "bidder_mean" }) {
   if (source === "pte") {
-    return (
-      <span className="bg-[#e2edf7] text-[#142845] text-[9px] font-semibold tracking-wider uppercase px-[5px] py-[1px] rounded-[4px]">
-        PTE
-      </span>
-    )
+    return <InternalBadge label="PTE" />
   }
   return (
     <span
-      className="bg-[#fff4e0] text-[#7a5d00] text-[9px] font-semibold tracking-wider uppercase px-[5px] py-[1px] rounded-[4px]"
+      className="rounded-full bg-suite-warn-bg px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-suite-warn"
       title="No PTE loaded — using the cross-bidder mean as the baseline."
     >
       Avg
@@ -272,8 +267,11 @@ function formatVariance(pct: number): string {
   return `${sign}${pct.toFixed(1)}%`
 }
 
-function signedToneClass(n: number, positiveIsBad: boolean): string {
-  if (!Number.isFinite(n) || n === 0) return "text-[#555]"
+function signedDir(
+  n: number,
+  positiveIsBad: boolean,
+): "up" | "down" | "flat" {
+  if (!Number.isFinite(n) || n === 0) return "flat"
   const isBad = positiveIsBad ? n > 0 : n < 0
-  return isBad ? "text-[#8b1c1c]" : "text-[#1b5e20]"
+  return isBad ? "up" : "down"
 }

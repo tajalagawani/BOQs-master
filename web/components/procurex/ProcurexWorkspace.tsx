@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * ProcureX module home — rebuilt on the 10X Suite design system.
+ * ioProcure module home — rebuilt on the 10X Suite design system.
  * Navy topnav + hero, then a white roster panel: a searchable wall of every
- * tender project, rendered with the same SuiteCard pattern as BOQsX/CostX.
+ * tender project, rendered with the same SuiteCard pattern as ioTranslate/ioMaster.
  */
 import { useMemo, useState } from "react";
 import { Plus, MapPin, Users, Clock } from "lucide-react";
@@ -36,7 +36,7 @@ export interface ProcurexGridEntry {
   href: string;
 }
 
-// Same card textures the original ProcureX wall used.
+// Same card textures the original ioProcure wall used.
 const cardBackgrounds = [
   "/card-tenders.png",
   "/card-procurement.png",
@@ -93,7 +93,7 @@ export function ProcurexWorkspace({
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search tenders by name or location"
-        crumb={<span className="font-semibold text-[#cdd6e6]">ProcureX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioProcure</span>}
         notifications={1}
       />
 

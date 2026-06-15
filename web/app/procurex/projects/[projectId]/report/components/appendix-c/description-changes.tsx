@@ -1,6 +1,13 @@
 "use client"
 
-import { ChevronsUpDown, FileEdit } from "lucide-react"
+import {
+  CodeInline,
+  DataTable,
+  Prose,
+  Ref,
+  SubTitle,
+  SuiteChip,
+} from "@/components/suite"
 
 import type { BoqChangeRow } from "@/modules/procurex/report/boq-changes"
 
@@ -12,6 +19,9 @@ import type { BoqChangeRow } from "@/modules/procurex/report/boq-changes"
  * line item's description after first issue. Not per-bidder — every
  * bidder is pricing against the same evolving BoQ, so this table
  * lives once at the report level.
+ *
+ * 10X-suite restyle: `.subt` sub-title + `.suite-tbl` DataTable. Mono
+ * item refs use `<Ref>`; addenda sources use the blue `<CodeInline>`.
  */
 export function DescriptionChangesBlock({
   id,
@@ -23,76 +33,80 @@ export function DescriptionChangesBlock({
   return (
     <section
       id={id}
-      className="flex flex-col gap-[20px] scroll-mt-[24px] print:break-inside-avoid"
+      className="scroll-mt-[24px] print:break-inside-avoid"
     >
-      <div className="flex flex-col gap-[6px]">
-        <div className="flex gap-[12px] items-center w-full">
-          <span className="bg-[rgba(226,237,247,0.5)] flex items-center justify-center rounded-[10px] size-[40px] shrink-0">
-            <FileEdit className="size-[16px] text-[#142845]" />
-          </span>
-          <h3 className="font-semibold text-[#142845] text-[18px] leading-[24px] flex-1 min-w-0">
-            BOQ description changes
-          </h3>
-          <CountChip count={rows.length} />
-        </div>
-        <p className="text-[#555] text-[12px] leading-[16px] font-light pl-[52px]">
-          Item description edits recorded as
-          <code className="px-[4px]">tender_item_event(kind=&apos;description_changed&apos;)</code>
-          — usually from addenda issued after first BoQ release.
-        </p>
-      </div>
+      <SubTitle
+        count={
+          rows.length === 0
+            ? "— addenda replayed"
+            : `— ${rows.length} ${rows.length === 1 ? "change" : "changes"} · addenda replayed`
+        }
+        right={
+          rows.length === 0 ? (
+            <SuiteChip tone="good">No changes</SuiteChip>
+          ) : (
+            <SuiteChip tone="warn">
+              {rows.length} {rows.length === 1 ? "change" : "changes"}
+            </SuiteChip>
+          )
+        }
+      >
+        BOQ description changes
+      </SubTitle>
+
+      <Prose size={11.5} muted>
+        Item description edits recorded as{" "}
+        <CodeInline>tender_item_event(kind=&apos;description_changed&apos;)</CodeInline>{" "}
+        — usually from addenda issued after first BoQ release.
+      </Prose>
 
       {rows.length === 0 ? (
-        <div className="border border-dashed border-[#e2edf7] bg-[rgba(226,237,247,0.15)] rounded-[12px] py-[28px] text-center">
-          <p className="text-[#888] text-[12px] leading-[16px]">
-            No description changes recorded.
-          </p>
+        <div className="rounded-[14px] border border-dashed border-suite-line-2 bg-suite-card-soft py-[28px] text-center text-[12px] text-suite-ink-4">
+          No description changes recorded.
         </div>
       ) : (
-        <div className="border border-[#e2edf7] rounded-[12px] overflow-auto bg-white max-h-[520px] print:max-h-none print:overflow-visible">
-          <table className="w-full text-[12px] border-collapse">
-            <thead className="sticky top-0 z-10 bg-[rgba(226,237,247,0.95)] backdrop-blur-sm print:static">
-              <tr className="bg-[rgba(226,237,247,0.5)]">
-                <Th>Item ref</Th>
-                <Th>Section</Th>
-                <Th>Original description</Th>
-                <Th>Revised description</Th>
-                <Th>Source</Th>
-                <Th>Effective</Th>
+        <DataTable minWidth={720}>
+          <thead>
+            <tr>
+              <th style={{ width: 90 }}>Item ref</th>
+              <th>Section</th>
+              <th>Original description</th>
+              <th>Revised description</th>
+              <th>Source</th>
+              <th>Effective</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td>
+                  <Ref>{row.itemRef}</Ref>
+                </td>
+                <td className="text-suite-ink-2">{row.sectionLabel}</td>
+                <td className="max-w-[280px] text-suite-dang">
+                  <span className="line-clamp-3 leading-[1.5]">
+                    {row.oldValue ?? "—"}
+                  </span>
+                </td>
+                <td className="max-w-[280px] text-suite-good">
+                  <span className="line-clamp-3 leading-[1.5]">
+                    {row.newValue ?? "—"}
+                  </span>
+                </td>
+                <td>
+                  {row.sourceLabel ? (
+                    <CodeInline>{row.sourceLabel}</CodeInline>
+                  ) : (
+                    <span className="text-suite-ink-4">—</span>
+                  )}
+                </td>
+                <td className="suite-num text-[11px] text-suite-ink-3">
+                  {formatDate(row.effectiveAt)}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-[#f0f5fa]">
-                  <Td className="font-mono text-[#142845] text-[11px]">
-                    {row.itemRef}
-                  </Td>
-                  <Td className="text-[#555] text-[12px]">
-                    {row.sectionLabel}
-                  </Td>
-                  <Td className="text-[#8b1c1c] text-[12px] leading-[18px] max-w-[280px]">
-                    <span className="line-clamp-3">
-                      {row.oldValue ?? "—"}
-                    </span>
-                  </Td>
-                  <Td className="text-[#1b5e20] text-[12px] leading-[18px] max-w-[280px]">
-                    <span className="line-clamp-3">
-                      {row.newValue ?? "—"}
-                    </span>
-                  </Td>
-                  <Td>
-                    <span className="inline-flex items-center text-[11px] bg-[#e2edf7] text-[#142845] px-[8px] py-[2px] rounded-[8px]">
-                      {row.sourceLabel ?? "—"}
-                    </span>
-                  </Td>
-                  <Td className="text-[#555] text-[11px] tabular-nums">
-                    {formatDate(row.effectiveAt)}
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </DataTable>
       )}
     </section>
   )
@@ -108,44 +122,4 @@ function formatDate(iso: string) {
   } catch {
     return "—"
   }
-}
-
-function CountChip({ count }: { count: number }) {
-  if (count === 0) {
-    return (
-      <span className="inline-flex items-center gap-[4px] bg-[#e8f5e9] text-[#1b5e20] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0">
-        <span className="size-[6px] rounded-full bg-[#1b5e20]" />
-        No changes
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-[6px] bg-[#fff4e0] text-[#7a5d00] text-[11px] leading-[16px] px-[10px] py-[3px] rounded-[12px] font-medium shrink-0">
-      <span className="size-[6px] rounded-full bg-[#7a5d00]" />
-      {count} {count === 1 ? "change" : "changes"}
-    </span>
-  )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="py-[10px] px-[12px] text-[#434343] text-[11px] leading-[16px] font-semibold uppercase tracking-wider text-left">
-      <span className="inline-flex items-center gap-[4px]">
-        {children}
-        <ChevronsUpDown className="size-[10px] text-[#9aa1ac]" />
-      </span>
-    </th>
-  )
-}
-
-function Td({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <td className={`py-[10px] px-[12px] align-top ${className}`}>{children}</td>
-  )
 }

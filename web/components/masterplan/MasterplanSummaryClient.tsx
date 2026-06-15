@@ -352,7 +352,7 @@ export default function MasterplanSummaryClient({
 
   return (
     <SuiteInnerShell
-      crumb={<span className="font-semibold text-[#cdd6e6]">CostX</span>}
+      crumb={<span className="font-semibold text-[#cdd6e6]">ioMaster</span>}
       search={navSearch}
       onSearch={setNavSearch}
       searchPlaceholder="Search masterplans, reports…"

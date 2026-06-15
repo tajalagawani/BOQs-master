@@ -1,4 +1,4 @@
-// RatesX → Elemental by Project.
+// ioInsight → Elemental by Project.
 // Per-project NRM L1 elemental cost (per m² BUA/GIA/GFA), as a stacked
 // composition or a per-element distribution. Currency is a hard axis: one
 // currency is plotted at a time; the rest are surfaced as an excluded count.

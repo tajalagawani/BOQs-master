@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * BOQsX module home — rebuilt on the 10X Suite design system.
+ * ioTranslate module home — rebuilt on the 10X Suite design system.
  * Navy topnav + hero, then a white roster panel: pricing-progress tiles over a
  * searchable table of every BOQ project. Faithful to procurex-step3-10x-style.html.
  */
@@ -92,7 +92,7 @@ export function BoqsSuiteWorkspace({
         search={search}
         onSearch={setSearch}
         searchPlaceholder="Search BOQs by name or file…"
-        crumb={<span className="font-semibold text-[#cdd6e6]">BOQsX</span>}
+        crumb={<span className="font-semibold text-[#cdd6e6]">ioTranslate</span>}
         notifications={1}
       />
 

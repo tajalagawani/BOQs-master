@@ -1,4 +1,4 @@
-// /api/rates/uploads — server endpoints for the RatesX module.
+// /api/rates/uploads — server endpoints for the ioInsight module.
 //
 //  POST   /api/rates/uploads             upsert one (section, tab) snapshot
 //  DELETE /api/rates/uploads?section&tab delete a snapshot

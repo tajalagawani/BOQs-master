@@ -25,7 +25,7 @@ export default async function UsersAdminPage() {
         <header className="mb-5">
           <h1 className="text-xl font-semibold text-suite-ink">Users &amp; Roles</h1>
           <p className="mt-1 text-[13px] text-suite-ink-3">
-            Manage IOX-wide access. Super admins can use every module; the RatesX
+            Manage IOX-wide access. Super admins can use every module; the ioInsight
             AI assistant is restricted to super admins and the testers you enable
             here.
           </p>
@@ -63,7 +63,7 @@ export default async function UsersAdminPage() {
                 <th className="py-2.5 px-3 font-medium">User</th>
                 <th className="py-2.5 px-3 font-medium">Current role</th>
                 <th className="py-2.5 px-3 font-medium">Change role</th>
-                <th className="py-2.5 px-3 font-medium">RatesX AI assistant</th>
+                <th className="py-2.5 px-3 font-medium">ioInsight AI assistant</th>
               </tr>
             </thead>
             <tbody>
