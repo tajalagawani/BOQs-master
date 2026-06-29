@@ -20,7 +20,7 @@ import {
   getUserById,
   setUserRole,
 } from "@/modules/identity/queries"
-import { findSsoOrgForUser } from "@/modules/identity/sso-org-queries"
+import { findSsoOrgForUser, getSsoOrgByTenant } from "@/modules/identity/sso-org-queries"
 import { ensureWorkspaceForUser } from "@/modules/workspace/actions"
 
 import { authConfig } from "./auth.config"
@@ -101,6 +101,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   callbacks: {
     ...authConfig.callbacks,
+    // Microsoft SSO is multi-tenant (issuer = /organizations). Only allow tenants
+    // that a superadmin has registered + enabled in the SSO org registry
+    // (/platform/sso-orgs) — reject everyone else. Credentials sign-ins are
+    // unaffected (no account.provider check match).
+    async signIn({ account, profile }) {
+      if (account?.provider === "microsoft-entra-id") {
+        const tid =
+          typeof (profile as { tid?: unknown } | null)?.tid === "string"
+            ? (profile as { tid: string }).tid
+            : undefined
+        if (!tid) return false
+        const org = await getSsoOrgByTenant(tid)
+        if (!org || !org.enabled) return false
+      }
+      return true
+    },
     // DB-backed: load the IOX role + capability into the token on sign-in and
     // whenever the session is explicitly refreshed (`update`).
     async jwt({ token, user, trigger }) {

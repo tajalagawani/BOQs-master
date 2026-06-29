@@ -60,10 +60,10 @@ export async function requireSuperadmin(): Promise<CurrentUser> {
   return user
 }
 
-/** Superadmins can always use the assistant; everyone else needs the flag. */
+/** The ioInsight AI assistant is open to every signed-in user (no longer a
+ *  testing-group restriction). The aiAssistantTester flag is now informational. */
 export function canUseRatesAssistant(
   user: { role: UserRole; aiAssistantTester: boolean } | null,
 ): boolean {
-  if (!user) return false
-  return user.role === "superadmin" || user.aiAssistantTester
+  return !!user
 }
