@@ -44,7 +44,7 @@ export default async function Home() {
       key: "procurex",
       title: "ioProcure",
       tag: "Tender analysis, accelerated",
-      href: "/procurex",
+      href: "/ioprocure",
       accent: "blue",
       preview: "tenders",
       stats: [

@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 
 const NAV: { href: string; label: string; match: (p: string) => boolean }[] = [
   { href: "/", label: "Home", match: (p) => p === "/" },
-  { href: "/procurex", label: "ioProcure", match: (p) => p.startsWith("/procurex") },
+  { href: "/ioprocure", label: "ioProcure", match: (p) => p.startsWith("/ioprocure") },
   { href: "/boqs", label: "ioTranslate", match: (p) => p.startsWith("/boqs") },
   { href: "/costx", label: "ioMaster", match: (p) => p.startsWith("/costx") },
   { href: "/rates", label: "ioInsight", match: (p) => p.startsWith("/rates") },
