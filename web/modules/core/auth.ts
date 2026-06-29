@@ -20,6 +20,7 @@ import {
   getUserById,
   setUserRole,
 } from "@/modules/identity/queries"
+import { findSsoOrgForUser } from "@/modules/identity/sso-org-queries"
 import { ensureWorkspaceForUser } from "@/modules/workspace/actions"
 
 import { authConfig } from "./auth.config"
@@ -126,7 +127,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (!user?.id) return
       // Bootstrap the superadmin allowlist, then bring up the user's workspace
       // and mirror them into the legacy identity table. Each step is isolated so
@@ -143,17 +144,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         console.error("[auth] assistant-only allowlist failed", err)
       }
       try {
-        // Temporary: every iox-domain Microsoft SSO sign-in gets full access.
-        // Runs after the allowlists so it wins for iox SSO users.
-        const domain = (user.email ?? "").toLowerCase().split("@")[1] ?? ""
-        if (
-          account?.provider === "microsoft-entra-id" &&
-          IOX_SSO_FULL_ACCESS_DOMAINS.includes(domain)
-        ) {
-          await setUserRole(user.id, "superadmin")
+        // SSO role assignment is driven by the superadmin-managed SSO org
+        // registry (/platform/sso-orgs): match the sign-in to a registered Entra
+        // tenant (by tid, else email domain) and apply that org's default role.
+        // Runs after the allowlists so the registry wins for SSO users.
+        if (account?.provider === "microsoft-entra-id") {
+          const tid =
+            typeof (profile as { tid?: unknown } | null)?.tid === "string"
+              ? ((profile as { tid: string }).tid)
+              : undefined
+          const org = await findSsoOrgForUser(tid, user.email)
+          if (org?.enabled) {
+            await setUserRole(user.id, org.defaultRole)
+          } else {
+            // Fallback so the iox tenant never loses superadmin even if the
+            // registry is unseeded/unavailable.
+            const domain = (user.email ?? "").toLowerCase().split("@")[1] ?? ""
+            if (IOX_SSO_FULL_ACCESS_DOMAINS.includes(domain)) {
+              await setUserRole(user.id, "superadmin")
+            }
+          }
         }
       } catch (err) {
-        console.error("[auth] iox SSO full-access grant failed", err)
+        console.error("[auth] SSO org role assignment failed", err)
       }
       try {
         await ensureWorkspaceForUser(user.id)

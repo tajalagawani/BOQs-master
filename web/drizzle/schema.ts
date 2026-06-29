@@ -3,6 +3,7 @@
 
 // Foundation
 export * from "@/modules/identity/schema"
+export * from "@/modules/identity/sso-org-schema"
 export * from "@/modules/workspace/schema"
 export * from "@/modules/audit/schema"
 

@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Users,
   FlaskConical,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -73,6 +74,7 @@ export const PLATFORM_SECTIONS: NavSection[] = [
     title: "Admin",
     items: [
       { href: "/platform/users",         label: "Users & Roles",  icon: Users,         match: (p) => p.startsWith("/platform/users") },
+      { href: "/platform/sso-orgs",      label: "SSO Orgs",       icon: KeyRound,      match: (p) => p.startsWith("/platform/sso-orgs") },
       { href: "/platform/ai-experiment", label: "AI Experiment",  icon: FlaskConical,  match: (p) => p.startsWith("/platform/ai-experiment") },
       { href: "/platform/feedback",      label: "AI Feedback",    icon: MessageSquare, match: (p) => p.startsWith("/platform/feedback") },
       { href: "/platform/settings", label: "Settings",      icon: Settings,      match: (p) => p.startsWith("/platform/settings") },
