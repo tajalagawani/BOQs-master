@@ -7,8 +7,6 @@ import {
   ScrollText,
   Bug,
   GitBranch,
-  Server,
-  Activity,
   Globe2,
   ExternalLink,
 } from "lucide-react";
@@ -110,23 +108,6 @@ export default async function PlatformOverviewPage() {
           label="Last CI run"
           value="Passing"
           hint="Push to main → live in ~3 min"
-        />
-        <StatusTile
-          href="https://portal.azure.com/#@5c1c05b1-7b56-45e5-b38e-c9aea88f4588/resource/subscriptions/5d5e49c7-1fe0-4d54-827b-57844c2dd0aa/resourceGroups/iox-rg/overview"
-          external
-          icon={<Server strokeWidth={1.75} />}
-          accent="zinc"
-          label="Azure infrastructure"
-          value="9 resources"
-          hint="iox-rg · UAE North · D2s_v3"
-        />
-        <StatusTile
-          href="/platform/monitoring"
-          icon={<Activity strokeWidth={1.75} />}
-          accent="amber"
-          label="Monitoring"
-          value="Live"
-          hint="Azure Monitor + Log Analytics (iox-law)"
         />
         <StatusTile
           icon={<Target strokeWidth={1.75} />}
