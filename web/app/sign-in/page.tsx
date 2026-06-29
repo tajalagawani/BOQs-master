@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 import { signIn, ssoEnabled } from "@/modules/core/auth"
 
 import { LoginForm } from "@/components/site-login/login-form"
@@ -83,8 +85,16 @@ export default async function SignInPage({
             </>
           ) : (
             <>
-              {/* Heading (carried by LoginForm normally; rendered here for SSO-only) */}
-              <div className="flex w-full items-center">
+              {/* IOX logo + heading (carried by LoginForm normally; here for SSO-only) */}
+              <div className="flex w-full flex-col items-start gap-[20px]">
+                <Image
+                  src="/iox-logo.svg"
+                  alt="IOX"
+                  width={67}
+                  height={40}
+                  priority
+                  className="h-16 w-auto"
+                />
                 <h1 className="font-sans text-[18px] font-semibold leading-[24px] whitespace-nowrap text-pagent">
                   Access the IOX intelligence environment
                 </h1>

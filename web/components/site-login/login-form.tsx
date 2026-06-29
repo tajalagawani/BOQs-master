@@ -31,8 +31,9 @@ export function LoginForm({ action, callbackUrl, error }: LoginFormProps) {
       action={action}
       className="flex w-full max-w-[400px] flex-col items-center gap-[32px]"
     >
-      {/* Instructions — 898:11521 / Header heading 898:11524 */}
-      <div className="flex w-full items-center">
+      {/* IOX logo + Instructions — 898:11521 / Header heading 898:11524 */}
+      <div className="flex w-full flex-col items-start gap-[20px]">
+        <img src="/iox-logo.svg" alt="IOX" className="h-16 w-auto" />
         <h1 className="font-sans text-[18px] font-semibold leading-[24px] whitespace-nowrap text-pagent">
           Access the IOX intelligence environment
         </h1>

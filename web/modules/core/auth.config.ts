@@ -16,8 +16,10 @@ import {
  * DB-free versions the middleware runs on every request.
  */
 
-/** Path prefixes that never require a session (auth endpoints, sign-in). */
-const PUBLIC_PREFIXES = ["/sign-in", "/procurex/sign-in", "/api/auth"]
+/** Path prefixes that never require a session (auth endpoints, sign-in).
+ * /api/session-check is the nginx auth_request probe for the co-hosted ProcureX
+ * app — it must be reachable un-redirected so it can return a clean 200/401. */
+const PUBLIC_PREFIXES = ["/sign-in", "/api/auth", "/api/session-check"]
 
 export const authConfig = {
   // Trust the reverse-proxy forwarded Host so the edge proxy + Auth.js build
