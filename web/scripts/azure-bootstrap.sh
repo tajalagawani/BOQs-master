@@ -93,8 +93,12 @@ log "7/12 npm ci"
 npm ci --no-audit --no-fund
 
 # --- 8. Apply schemas ------------------------------------------------------
-log "8/12 apply Prisma migrations"
-npx prisma migrate deploy
+# This repo's schema is managed by `prisma db push` + Drizzle + manual SQL, NOT
+# `prisma migrate`. `migrate deploy` fails with P3015 because the
+# prisma/migrations/manual/ folder is read as a migration that has no top-level
+# migration.sql. Use db push (same path the local/dev bootstrap uses).
+log "8/12 push Prisma schema (db push)"
+npx prisma db push --accept-data-loss
 npx prisma generate
 
 log "8b/12 apply Drizzle migrations"

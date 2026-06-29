@@ -18,6 +18,7 @@ import {
   applySuperadminAllowlist,
   getUserByEmail,
   getUserById,
+  setUserRole,
 } from "@/modules/identity/queries"
 import { ensureWorkspaceForUser } from "@/modules/workspace/actions"
 
@@ -31,6 +32,15 @@ import { HARDCODED_SUPERADMIN_EMAILS } from "./superadmins"
 const SUPERADMIN_EMAILS = [
   ...HARDCODED_SUPERADMIN_EMAILS,
   ...env.SUPERADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
+]
+
+// Temporary policy: any Microsoft SSO sign-in from these domains is granted full
+// (superadmin) access on every login. Scoped to iox accounts so multi-tenant SSO
+// can't hand admin to outside orgs. Tighten/remove once roles are managed
+// per-user in the admin UI.
+const IOX_SSO_FULL_ACCESS_DOMAINS = [
+  "iox-solutions.com",
+  "ioxsolutions2026.onmicrosoft.com",
 ]
 
 const providers: NextAuthConfig["providers"] = [
@@ -116,7 +126,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       if (!user?.id) return
       // Bootstrap the superadmin allowlist, then bring up the user's workspace
       // and mirror them into the legacy identity table. Each step is isolated so
@@ -131,6 +141,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await applyAssistantOnlyAllowlist(user.id, user.email, ASSISTANT_ONLY_EMAILS)
       } catch (err) {
         console.error("[auth] assistant-only allowlist failed", err)
+      }
+      try {
+        // Temporary: every iox-domain Microsoft SSO sign-in gets full access.
+        // Runs after the allowlists so it wins for iox SSO users.
+        const domain = (user.email ?? "").toLowerCase().split("@")[1] ?? ""
+        if (
+          account?.provider === "microsoft-entra-id" &&
+          IOX_SSO_FULL_ACCESS_DOMAINS.includes(domain)
+        ) {
+          await setUserRole(user.id, "superadmin")
+        }
+      } catch (err) {
+        console.error("[auth] iox SSO full-access grant failed", err)
       }
       try {
         await ensureWorkspaceForUser(user.id)

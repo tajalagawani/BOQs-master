@@ -34,7 +34,15 @@ export const authConfig = {
     authorized: ({ auth, request }) => {
       const { pathname } = request.nextUrl
       if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true
-      if (!auth?.user) return false
+      if (!auth?.user) {
+        // Non-users who hit the portal ROOT get the public marketing website
+        // rather than the login wall. Deep links fall through to the /sign-in
+        // redirect (with callbackUrl) below, so they return here after signing in.
+        if (pathname === "/") {
+          return NextResponse.redirect(new URL("https://www.iox-solutions.com"))
+        }
+        return false
+      }
       // Assistant-only users are confined to the AI assistant + its API; any
       // other path bounces them back to the chat.
       if (isAssistantOnly(auth.user.email)) {

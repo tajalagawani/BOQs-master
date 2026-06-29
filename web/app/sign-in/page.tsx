@@ -1,24 +1,43 @@
-import Image from "next/image"
 import { signIn, ssoEnabled } from "@/modules/core/auth"
-import { env } from "@/modules/core/env"
-import { listDevSeedUsers } from "@/modules/identity/queries"
 
-export const metadata = { title: "Sign in · IOX" }
+import { LoginForm } from "@/components/site-login/login-form"
+import { LoginIllustration } from "@/components/site-login/login-illustration"
+import { LoginLayout } from "@/components/site-login/login-layout"
+import { ReturnToWebsite } from "@/components/site-login/return-to-website"
+import { SignupRow } from "@/components/site-login/signup-row"
+import { SsoOptions } from "@/components/site-login/sso-options"
 
-const DEV_PASSWORD = "dev"
+export const metadata = { title: "Log in — IOX" }
 
+/**
+ * Portal sign-in — the iox-website "/login" design (Figma 898:8871), ported into
+ * this app (web/components/site-login) and wired to NextAuth.
+ *
+ * Login is **Microsoft SSO only**: the credential (email/password) form is not
+ * shown. The credentials provider is still registered in auth.ts as an emergency
+ * "break-glass" path — append `?breakglass=1` to reveal the password form so an
+ * admin can never be fully locked out if SSO is unavailable.
+ *
+ * `?illustration=alt` selects the alternate background panel.
+ */
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; error?: string }>
+  searchParams: Promise<{
+    callbackUrl?: string
+    error?: string
+    illustration?: string
+    breakglass?: string
+  }>
 }) {
   const sp = await searchParams
   const callbackUrl = sp.callbackUrl ?? "/"
   const error = sp.error
-  const devUsers =
-    env.NODE_ENV !== "production" || env.ALLOW_DEV_LOGIN
-      ? await listDevSeedUsers()
-      : []
+  const variant = sp.illustration === "alt" ? "alt" : "default"
+  // SSO-only by default. Show the credential form when explicitly breaking glass
+  // (?breakglass=1) OR when SSO isn't configured for this environment (e.g. dev),
+  // so a deployment without Entra still has a working login.
+  const showPassword = sp.breakglass === "1" || !ssoEnabled
 
   async function passwordSignIn(formData: FormData) {
     "use server"
@@ -35,126 +54,61 @@ export default async function SignInPage({
   }
 
   return (
-    <main className="suite suite-hero relative min-h-screen grid place-items-center overflow-hidden px-4 py-12">
-      {/* Decorative art on the navy background, rendered white. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-center bg-no-repeat opacity-[0.08]"
-        style={{
-          backgroundImage: "url(/login-art.svg)",
-          backgroundSize: "cover",
-          filter: "brightness(0) invert(1)",
-        }}
-      />
-      <div className="relative z-10 bg-white rounded-[22px] suite-shadow border border-suite-line w-full max-w-md p-8">
-        <div className="mb-1 flex items-center gap-3">
-          <Image
-            src="/iox-logo.svg"
-            alt="IOX"
-            width={67}
-            height={40}
-            priority
-            className="h-6 w-auto"
-          />
-          <span className="h-6 w-px bg-suite-line" aria-hidden />
-          <h1 className="text-2xl font-semibold text-suite-ink">Sign in</h1>
+    <LoginLayout
+      illustration={variant}
+      illustrationContent={
+        <LoginIllustration
+          variant={variant}
+          className="absolute inset-0 z-20"
+        />
+      }
+    >
+      {/* Return to website — pinned to the top of the form column (898:11517) */}
+      <ReturnToWebsite />
+
+      {/* Auth group — vertically centred on the 400px track */}
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <div className="flex w-full max-w-[400px] flex-col items-center gap-[32px]">
+          {showPassword ? (
+            <>
+              {/* Credential login — emergency break-glass, or when SSO is off */}
+              <LoginForm
+                action={passwordSignIn}
+                callbackUrl={callbackUrl}
+                error={error}
+              />
+              {ssoEnabled ? (
+                <SsoOptions action={microsoftSignIn} callbackUrl={callbackUrl} />
+              ) : null}
+            </>
+          ) : (
+            <>
+              {/* Heading (carried by LoginForm normally; rendered here for SSO-only) */}
+              <div className="flex w-full items-center">
+                <h1 className="font-sans text-[18px] font-semibold leading-[24px] whitespace-nowrap text-pagent">
+                  Access the IOX intelligence environment
+                </h1>
+              </div>
+
+              {error ? (
+                <p className="w-full text-[13px] font-normal leading-[20px] text-[#c0564d]">
+                  Sign-in failed. Please try again, or contact your administrator.
+                </p>
+              ) : null}
+
+              {/* Microsoft SSO — the only login method */}
+              <SsoOptions
+                action={microsoftSignIn}
+                callbackUrl={callbackUrl}
+                standalone
+              />
+            </>
+          )}
         </div>
-        <p className="text-sm text-suite-ink-2 mb-6">
-          Use your work account, or your email and password.
-        </p>
-
-        {error ? (
-          <div className="mb-4 rounded-lg border border-suite-dang/30 bg-suite-dang-bg px-3 py-2 text-sm text-suite-dang">
-            Sign-in failed. Check your credentials and try again.
-          </div>
-        ) : null}
-
-        {ssoEnabled ? (
-          <>
-            <form action={microsoftSignIn}>
-              <input type="hidden" name="callbackUrl" value={callbackUrl} />
-              <button
-                type="submit"
-                className="w-full h-11 rounded-xl border border-suite-line bg-white hover:bg-suite-card-soft hover:border-suite-navy text-sm font-medium text-suite-ink flex items-center justify-center gap-2 transition"
-              >
-                <span aria-hidden className="inline-grid grid-cols-2 gap-[2px]">
-                  <span className="h-2 w-2 bg-[#F25022]" />
-                  <span className="h-2 w-2 bg-[#7FBA00]" />
-                  <span className="h-2 w-2 bg-[#00A4EF]" />
-                  <span className="h-2 w-2 bg-[#FFB900]" />
-                </span>
-                Continue with Microsoft
-              </button>
-            </form>
-            <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-wider text-suite-ink-4">
-              <span className="h-px flex-1 bg-suite-line" />
-              or
-              <span className="h-px flex-1 bg-suite-line" />
-            </div>
-          </>
-        ) : null}
-
-        <form action={passwordSignIn} className="flex flex-col gap-3">
-          <input type="hidden" name="callbackUrl" value={callbackUrl} />
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-suite-ink-2">Email</span>
-            <input
-              required
-              type="email"
-              name="email"
-              autoComplete="email"
-              className="h-11 rounded-xl border border-suite-line bg-white px-3 text-sm outline-none focus:border-suite-navy focus:ring-2 focus:ring-suite-navy/10"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-suite-ink-2">Password</span>
-            <input
-              required
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              className="h-11 rounded-xl border border-suite-line bg-white px-3 text-sm outline-none focus:border-suite-navy focus:ring-2 focus:ring-suite-navy/10"
-            />
-          </label>
-          <button
-            type="submit"
-            className="mt-2 h-11 rounded-xl bg-suite-navy text-white text-sm font-medium hover:bg-suite-navy-3"
-          >
-            Sign in
-          </button>
-        </form>
-
-        {devUsers.length > 0 ? (
-          <div className="mt-8 pt-6 border-t border-dashed border-suite-line">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-semibold tracking-wider text-suite-ink-3 uppercase">
-                Dev quick-fill
-              </span>
-              <span className="text-[10px] text-suite-ink-3">
-                (password: <code>{DEV_PASSWORD}</code>)
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {devUsers.map((u) => (
-                <form key={u.id} action={passwordSignIn}>
-                  <input type="hidden" name="callbackUrl" value={callbackUrl} />
-                  <input type="hidden" name="email" value={u.email} />
-                  <input type="hidden" name="password" value={DEV_PASSWORD} />
-                  <button
-                    type="submit"
-                    className="w-full text-left h-12 rounded-xl border border-suite-line bg-white hover:bg-suite-card-soft hover:border-suite-navy px-3 transition"
-                  >
-                    <div className="text-[11px] font-medium text-suite-ink">
-                      {u.devRoleLabel ?? u.name ?? u.email}
-                    </div>
-                    <div className="text-[10px] text-suite-ink-3">{u.email}</div>
-                  </button>
-                </form>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
-    </main>
+
+      {/* "Don't have an account?" — pinned to the bottom of the form column */}
+      <SignupRow />
+    </LoginLayout>
   )
 }

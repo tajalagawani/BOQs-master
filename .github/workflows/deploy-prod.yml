@@ -1,0 +1,288 @@
+name: Deploy to Azure VM (PROD)
+
+# PROD twin of deploy.yml. Triggered by the `production` branch (promote with a
+# PR main → production), NOT by main. Reads its secrets from the GitHub
+# Environment named `production` — same secret NAMES as dev, prod-scoped VALUES
+# (AZURE_VM_HOST = the prod VM's public IP, etc).
+#
+# Differences vs dev (deploy.yml):
+#   • trigger: push to `production` (+ manual dispatch)
+#   • job pins `environment: production`  → prod secrets + optional approval gate
+#   • AUTH_URL = http://<prod-ip>  (IP-only, no TLS yet)  + AUTH_TRUST_HOST=true
+#   • NO dev-login: ALLOW_DEV_LOGIN is never set, the dev-seed step is removed
+#   • smoke test hits the prod IP over HTTP
+
+on:
+  push:
+    branches: [production]
+    paths:
+      - 'web/**'
+      - 'docs/**'
+      - '.github/workflows/deploy-prod.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production   # ← resolves secrets from the `production` Environment
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web
+        env:
+          HEROUI_AUTH_TOKEN: ${{ secrets.HEROUI_AUTH_TOKEN }}
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        working-directory: web
+        run: npx prisma generate
+
+      - name: Production build
+        working-directory: web
+        env:
+          NODE_OPTIONS: '--max-old-space-size=6144'
+          DATABASE_URL: 'postgresql://build:build@localhost:5432/build'
+          DATABASE_URL_UNPOOLED: 'postgresql://build:build@localhost:5432/build'
+          AUTH_SECRET: 'build-time-placeholder-not-used-at-runtime'
+          ANTHROPIC_API_KEY: 'sk-ant-build-time-placeholder'
+        run: npm run build
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AZURE_VM_SSH_KEY }}
+
+      - name: Trust VM host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync source to VM
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='.next/' \
+            --exclude='web/.env' \
+            --exclude='web/.env.*' \
+            --exclude='web/node_modules/' \
+            --exclude='web/.next/' \
+            --exclude='web/uploads/' \
+            --exclude='web/runs/' \
+            -e "ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            ./ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/home/iox/app/
+
+      - name: Rsync production build (.next/) to VM
+        run: |
+          rsync -az --delete \
+            --exclude="dev/" --exclude="cache/" \
+            -e "ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
+            web/.next/ ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/home/iox/app/web/.next/
+
+      - name: Rebuild /tmp bootstrap env on VM (survives reboots)
+        env:
+          HEROUI_AUTH_TOKEN: ${{ secrets.HEROUI_AUTH_TOKEN }}
+        run: |
+          tok=$(mktemp)
+          printf 'HEROUI_AUTH_TOKEN=%s\n' "$HEROUI_AUTH_TOKEN" > "$tok"
+          scp -o ServerAliveInterval=15 "$tok" \
+            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/tmp/iox-heroui-token
+          rm -f "$tok"
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            : > /tmp/iox-bootstrap.env
+            grep -E "^DATABASE_URL_UNPOOLED=" .env >> /tmp/iox-bootstrap.env \
+              || { echo "[deploy] ERROR: DATABASE_URL_UNPOOLED missing from .env"; exit 1; }
+            cat /tmp/iox-heroui-token >> /tmp/iox-bootstrap.env
+            rm -f /tmp/iox-heroui-token
+            chmod 600 /tmp/iox-bootstrap.env
+            echo "[deploy] /tmp/iox-bootstrap.env rebuilt ($(wc -l < /tmp/iox-bootstrap.env) vars)"'
+
+      - name: Sync node_modules if package-lock changed
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            if ! cmp -s package-lock.json .last-deployed-lock 2>/dev/null; then
+              echo "[deploy] package-lock.json changed — running npm ci"
+              source /tmp/iox-bootstrap.env
+              HEROUI_AUTH_TOKEN="$HEROUI_AUTH_TOKEN" npm ci --no-audit --no-fund
+              cp package-lock.json .last-deployed-lock
+            else
+              echo "[deploy] package-lock.json unchanged — skipping npm ci"
+            fi'
+
+      - name: Install POMI engine Python deps on VM
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            if ! cmp -s engine/requirements.txt .last-deployed-pyreqs 2>/dev/null; then
+              echo "[deploy] engine/requirements.txt changed — installing python deps"
+              if ! python3 -m pip --version >/dev/null 2>&1; then
+                echo "[deploy] pip missing — installing python3-pip"
+                sudo apt-get update -qq
+                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip
+              fi
+              python3 -m pip install --user --upgrade -r engine/requirements.txt \
+                || python3 -m pip install --user --upgrade --break-system-packages -r engine/requirements.txt
+              cp engine/requirements.txt .last-deployed-pyreqs
+            else
+              echo "[deploy] python reqs unchanged — skipping"
+            fi'
+
+      - name: Sync platform-integration env vars to VM
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_OWNER: ${{ secrets.GH_OWNER }}
+          GH_REPO: ${{ secrets.GH_REPO }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_LOG_ANALYTICS_WORKSPACE_ID: ${{ secrets.AZURE_LOG_ANALYTICS_WORKSPACE_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: |
+          tmp=$(mktemp)
+          {
+            echo "# ━━━ MANAGED BY DEPLOY WORKFLOW — DO NOT EDIT BY HAND ━━━"
+            [ -n "$GH_TOKEN" ]                          && echo "GH_TOKEN=$GH_TOKEN"
+            [ -n "$GH_OWNER" ]                          && echo "GH_OWNER=$GH_OWNER"
+            [ -n "$GH_REPO" ]                           && echo "GH_REPO=$GH_REPO"
+            [ -n "$AZURE_TENANT_ID" ]                   && echo "AZURE_TENANT_ID=$AZURE_TENANT_ID"
+            [ -n "$AZURE_SUBSCRIPTION_ID" ]             && echo "AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID"
+            [ -n "$AZURE_RESOURCE_GROUP" ]              && echo "AZURE_RESOURCE_GROUP=$AZURE_RESOURCE_GROUP"
+            [ -n "$AZURE_LOG_ANALYTICS_WORKSPACE_ID" ]  && echo "AZURE_LOG_ANALYTICS_WORKSPACE_ID=$AZURE_LOG_ANALYTICS_WORKSPACE_ID"
+            [ -n "$AZURE_CLIENT_ID" ]                   && echo "AZURE_CLIENT_ID=$AZURE_CLIENT_ID"
+            [ -n "$AZURE_CLIENT_SECRET" ]               && echo "AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET"
+            # Canonical public URL — the portal subdomain (TLS via certbot on the VM).
+            echo "AUTH_URL=https://portal.iox-solutions.com"
+            echo "AUTH_TRUST_HOST=true"
+            echo "# ━━━ END MANAGED BLOCK ━━━"
+          } > "$tmp"
+          scp -o ServerAliveInterval=15 "$tmp" \
+            ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }}:/tmp/iox-platform-env
+          rm -f "$tmp"
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            touch .env
+            awk "/^# ━━━ MANAGED BY DEPLOY WORKFLOW/{skip=1} !skip; /^# ━━━ END MANAGED BLOCK/{skip=0}" .env > .env.next
+            cat /tmp/iox-platform-env >> .env.next
+            mv .env.next .env
+            chmod 600 .env
+            rm -f /tmp/iox-platform-env
+            echo "[deploy] platform env synced ($(wc -l < .env) total lines)"'
+
+      - name: Regenerate Prisma client on VM (schema may have changed)
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            sum=$(sha256sum prisma/schema.prisma | cut -d" " -f1)
+            if [ "$sum" != "$(cat .last-deployed-prisma-schema 2>/dev/null)" ]; then
+              echo "[deploy] schema.prisma changed — regenerating client"
+              npx prisma generate
+              echo "$sum" > .last-deployed-prisma-schema
+            else
+              echo "[deploy] schema.prisma unchanged — skipping prisma generate"
+            fi'
+
+      - name: Apply any new Drizzle migrations
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            DB="$DATABASE_URL_UNPOOLED"
+            psql "$DB" -c "CREATE TABLE IF NOT EXISTS _iox_drizzle_applied (filename text PRIMARY KEY, applied_at timestamptz DEFAULT NOW());" >/dev/null
+            for sql in drizzle/migrations/*.sql; do
+              base=$(basename "$sql")
+              done=$(psql "$DB" -t -A -c "SELECT 1 FROM _iox_drizzle_applied WHERE filename = '"'"'$base'"'"';")
+              if [ "$done" = "1" ]; then
+                echo "  ✓ $base (skipped — already applied)"
+              else
+                echo "  → $base"
+                psql "$DB" -v ON_ERROR_STOP=0 -q -f "$sql" >/dev/null 2>&1 || true
+                psql "$DB" -c "INSERT INTO _iox_drizzle_applied (filename) VALUES ('"'"'$base'"'"') ON CONFLICT DO NOTHING;" >/dev/null
+              fi
+            done'
+
+      - name: Apply any manual Prisma migrations
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            DB="$DATABASE_URL_UNPOOLED"
+            psql "$DB" -c "CREATE TABLE IF NOT EXISTS _iox_manual_applied (filename text PRIMARY KEY, applied_at timestamptz DEFAULT NOW());" >/dev/null
+            if [ -d prisma/migrations/manual ]; then
+              for sql in $(find prisma/migrations/manual -name "*.sql" | sort); do
+                [ -f "$sql" ] || continue
+                base=$(basename "$sql")
+                done=$(psql "$DB" -t -A -c "SELECT 1 FROM _iox_manual_applied WHERE filename = '"'"'$base'"'"';")
+                if [ "$done" = "1" ]; then
+                  echo "  ✓ $base (skipped — already applied)"
+                else
+                  echo "  → $base"
+                  psql "$DB" -v ON_ERROR_STOP=1 -q -f "$sql"
+                  psql "$DB" -c "INSERT INTO _iox_manual_applied (filename) VALUES ('"'"'$base'"'"') ON CONFLICT DO NOTHING;" >/dev/null
+                fi
+              done
+            fi'
+
+      - name: Seed RatesX warehouse from lib (into the DB pm2 actually runs)
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            ECO_DB=$(node -e "try{const c=require(\"./ecosystem.config.cjs\");const a=Array.isArray(c.apps)?c.apps[0]:c;process.stdout.write((a.env&&a.env.DATABASE_URL)||\"\")}catch(e){}")
+            ENV_DB=$(grep -E "^DATABASE_URL=" .env | head -1 | sed -E "s/^DATABASE_URL=//; s/^\"//; s/\"$//")
+            APP_DB="${ECO_DB:-$ENV_DB}"
+            [ -z "$APP_DB" ] && APP_DB="$DATABASE_URL_UNPOOLED"
+            echo "[deploy] seeding into : $(echo "$APP_DB" | sed -E "s#.*@##; s#\?.*##")"
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-lib.ts
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-buildings-benchmarks.ts
+            DATABASE_URL="$APP_DB" npx tsx scripts/ingest-rates-databases.ts
+            echo "[deploy] seeding starter AI rules (idempotent — skips if any exist)"
+            DATABASE_URL_UNPOOLED="$APP_DB" node scripts/seed-ai-rules.mjs'
+
+      - name: Seed hardcoded super-admins (credentials login, no SSO)
+        env:
+          SAP: ${{ secrets.SUPERADMIN_SEED_PASSWORD }}
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} "set -e
+            cd /home/iox/app/web
+            source /tmp/iox-bootstrap.env
+            echo '[deploy] seeding @omniumint.com super-admins (email + password login)'
+            ECO_DB=\$(node -e 'try{const c=require(\"./ecosystem.config.cjs\");const a=Array.isArray(c.apps)?c.apps[0]:c;process.stdout.write((a.env&&a.env.DATABASE_URL)||\"\")}catch(e){}')
+            ENV_DB=\$(grep -E '^DATABASE_URL=' .env | head -1 | sed -E 's/^DATABASE_URL=//; s/^\"//; s/\"\$//')
+            APP_DB=\"\${ECO_DB:-\$ENV_DB}\"
+            [ -z \"\$APP_DB\" ] && APP_DB=\"\$DATABASE_URL_UNPOOLED\"
+            SUPERADMIN_SEED_PASSWORD='${SAP}' DATABASE_URL_UNPOOLED=\"\$APP_DB\" node scripts/seed-superadmins.mjs"
+
+      - name: Reload pm2
+        run: |
+          ssh ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} 'set -e
+            cd /home/iox/app/web
+            pm2 reload ecosystem.config.cjs --update-env
+            sleep 3
+            pm2 status'
+
+      - name: Smoke test the public site (HTTPS / portal domain)
+        run: |
+          curl -sfL -o /dev/null -w "  https://portal.iox-solutions.com/sign-in → HTTP %{http_code}\n" https://portal.iox-solutions.com/sign-in
+          curl -sfL -o /dev/null -w "  https://portal.iox-solutions.com/procurex/sign-in → HTTP %{http_code}\n" https://portal.iox-solutions.com/procurex/sign-in
